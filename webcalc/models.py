@@ -1,3 +1,4 @@
 from django.db import models
 
-# Create your models here.
+class UploadTrain(models.Model):
+    training_file = models.FileField()

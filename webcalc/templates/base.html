@@ -1,0 +1,15 @@
+<!-- templates/base.html -->
+<html>
+    <head>
+        <title>Phonotactic Web Calculator</title>
+    </head>
+    <body>
+        <header>
+            <h1><a href="{% url 'home' %}">Home</a></h1>
+        </header>
+        <div>
+            {% block content %}
+            {% endblock content %}
+        </div>
+    </body>
+</html>
