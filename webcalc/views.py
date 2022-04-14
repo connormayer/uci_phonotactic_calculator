@@ -7,7 +7,7 @@ from .models import UploadTrain
 
 class UploadTrainView(CreateView):
     model = UploadTrain
-    fields = ['training_file',]
+    fields = ['training_file', 'test_file', 'training_model']
     template_name = 'home.html'
     success_url = reverse_lazy('home')
 
