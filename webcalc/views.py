@@ -14,7 +14,7 @@ class UploadTrainView(CreateView):
     model = UploadTrain
     fields = ['training_file', 'test_file', 'training_model']
     template_name = 'home.html'
-    success_url = reverse_lazy('home')
+    success_url = reverse_lazy('output')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -29,4 +29,14 @@ class MediaView(TemplateView):
         media_path = settings.MEDIA_ROOT
         files = [f for f in listdir(media_path) if isfile(join(media_path, f))]
         context['myfiles'] = files
+        return context
+
+class OutputView(TemplateView):
+    #model = UploadTrain
+    #fields = ['training_file', test]
+    template_name = 'output.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['output_file'] = "OUTPUT FILE HERE"
         return context
