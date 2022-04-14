@@ -32,11 +32,11 @@ class MediaView(TemplateView):
         return context
 
 class OutputView(TemplateView):
-    #model = UploadTrain
+    model = UploadTrain
     #fields = ['training_file', test]
     template_name = 'output.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['output_file'] = "OUTPUT FILE HERE"
+        context['output_file'] = (self.model.objects.last()).test_file.name
         return context
