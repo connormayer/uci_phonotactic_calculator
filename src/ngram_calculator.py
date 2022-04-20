@@ -129,17 +129,22 @@ def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs, p
                 str(pos_bi_score)
             ])))
 
+def run(train, test, out):
+    unigram_probs, bigram_probs, sound_idx = build_ngram_models(train)
+    pos_uni_freqs, pos_bi_freqs = build_positional_models(train)
+
+    score_corpus(
+        test, out, 
+        unigram_probs, bigram_probs, 
+        pos_uni_freqs, pos_bi_freqs,
+        sound_idx
+    )
+
 if __name__ == "__main__":
     train_dataset = '../data/english_training_data.txt'
     test_dataset = '../data/english_test_data.csv'
     outfile = '../english_output.csv'
 
-    unigram_probs, bigram_probs, sound_idx = build_ngram_models(train_dataset)
-    pos_uni_freqs, pos_bi_freqs = build_positional_models(train_dataset)
+    run(train_dataset, test_dataset, outfile)
 
-    score_corpus(
-        test_dataset, outfile, 
-        unigram_probs, bigram_probs, 
-        pos_uni_freqs, pos_bi_freqs,
-        sound_idx
-    )
+    
