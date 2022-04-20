@@ -5,7 +5,9 @@ from django.urls import reverse_lazy
 from webcalc_project import settings
 
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, basename
+
+from src import ngram_calculator as calc
 
 # Create your views here.
 from .models import UploadTrain
@@ -20,6 +22,15 @@ class UploadTrainView(CreateView):
         context = super().get_context_data(**kwargs)
         context['documents'] = UploadTrain.objects.all()
         return context
+
+    def form_valid(self, form):
+        response = super(UploadTrainView, self).form_valid(form)
+        media_path = settings.MEDIA_ROOT
+        train_file = join(media_path, basename((self.model.objects.last()).training_file.name))
+        test_file = join(media_path, basename((self.model.objects.last()).test_file.name))
+        out_file = join(media_path, "outfile.csv")
+        calc.run(train_file, test_file, out_file)
+        return response
 
 class MediaView(TemplateView):
     template_name = 'media.html'
@@ -38,5 +49,5 @@ class OutputView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['output_file'] = (self.model.objects.last()).test_file.name
+        context['output_file'] = 'outfile.csv'#(self.model.objects.last()).test_file.name
         return context

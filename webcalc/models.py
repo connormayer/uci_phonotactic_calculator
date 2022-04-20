@@ -12,10 +12,10 @@ class UploadTrain(models.Model):
     training_model = models.CharField(choices=models_list, max_length=128)
 
     def save(self, *args, **kwargs):
-        if not self.pk:
-            media_path = settings.MEDIA_ROOT
-            train_file = join(media_path, basename(self.training_file.name))
-            test_file = join(media_path, basename(self.test_file.name))
-            out_file = join(media_path, "outfile.csv")
-            calc.run(train_file, test_file, out_file)
+        # if not self.pk:
+        #     media_path = settings.MEDIA_ROOT
+        #     train_file = join(media_path, basename(self.training_file.name))
+        #     test_file = join(media_path, basename(self.test_file.name))
+        #     out_file = join(media_path, "outfile.csv")
+        #     calc.run(train_file, test_file, out_file)
         return super(UploadTrain, self).save(*args, **kwargs)
