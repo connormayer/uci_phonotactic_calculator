@@ -10,7 +10,7 @@ from os.path import isfile, join, basename
 from src import ngram_calculator as calc
 
 # Create your views here.
-from .models import UploadTrain
+from .models import UploadTrain, DefaultFile
 
 class UploadTrainView(CreateView):
     model = UploadTrain
@@ -20,7 +20,7 @@ class UploadTrainView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['documents'] = UploadTrain.objects.all()
+        context['documents'] = UploadTrain.objects.all() # change to self.model.objects.all() ?
         return context
 
     def form_valid(self, form):
@@ -34,10 +34,11 @@ class UploadTrainView(CreateView):
 
 class MediaView(TemplateView):
     template_name = 'media.html'
+    model = DefaultFile
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        media_path = settings.MEDIA_ROOT
+        media_path = join(settings.MEDIA_ROOT, 'default')
         files = [f for f in listdir(media_path) if isfile(join(media_path, f))]
         context['myfiles'] = files
         return context

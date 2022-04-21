@@ -21,5 +21,5 @@ class UploadTrain(models.Model):
         return super(UploadTrain, self).save(*args, **kwargs)
 
 class DefaultFile(models.Model):
-    training_file = models.FileField()
+    training_file = models.FileField(upload_to='default/')
     description = models.CharField(max_length=200)
