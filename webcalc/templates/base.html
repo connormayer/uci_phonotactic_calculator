@@ -1,17 +1,39 @@
 <!-- templates/base.html -->
+
+{% load static %}
+
 <html>
     <head>
         <title>Phonotactic Web Calculator</title>
+        <link href="{% static 'css/base.css' %}" rel="stylesheet">
     </head>
+
     <body>
-        <header>
-            <h2><a href="{% url 'home' %}">Home</a></h2>
-            <h2><a href="{% url 'home' %}">About</a></h2>
-            <h2><a href="{% url 'media' %}">Media</a></h2>
-        </header>
-        <div>
-            {% block content %}
-            {% endblock content %}
+        
+        <div class="top-header">
+            <span class="home-button">
+                <strong>
+                    <a href="{% url 'home' %}">Home</a>
+                </strong>
+            </span>
+            <span class="about-button">
+                <strong>
+                    <a href="{% url 'home' %}">About</a>
+                </strong>
+            </span>
+            <span class="media-button">
+                <strong>
+                    <a href="{% url 'media' %}">Media</a>
+                </strong>
+            </span>
         </div>
+        <div class="page-title">
+            <h1>
+                Phonotactic Probability Calculator
+            </h1>
+        </div>
+    
+        {% block content %}
+        {% endblock content %}
     </body>
 </html>
