@@ -19,3 +19,7 @@ class UploadTrain(models.Model):
         #     out_file = join(media_path, "outfile.csv")
         #     calc.run(train_file, test_file, out_file)
         return super(UploadTrain, self).save(*args, **kwargs)
+
+class DefaultFile(models.Model):
+    training_file = models.FileField()
+    description = models.CharField(max_length=200)
