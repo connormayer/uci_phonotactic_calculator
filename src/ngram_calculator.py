@@ -20,8 +20,7 @@ def build_ngram_models(dataset):
     with open(dataset, 'r') as f:
         tokens = f.read()
 
-    tokens = set([tuple(s.split(" ")) for s in tokens.split("\n") if s])
-    tokens = [list(token) for token in tokens]
+    tokens = [s.split(" ") for s in tokens.split("\n") if s]
 
     unique_sounds = set(
         [item for sublist in tokens for item in sublist]
@@ -50,8 +49,7 @@ def build_positional_models(dataset):
     with open(dataset, 'r') as f:
         tokens = f.read()
 
-    tokens = set([tuple(s.split(" ")) for s in tokens.split("\n") if s])
-    tokens = [list(token) for token in tokens]
+    tokens = [s.split(" ") for s in tokens.split("\n") if s]
 
     pos_unigram_freqs = defaultdict(lambda: defaultdict(int))
     pos_bigram_freqs = defaultdict(lambda: defaultdict(int))
@@ -77,7 +75,16 @@ def build_positional_models(dataset):
 def get_unigram_prob(word, unigram_probs):
     prob = 0
     for sound in word:
-        prob += unigram_probs[sound]
+        '''
+        if sound in unigram_probs:
+            prob += unigram_probs[sound]
+        else:
+            prob += float('-inf')
+        '''
+        # Add basic smoothing for sounds that appear in test data but
+        #   not training data. Use float('-inf') because we are
+        #   using log probabilities --> log(-inf) = 0
+        prob += unigram_probs.get(sound, float('-inf'))
 
     return prob
 
@@ -109,8 +116,7 @@ def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs, p
     with open(dataset, 'r') as f:
         tokens = f.read()
 
-    tokens = set([tuple(s.split(" ")) for s in tokens.split("\n") if s])
-    tokens = [list(token) for token in tokens]
+    tokens = [s.split(" ") for s in tokens.split("\n") if s]
 
     with open(outfile, 'w') as f:
         f.write('word,word_len,uni_prob,bi_prob,pos_uni_freq,pos_bi_freq\n')
