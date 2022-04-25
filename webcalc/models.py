@@ -23,3 +23,8 @@ class UploadTrain(models.Model):
 class DefaultFile(models.Model):
     training_file = models.FileField(upload_to='default')
     description = models.CharField(max_length=200)
+
+    @property
+    def file_name(self):
+        cur_name = self.training_file.name
+        return cur_name.replace('default/', '')

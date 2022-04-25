@@ -4,8 +4,9 @@
 {% block content %}
     <div style="padding:40px;margin:40px;border:1px solid #ccc">
         <h1>File List</h1>
-        {% for myfile in myfiles %}
-            <a href = "/media/default/{{ myfile }}" download><h2>{{ myfile }}</h2></a>
+        {% for obj in objects %}
+            <a href = "/media/default/{{ obj.file_name }}" download><h2>{{ obj.file_name }}</h2></a>
+            <h3>{{ obj.description }}</h3>
         {% endfor %}
     </div>
 {% endblock content %}
