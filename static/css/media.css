@@ -1,0 +1,9 @@
+table, td {
+    border: 2px solid black;
+    border-collapse: collapse;
+    padding-left: 10px;
+    padding-right: 10px;
+    text-align: center;
+    vertical-align: middle;
+    position: relative;
+}
