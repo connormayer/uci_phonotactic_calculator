@@ -24,9 +24,10 @@ class UploadTrainView(CreateView):
         return context
 
     def form_valid(self, form):
-        # Validate training and test files here
-        ###########
         response = super(UploadTrainView, self).form_valid(form)
+        # Validate training and test files here
+        # If not valid, return response immediately without calling run
+        ###########
         media_path = settings.MEDIA_ROOT
         train_file = join(media_path, basename((self.model.objects.last()).training_file.name))
         test_file = join(media_path, basename((self.model.objects.last()).test_file.name))
@@ -56,3 +57,6 @@ class OutputView(TemplateView):
 
         context['output_file'] = (self.model.objects.last()).out_file
         return context
+
+class AboutView(TemplateView):
+    template_name = 'about.html'
