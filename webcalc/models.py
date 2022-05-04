@@ -7,13 +7,13 @@ from webcalc_project import settings
 from datetime import datetime
 
 class UploadTrain(models.Model):
-    training_file = models.FileField()
-    test_file = models.FileField()
+    training_file = models.FileField(upload_to='uploads')
+    test_file = models.FileField(upload_to='uploads')
     models_list = [('unigram', 'Unigram Probability'), ('bigram', 'Bigram Probability'), \
         ('posUnigram', 'Positional Unigram Score'), ('posBigram', 'Positional Bigram Score')]
     training_model = models.CharField(choices=models_list, max_length=128)
     timeStr = datetime.now().strftime('%Y_%m_%d_%H%M%S')
-    media_path = settings.MEDIA_ROOT
+    #media_path = settings.MEDIA_ROOT
     out_file = "outfile_" + timeStr + ".csv"
 
     def save(self, *args, **kwargs):

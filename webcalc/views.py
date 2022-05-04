@@ -29,9 +29,9 @@ class UploadTrainView(CreateView):
         # If not valid, return response immediately without calling run
         ###########
         media_path = settings.MEDIA_ROOT
-        train_file = join(media_path, basename((self.model.objects.last()).training_file.name))
-        test_file = join(media_path, basename((self.model.objects.last()).test_file.name))
-        out_file = join(media_path, basename((self.model.objects.last()).out_file))
+        train_file = join(media_path, 'uploads', basename((self.model.objects.last()).training_file.name))
+        test_file = join(media_path, 'uploads', basename((self.model.objects.last()).test_file.name))
+        out_file = join(media_path, 'uploads', basename((self.model.objects.last()).out_file))
         calc.run(train_file, test_file, out_file)
         return response
 
