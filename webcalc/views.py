@@ -14,7 +14,7 @@ from .models import UploadTrain, DefaultFile
 
 class UploadTrainView(CreateView):
     model = UploadTrain
-    fields = ['training_file', 'test_file', 'training_model']
+    fields = '__all__'#['training_file', 'test_file', 'training_model']
     template_name = 'home.html'
     success_url = reverse_lazy('output')
 
@@ -31,7 +31,11 @@ class UploadTrainView(CreateView):
         media_path = settings.MEDIA_ROOT
         train_file = join(media_path, 'uploads', basename((self.model.objects.last()).training_file.name))
         test_file = join(media_path, 'uploads', basename((self.model.objects.last()).test_file.name))
-        out_file = join(media_path, 'uploads', basename((self.model.objects.last()).out_file))
+        test_file_name_sub = ((self.model.objects.last()).test_file.name)[:4]
+        old_outfile_name = (self.model.objects.last()).out_file
+        new_outfile_name = old_outfile_name.replace('.csv', '') + '_' + test_file_name_sub + '.csv'
+
+        out_file = join(media_path, 'uploads', basename(new_outfile_name))
         calc.run(train_file, test_file, out_file)
         return response
 
@@ -55,7 +59,11 @@ class OutputView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context['output_file'] = (self.model.objects.last()).out_file
+        test_file_name_sub = ((self.model.objects.last()).test_file.name)[:4]
+        old_outfile_name = (self.model.objects.last()).out_file
+        new_outfile_name = old_outfile_name.replace('.csv', '') + '_' + test_file_name_sub + '.csv'
+
+        context['output_file'] = new_outfile_name#(self.model.objects.last()).out_file
         return context
 
 class AboutView(TemplateView):
