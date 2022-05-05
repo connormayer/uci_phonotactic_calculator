@@ -93,17 +93,34 @@ class UploadDefaultView(CreateView):
     model = UploadWithDefault
     fields = '__all__'
     template_name = 'uploadDefault.html'
-    success_url = reverse_lazy('output') # CHANGE THIS?
+    success_url = reverse_lazy('output')
+
+    def form_invalid(self, form):
+        response = super(UploadDefaultView, self).form_invalid(form)
+        context = self.get_context_data()
+        form.data = form.data.copy()  # make copy of form data
+        form.data['training_model'] = '' # reset training model dropdown selection in form
+        form.data['training_file'] = '' # reset training file dropdown selection in form
+        context['form'] = form # set form in context to updated form
+        messages.warning(self.request, 'Bad file formatting')
+        return response
 
     def form_valid(self, form):
         response = super(UploadDefaultView, self).form_valid(form)
-        # Validate training and test files here
-        # If not valid, return response immediately without calling run
-        ###########
+
         media_path = settings.MEDIA_ROOT
         
         train_file = join(media_path, 'default', basename((self.model.objects.last()).training_file))
         test_file = join(media_path, 'uploads', basename((self.model.objects.last()).test_file.name))
+
+        # Validate test file here
+        # If not valid, return form_invalid without calling run
+        # No need to validate training file since it is default file
+        ###########
+
+        if not validate.valid_file(test_file):
+            return self.form_invalid(form)
+
         test_file_name_sub = ((self.model.objects.last()).test_file.name)[:4]
         old_outfile_name = (self.model.objects.last()).out_file
         new_outfile_name = old_outfile_name.replace('.csv', '') + '_' + test_file_name_sub + '.csv'
