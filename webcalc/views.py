@@ -50,7 +50,7 @@ class UploadTrainView(CreateView):
         if not validate.valid_file(train_file) or not validate.valid_file(test_file):
             return self.form_invalid(form)
 
-        test_file_name_sub = ((self.model.objects.last()).test_file.name)[:4]
+        test_file_name_sub = basename((self.model.objects.last()).test_file.name)[:4]
         old_outfile_name = (self.model.objects.last()).out_file
         new_outfile_name = old_outfile_name.replace('.csv', '') + '_' + test_file_name_sub + '.csv'
 
@@ -128,20 +128,3 @@ class UploadDefaultView(CreateView):
         out_file = join(media_path, 'uploads', basename(new_outfile_name))
         calc.run(train_file, test_file, out_file)
         return response
-
-class OutputDefaultView(TemplateView):
-    model = UploadWithDefault
-    #fields = ['training_file', test]
-    template_name = 'output.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        print(basename((self.model.objects.last()).test_file.name), ((self.model.objects.last()).test_file.name))
-        test_file_name_sub = basename((self.model.objects.last()).test_file.name)[:4]
-        old_outfile_name = (self.model.objects.last()).out_file
-        new_outfile_name = old_outfile_name.replace('.csv', '') + '_' + test_file_name_sub + '.csv'
-        print(test_file_name_sub, old_outfile_name, new_outfile_name)
-
-        context['output_file'] = new_outfile_name#(self.model.objects.last()).out_file
-        return context
