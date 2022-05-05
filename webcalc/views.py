@@ -78,7 +78,7 @@ class OutputView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        test_file_name_sub = ((self.model.objects.last()).test_file.name)[:4]
+        test_file_name_sub = basename((self.model.objects.last()).test_file.name)[:4]
         old_outfile_name = (self.model.objects.last()).out_file
         new_outfile_name = old_outfile_name.replace('.csv', '') + '_' + test_file_name_sub + '.csv'
 
@@ -121,7 +121,7 @@ class UploadDefaultView(CreateView):
         if not validate.valid_file(test_file):
             return self.form_invalid(form)
 
-        test_file_name_sub = ((self.model.objects.last()).test_file.name)[:4]
+        test_file_name_sub = basename((self.model.objects.last()).test_file.name)[:4]
         old_outfile_name = (self.model.objects.last()).out_file
         new_outfile_name = old_outfile_name.replace('.csv', '') + '_' + test_file_name_sub + '.csv'
 
@@ -137,9 +137,11 @@ class OutputDefaultView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        test_file_name_sub = ((self.model.objects.last()).test_file.name)[:4]
+        print(basename((self.model.objects.last()).test_file.name), ((self.model.objects.last()).test_file.name))
+        test_file_name_sub = basename((self.model.objects.last()).test_file.name)[:4]
         old_outfile_name = (self.model.objects.last()).out_file
         new_outfile_name = old_outfile_name.replace('.csv', '') + '_' + test_file_name_sub + '.csv'
+        print(test_file_name_sub, old_outfile_name, new_outfile_name)
 
         context['output_file'] = new_outfile_name#(self.model.objects.last()).out_file
         return context
