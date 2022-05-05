@@ -5,10 +5,13 @@ from django.views.generic.base import TemplateView
 from django.urls import reverse_lazy
 from webcalc_project import settings
 
+from django.contrib import messages
+
 from os import listdir
 from os.path import isfile, join, basename
 
 from src import ngram_calculator as calc
+from src import validate
 
 # Create your views here.
 from .models import UploadTrain, DefaultFile, UploadWithDefault
@@ -24,6 +27,11 @@ class UploadTrainView(CreateView):
         context['documents'] = UploadTrain.objects.all() # change to self.model.objects.all() ?
         return context
 
+    def form_invalid(self, form):
+        response = super(UploadTrainView, self).form_invalid(form)
+        messages.warning(self.request, 'Bad file formatting')
+        return response
+
     def form_valid(self, form):
         response = super(UploadTrainView, self).form_valid(form)
         # Validate training and test files here
@@ -32,6 +40,10 @@ class UploadTrainView(CreateView):
         media_path = settings.MEDIA_ROOT
         train_file = join(media_path, 'uploads', basename((self.model.objects.last()).training_file.name))
         test_file = join(media_path, 'uploads', basename((self.model.objects.last()).test_file.name))
+
+        if not validate.valid_file(train_file) or not validate.valid_file(test_file):
+            return self.form_invalid(form)
+
         test_file_name_sub = ((self.model.objects.last()).test_file.name)[:4]
         old_outfile_name = (self.model.objects.last()).out_file
         new_outfile_name = old_outfile_name.replace('.csv', '') + '_' + test_file_name_sub + '.csv'
