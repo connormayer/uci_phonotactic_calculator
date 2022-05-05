@@ -1,4 +1,4 @@
-<!-- templates/home.html -->
+<!-- templates/uploadDefault.html -->
 {% extends 'base.html' %}
 
 {% block content %}
@@ -12,6 +12,6 @@
         {{ form.as_p }}
         <button type="submit">Submit</button>
         </form><hr>
-        <h3 style="color:green"><a href="{% url 'uploadDefault' %}">Use default training files instead</a></h3>
+        <h3 style="color:green"><a href="{% url 'media' %}">Training file descriptions here</a></h3>
     </div>
 {% endblock content %}

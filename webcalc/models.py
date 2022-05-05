@@ -38,4 +38,15 @@ class DefaultFile(models.Model):
 
 
 class UploadWithDefault(models.Model):
-    files_list = DefaultFile.objects.all()
+    default_objects = DefaultFile.objects.all()
+    files_list = [(x.file_name, x.file_name) for x in default_objects]
+    training_file = models.CharField(choices=files_list, max_length=200)
+    test_file = models.FileField(upload_to='uploads')
+    models_list = [('unigram', 'Unigram Probability'), ('bigram', 'Bigram Probability'), \
+        ('posUnigram', 'Positional Unigram Score'), ('posBigram', 'Positional Bigram Score')]
+    training_model = models.CharField(choices=models_list, max_length=128)
+
+    timeStr = datetime.now().strftime('%m_%d_%H%M')
+    #media_path = settings.MEDIA_ROOT
+    out_file = "outfile_" + timeStr + ".csv"
+    #out_file = None
