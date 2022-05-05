@@ -29,17 +29,23 @@ class UploadTrainView(CreateView):
 
     def form_invalid(self, form):
         response = super(UploadTrainView, self).form_invalid(form)
+        context = self.get_context_data()
+        form.data = form.data.copy()  # make copy of form data
+        form.data['training_model'] = '' # reset training model dropdown selection in form
+        context['form'] = form # set form in context to updated form
         messages.warning(self.request, 'Bad file formatting')
         return response
 
     def form_valid(self, form):
         response = super(UploadTrainView, self).form_valid(form)
-        # Validate training and test files here
-        # If not valid, return response immediately without calling run
-        ###########
+        
         media_path = settings.MEDIA_ROOT
         train_file = join(media_path, 'uploads', basename((self.model.objects.last()).training_file.name))
         test_file = join(media_path, 'uploads', basename((self.model.objects.last()).test_file.name))
+
+        # Validate training and test files here
+        # If not valid, return form_invalid without calling run
+        ###########
 
         if not validate.valid_file(train_file) or not validate.valid_file(test_file):
             return self.form_invalid(form)
