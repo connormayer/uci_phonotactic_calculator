@@ -35,3 +35,7 @@ class DefaultFile(models.Model):
     def file_name(self):
         cur_name = self.training_file.name
         return cur_name.replace('default/', '')
+
+
+class UploadWithDefault(models.Model):
+    files_list = DefaultFile.objects.all()
