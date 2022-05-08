@@ -1,4 +1,5 @@
 from audioop import reverse
+from email.policy import default
 from django.shortcuts import render
 from django.views.generic.edit import CreateView
 from django.views.generic.base import TemplateView
@@ -42,8 +43,16 @@ class UploadTrainView(CreateView):
         
         media_path = settings.MEDIA_ROOT
 
-        if (self.model.objects.last()).training_file.name == '':
-            if (self.model.objects.last()).default_training_file == '':
+        uploaded_training = ((self.model.objects.last()).training_file.name != '')
+        default_training = ((self.model.objects.last()).default_training_file != '')
+
+        # This may not be needed
+        if uploaded_training and default_training:
+            messages.warning(self.request, 'Either upload a training file OR use a default one (not both)')
+            return self.form_invalid(form)
+
+        if not uploaded_training:
+            if not default_training:
                 messages.warning(self.request, 'Please upload a training file or select a default file')
                 return self.form_invalid(form)
             else:
