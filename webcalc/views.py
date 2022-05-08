@@ -12,7 +12,7 @@ from os import listdir
 from os.path import isfile, join, basename
 
 from src import ngram_calculator as calc
-from src import validate
+from src import utility as util
 
 # Create your views here.
 from .models import UploadTrain, DefaultFile, UploadWithDefault
@@ -40,6 +40,8 @@ class UploadTrainView(CreateView):
 
     def form_valid(self, form):
         response = super(UploadTrainView, self).form_valid(form)
+
+        util.clean_media_folder()
         
         media_path = settings.MEDIA_ROOT
 
@@ -67,10 +69,10 @@ class UploadTrainView(CreateView):
         # If not valid, return form_invalid without calling run
         ###########
 
-        if not validate.valid_file(train_file):
+        if not util.valid_file(train_file):
             messages.warning(self.request, 'Invalid training file format: Add spaces to separate phonemes')
             return self.form_invalid(form)
-        elif not validate.valid_file(test_file):
+        elif not util.valid_file(test_file):
             messages.warning(self.request, 'Invalid test file format: Add spaces to separate phonemes')
             return self.form_invalid(form)
 
@@ -80,8 +82,6 @@ class UploadTrainView(CreateView):
 
         out_file = join(media_path, 'uploads', basename(new_outfile_name))
         calc.run(train_file, test_file, out_file)
-
-        # clear media folder here
 
         return response
 
@@ -145,7 +145,7 @@ class UploadDefaultView(CreateView):
         # No need to validate training file since it is default file
         ###########
 
-        if not validate.valid_file(test_file):
+        if not util.valid_file(test_file):
             return self.form_invalid(form)
 
         test_file_name_sub = basename((self.model.objects.last()).test_file.name)[:4]
