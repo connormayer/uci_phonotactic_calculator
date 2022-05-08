@@ -6,9 +6,22 @@ from webcalc_project import settings
 
 from datetime import datetime
 
+
+class DefaultFile(models.Model):
+    training_file = models.FileField(upload_to='default')
+    description = models.CharField(max_length=200)
+
+    @property
+    def file_name(self):
+        cur_name = self.training_file.name
+        return cur_name.replace('default/', '')
+
 class UploadTrain(models.Model):
     # upload files go to media\uploads
-    training_file = models.FileField(upload_to='uploads')
+    default_objects = DefaultFile.objects.all()
+    files_list = [(x.file_name, x.file_name) for x in default_objects]
+    training_file = models.FileField(upload_to='uploads', blank=True)
+    default_training_file = models.CharField(choices=files_list, max_length=200, blank=True)
     test_file = models.FileField(upload_to='uploads')
     models_list = [('unigram', 'Unigram Probability'), ('bigram', 'Bigram Probability'), \
         ('posUnigram', 'Positional Unigram Score'), ('posBigram', 'Positional Bigram Score')]
@@ -26,15 +39,6 @@ class UploadTrain(models.Model):
         #     out_file = join(media_path, "outfile.csv")
         #     calc.run(train_file, test_file, out_file)
         return super(UploadTrain, self).save(*args, **kwargs)
-
-class DefaultFile(models.Model):
-    training_file = models.FileField(upload_to='default')
-    description = models.CharField(max_length=200)
-
-    @property
-    def file_name(self):
-        cur_name = self.training_file.name
-        return cur_name.replace('default/', '')
 
 
 class UploadWithDefault(models.Model):

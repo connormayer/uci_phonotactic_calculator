@@ -31,6 +31,7 @@ class UploadTrainView(CreateView):
         response = super(UploadTrainView, self).form_invalid(form)
         context = self.get_context_data()
         form.data = form.data.copy()  # make copy of form data
+        form.data['default_training_file'] = ''
         form.data['training_model'] = '' # reset training model dropdown selection in form
         context['form'] = form # set form in context to updated form
         messages.warning(self.request, 'Bad file formatting')
@@ -40,7 +41,16 @@ class UploadTrainView(CreateView):
         response = super(UploadTrainView, self).form_valid(form)
         
         media_path = settings.MEDIA_ROOT
-        train_file = join(media_path, 'uploads', basename((self.model.objects.last()).training_file.name))
+
+        if (self.model.objects.last()).training_file.name == '':
+            if (self.model.objects.last()).default_training_file == '':
+                return self.form_invalid(form)
+            else:
+                train_file = join(media_path, 'uploads', basename((self.model.objects.last()).default_training_file))
+        else:
+            train_file = join(media_path, 'uploads', basename((self.model.objects.last()).training_file.name))
+
+        
         test_file = join(media_path, 'uploads', basename((self.model.objects.last()).test_file.name))
 
         # Validate training and test files here
@@ -56,6 +66,9 @@ class UploadTrainView(CreateView):
 
         out_file = join(media_path, 'uploads', basename(new_outfile_name))
         calc.run(train_file, test_file, out_file)
+
+        # clear media folder here
+
         return response
 
 class MediaView(TemplateView):
@@ -127,4 +140,7 @@ class UploadDefaultView(CreateView):
 
         out_file = join(media_path, 'uploads', basename(new_outfile_name))
         calc.run(train_file, test_file, out_file)
+
+        # clear media folder here
+
         return response
