@@ -34,7 +34,7 @@ class UploadTrainView(CreateView):
         form.data['default_training_file'] = ''
         form.data['training_model'] = '' # reset training model dropdown selection in form
         context['form'] = form # set form in context to updated form
-        messages.warning(self.request, 'Bad file formatting')
+        #messages.warning(self.request, 'Bad file formatting')
         return response
 
     def form_valid(self, form):
@@ -44,6 +44,7 @@ class UploadTrainView(CreateView):
 
         if (self.model.objects.last()).training_file.name == '':
             if (self.model.objects.last()).default_training_file == '':
+                messages.warning(self.request, 'Please upload a training file or select a default file')
                 return self.form_invalid(form)
             else:
                 train_file = join(media_path, 'uploads', basename((self.model.objects.last()).default_training_file))
@@ -57,7 +58,11 @@ class UploadTrainView(CreateView):
         # If not valid, return form_invalid without calling run
         ###########
 
-        if not validate.valid_file(train_file) or not validate.valid_file(test_file):
+        if not validate.valid_file(train_file):
+            messages.warning(self.request, 'Invalid training file format: Add spaces to separate phonemes')
+            return self.form_invalid(form)
+        elif not validate.valid_file(test_file):
+            messages.warning(self.request, 'Invalid test file format: Add spaces to separate phonemes')
             return self.form_invalid(form)
 
         test_file_name_sub = basename((self.model.objects.last()).test_file.name)[:4]
