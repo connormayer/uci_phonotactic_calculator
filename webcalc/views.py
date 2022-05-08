@@ -58,7 +58,7 @@ class UploadTrainView(CreateView):
                 messages.warning(self.request, 'Please upload a training file or select a default file')
                 return self.form_invalid(form)
             else:
-                train_file = join(media_path, 'uploads', basename((self.model.objects.last()).default_training_file))
+                train_file = join(media_path, 'default', basename((self.model.objects.last()).default_training_file))
         else:
             train_file = join(media_path, 'uploads', basename((self.model.objects.last()).training_file.name))
 

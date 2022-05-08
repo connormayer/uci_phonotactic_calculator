@@ -23,8 +23,7 @@ class UploadTrain(models.Model):
     training_file = models.FileField(upload_to='uploads', blank=True)
     default_training_file = models.CharField(choices=files_list, max_length=200, blank=True)
     test_file = models.FileField(upload_to='uploads')
-    models_list = [('unigram', 'Unigram Probability'), ('bigram', 'Bigram Probability'), \
-        ('posUnigram', 'Positional Unigram Score'), ('posBigram', 'Positional Bigram Score')]
+    models_list = [('simple', 'Unigram/Bigram Scores'), ('complex', 'RNN Model')]
     training_model = models.CharField(choices=models_list, max_length=128)
     timeStr = datetime.now().strftime('%m_%d_%H%M')
     #media_path = settings.MEDIA_ROOT
