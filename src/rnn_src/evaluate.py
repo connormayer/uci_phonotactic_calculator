@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from scipy.stats import norm
 from statsmodels.stats.weightstats import CompareMeans
-from training import compute_perplexity
+from .training import compute_perplexity
 
 def get_probs(input_file, model, phone2ix, out_filename):
     inp_file = open(input_file, 'r',encoding='UTF-8')
@@ -19,9 +19,10 @@ def get_probs(input_file, model, phone2ix, out_filename):
 
     num_points = len(data_tens)
 
+    out_file.write('word,score\n')
     for i,word in enumerate(data_tens):
         curr_string = as_strings[i]
-        out_file.write(curr_string + '\t' + str(compute_perplexity(word.unsqueeze(0), model).numpy()) + '\n')
+        out_file.write(curr_string + ',' + str(compute_perplexity(word.unsqueeze(0), model).numpy()) + '\n')
     
     inp_file.close()
     out_file.close()

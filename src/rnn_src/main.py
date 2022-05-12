@@ -2,10 +2,10 @@ import argparse
 import numpy as np
 import sys
 import torch
-from evaluate import get_probs
-from model import Emb_RNNLM, Feature_RNNLM
-from data_process import get_corpus_data, process_data, process_features
-from training import train_lm
+from .evaluate import get_probs
+from .model import Emb_RNNLM, Feature_RNNLM
+from .data_process import get_corpus_data, process_data, process_features
+from .training import train_lm
 
 DEFAULT_FEATURES_FILE = None
 DEFAULT_D_EMB = 24
@@ -20,6 +20,40 @@ DEFAULT_DEV = True
 
 
 SPECIAL_LABELS = ['<p>', '<s>', '<e>']
+
+def run(train_file, test_file, out_file, feature_file=None):
+    raw_data = get_corpus_data(train_file)
+    inventory, phone2ix, ix2phone, training, dev = process_data(
+        raw_data, dev=DEFAULT_DEV, training_split=DEFAULT_TRAINING_SPLIT
+    )
+    inventory_size = len(inventory)
+    rnn_params = {}
+    rnn_params['d_emb'] = DEFAULT_D_EMB
+    rnn_params['d_hid'] = DEFAULT_D_HID
+    rnn_params['num_layers'] = DEFAULT_NUM_LAYERS
+    rnn_params['batch_size'] = DEFAULT_BATCH_SIZE
+    rnn_params['learning_rate'] = DEFAULT_LEARNING_RATE
+    rnn_params['epochs'] = DEFAULT_EPOCHS
+    rnn_params['tied'] = DEFAULT_TIED
+    rnn_params['inv_size'] = inventory_size
+
+    if not feature_file:
+        RNN = Emb_RNNLM(rnn_params)
+        print('Fitting embedding model...')
+    else:
+        features, num_feats = process_features(feature_file, inventory)
+        #build feature table, to replace embedding table, No grad b/c features are fixed
+        feature_table = torch.zeros(inventory_size, num_feats, requires_grad=False)
+        for i in range(inventory_size):
+            feature_table[i] = torch.tensor(features[ix2phone[i]])
+        rnn_params['d_feats'] = num_feats
+        RNN = Feature_RNNLM(rnn_params, feature_table)
+        print('Fitting feature model...')
+
+    train_lm(training, dev, rnn_params, RNN)
+    RNN.eval()
+
+    get_probs(test_file, RNN, phone2ix, out_file)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

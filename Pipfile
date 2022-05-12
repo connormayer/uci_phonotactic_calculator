@@ -5,6 +5,9 @@ name = "pypi"
 
 [packages]
 django = "==2.1.1"
+torch = "*"
+scipy = "*"
+statsmodels = "*"
 
 [dev-packages]
 
