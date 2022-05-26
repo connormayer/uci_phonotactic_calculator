@@ -25,7 +25,7 @@ class UploadTrain(models.Model):
     #default_objects = []
     default_objects = DefaultFile.objects.all()
     # second value in tuple is human-readable name (what gets displayed)
-    files_list = [(x.file_name, x.file_name + ' -- ' + x.short_desc) for x in default_objects]
+    files_list = [(x.file_name, x.short_desc) for x in default_objects]
     
     # upload files go to media\uploads
     training_file = models.FileField(upload_to='uploads', blank=True)
