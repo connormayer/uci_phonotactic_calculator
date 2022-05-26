@@ -20,6 +20,12 @@ def build_ngram_models(dataset):
     with open(dataset, 'r') as f:
         tokens = f.read()
 
+    # split using default e.g. s.split() not split(" ")
+    # if last part of split is an integer, we have frequencies and can
+    #   do log-prob with tokens
+    #   - map word to frequency
+    #   - loop through words and add log/freq of unigrams to dict
+    #   - calculate log prob as below (unigram_probs)
     tokens = [s.split(" ") for s in tokens.split("\n") if s]
 
     unique_sounds = set(
