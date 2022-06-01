@@ -34,10 +34,10 @@ def build_ngram_models(dataset):
             freq = float(line[-1]) # might not work if frequencies are not given
             word = line[:-1]
             for segment in word:
-                unigram_token_freqs[segment] += freq
+                unigram_token_freqs[segment] += np.log(freq)
             tokens.append(word)
         total_count = sum(unigram_token_freqs.values())
-        unigram_token_probs = {key : np.log(value/total_count) for key, value in unigram_token_freqs.items()}
+        unigram_token_probs = {key : np.log(value / total_count) for key, value in unigram_token_freqs.items()}
     except:
         unigram_token_probs = dict()
         tokens = line_splits
