@@ -44,7 +44,8 @@ def build_ngram_models(dataset):
         total_count_uni = sum(unigram_token_freqs.values())
         total_count_bi = sum(bigram_token_freqs.values())
         unigram_token_probs = {key : np.log(value / total_count_uni) for key, value in unigram_token_freqs.items()}
-        bigram_token_probs = {key : np.log(value / total_count_bi) for key, value in bigram_token_freqs.items()}
+        bigram_token_probs = {key : np.log(value / (unigram_token_freqs[key[0]] if key[0] != '#' else total_count_uni)) \
+            for key, value in bigram_token_freqs.items() }
     except:
         unigram_token_probs = dict()
         bigram_token_probs = dict()
