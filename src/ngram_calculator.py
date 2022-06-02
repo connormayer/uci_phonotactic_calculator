@@ -82,16 +82,36 @@ def build_positional_models(dataset):
     with open(dataset, 'r') as f:
         tokens = f.read()
 
-    tokens = [s.split(" ") for s in tokens.split("\n") if s]
+    tokens = [s.split() for s in tokens.split("\n") if s]
+    try:
+        new_tokens = []
+        for t in tokens:
+            freq = float(t[-1])
+            new_tokens.append((t[:-1], freq))
+        tokens = new_tokens
+    except:
+        pass
 
     pos_unigram_freqs = defaultdict(lambda: defaultdict(int))
     pos_bigram_freqs = defaultdict(lambda: defaultdict(int))
 
-    for token in tokens:
+    pos_unigram_tok_freqs = defaultdict(lambda: defaultdict(int))
+    pos_bigram_tok_freqs = defaultdict(lambda: defaultdict(int))
+
+    for element in tokens:
+        if len(element) == 2:
+            token,freq = element
+        else:
+            token = element
+            freq = None
         for idx, sound in enumerate(token):
             pos_unigram_freqs[idx][sound] += 1
+            if freq:
+                pos_unigram_tok_freqs[idx][sound] += np.log(freq)
             if idx < len(token) - 1:
                 pos_bigram_freqs[(idx, idx + 1)][(sound, token[idx + 1])] += 1
+                if freq:
+                    pos_bigram_tok_freqs[(idx, idx + 1)][(sound, token[idx + 1])] += np.log(freq)
     
     for idx in pos_unigram_freqs.keys():
         total = sum(pos_unigram_freqs[idx].values())
@@ -103,7 +123,19 @@ def build_positional_models(dataset):
         for sounds in pos_bigram_freqs[idx].keys():
             pos_bigram_freqs[idx][sounds] /= total
 
-    return pos_unigram_freqs, pos_bigram_freqs
+    if len(pos_unigram_tok_freqs) != 0:
+        for idx in pos_unigram_tok_freqs.keys():
+            total = sum(pos_unigram_tok_freqs[idx].values())
+            for sound in pos_unigram_tok_freqs[idx].keys():
+                pos_unigram_tok_freqs[idx][sound] /= total
+
+    if len(pos_bigram_tok_freqs) != 0:
+        for idx in pos_bigram_tok_freqs.keys():
+            total = sum(pos_bigram_tok_freqs[idx].values())
+            for sound in pos_bigram_tok_freqs[idx].keys():
+                pos_bigram_tok_freqs[idx][sound] /= total
+
+    return pos_unigram_freqs, pos_bigram_freqs, pos_unigram_tok_freqs, pos_bigram_tok_freqs
 
 def get_unigram_prob(word, unigram_probs):
     prob = 0
@@ -163,16 +195,33 @@ def get_bigram_token_score(word, bigram_token_probs):
         score += bigram_token_probs.get(bigram, float('-inf'))
     return score
 
+def get_pos_unigram_tok_score(word, pos_uni_tok_freqs):
+    score = 0
+
+    for idx, sound in enumerate(word):
+        score += pos_uni_tok_freqs[idx][sound]
+
+    return score
+
+def get_pos_bigram_tok_score(word, pos_bi_tok_freqs):
+    score = 0
+
+    for idx, sound in enumerate(word):
+        if idx < len(word) - 1:
+            score += pos_bi_tok_freqs[(idx, idx + 1)][sound, word[idx + 1]]
+
+    return score
+
 
 def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs, pos_bi_freqs, sound_idx, unigram_token_probs, \
-    bigram_token_probs):
+    bigram_token_probs, pos_uni_tok_freqs, pos_bi_tok_freqs):
     with open(dataset, 'r') as f:
         tokens = f.read()
 
     tokens = [s.split(" ") for s in tokens.split("\n") if s]
 
     with open(outfile, 'w') as f:
-        f.write('word,word_len,uni_prob,bi_prob,pos_uni_freq,pos_bi_freq,uni_tok_prob,bi_tok_prob\n')
+        f.write('word,word_len,uni_prob,bi_prob,pos_uni_freq,pos_bi_freq,uni_tok_prob,bi_tok_prob,pos_uni_tok,pos_bi_tok\n')
         for token in tokens:
             word_len = len(token)
             unigram_prob = get_unigram_prob(token, unigram_probs)
@@ -181,6 +230,8 @@ def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs, p
             pos_bi_score = 1 + get_pos_bigram_score(token, pos_bi_freqs)
             uni_tok_prob = get_unigram_token_score(token, unigram_token_probs)
             bi_tok_prob = get_bigram_token_score(token, bigram_token_probs)
+            pos_uni_tok_score = 1 + get_pos_unigram_tok_score(token, pos_uni_tok_freqs)
+            pos_bi_tok_score = 1 + get_pos_bigram_tok_score(token, pos_bi_tok_freqs)
             f.write('{}\n'.format(','.join([
                 ' '.join(token), 
                 str(word_len),
@@ -189,19 +240,22 @@ def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs, p
                 str(pos_uni_score), 
                 str(pos_bi_score),
                 str(uni_tok_prob),
-                str(bi_tok_prob)
+                str(bi_tok_prob),
+                str(pos_uni_tok_score),
+                str(pos_bi_tok_score)
             ])))
 
 def run(train, test, out):
     unigram_probs, bigram_probs, sound_idx, unigram_token_probs, bigram_token_probs = build_ngram_models(train)
-    pos_uni_freqs, pos_bi_freqs = build_positional_models(train)
+    pos_uni_freqs, pos_bi_freqs, pos_uni_tok_freqs, pos_bi_tok_freqs = build_positional_models(train)
 
     score_corpus(
         test, out, 
         unigram_probs, bigram_probs, 
         pos_uni_freqs, pos_bi_freqs,
         sound_idx, unigram_token_probs,
-        bigram_token_probs
+        bigram_token_probs, pos_uni_tok_freqs,
+        pos_bi_tok_freqs
     )
 
 if __name__ == "__main__":
