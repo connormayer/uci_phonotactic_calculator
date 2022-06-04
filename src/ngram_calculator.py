@@ -1,5 +1,6 @@
 import nltk
 import numpy as np
+import matplotlib.pyplot as plt
 
 from collections import defaultdict
 
@@ -213,6 +214,19 @@ def get_pos_bigram_tok_score(word, pos_bi_tok_freqs):
 
     return score
 
+def plot(X, Y, labelX, labelY):
+    plt.scatter(X,Y,s=5)
+
+    m, b = np.polyfit(X, Y, 1)
+    pred_points = [m*x + b for x in X]
+    plt.plot(X, pred_points, '-')
+    
+    plt.xlabel(labelX)
+    plt.ylabel(labelY)
+    plt.title(f'{labelX} vs {labelY}')
+
+    plt.show()
+
 
 def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs, pos_bi_freqs, sound_idx, unigram_token_probs, \
     bigram_token_probs, pos_uni_tok_freqs, pos_bi_tok_freqs):
@@ -220,6 +234,15 @@ def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs, p
         tokens = f.read()
 
     tokens = [s.split(" ") for s in tokens.split("\n") if s]
+
+    uni_prob_list = []
+    bi_prob_list = []
+    pos_uni_score_list = []
+    pos_bi_score_list = []
+    uni_tok_prob_list = []
+    bi_tok_prob_list = []
+    pos_uni_tok_score_list = []
+    pos_bi_tok_score_list = []
 
     with open(outfile, 'w') as f:
         f.write('word,word_len,uni_prob,bi_prob,pos_uni_freq,pos_bi_freq,uni_tok_prob,bi_tok_prob,pos_uni_tok,pos_bi_tok\n')
@@ -233,6 +256,16 @@ def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs, p
             bi_tok_prob = get_bigram_token_score(token, bigram_token_probs)
             pos_uni_tok_score = 1 + get_pos_unigram_tok_score(token, pos_uni_tok_freqs)
             pos_bi_tok_score = 1 + get_pos_bigram_tok_score(token, pos_bi_tok_freqs)
+
+            uni_prob_list.append(unigram_prob)
+            bi_prob_list.append(bigram_prob)
+            pos_uni_score_list.append(pos_uni_score)
+            pos_bi_score_list.append(pos_bi_score)
+            uni_tok_prob_list.append(uni_tok_prob)
+            bi_tok_prob_list.append(bi_tok_prob)
+            pos_uni_tok_score_list.append(pos_uni_tok_score)
+            pos_bi_tok_score_list.append(pos_bi_tok_score)
+
             f.write('{}\n'.format(','.join([
                 ' '.join(token), 
                 str(word_len),
