@@ -225,7 +225,6 @@ def calculate_rsquared(actual, pred):
     return R**2
 
 def plot(X, Y, labelX, labelY, file_name='plot.png'):
-    # put equation on the plot
     #fig=plt.figure()
     plt.scatter(X,Y,s=5)
 
@@ -239,7 +238,10 @@ def plot(X, Y, labelX, labelY, file_name='plot.png'):
 
     r_sq = calculate_rsquared(Y, pred_points)
 
-    plt.annotate(f'R^2 = {r_sq:.3f}', xy=(0.8,0.05), xycoords='axes fraction')
+    # place r^2 as annotation
+    plt.annotate(f'R^2 = {r_sq:.3f}', xy=(0.75,0.1), xycoords='axes fraction')
+    # place regression equation as annotation
+    plt.annotate(f'y = {m:.2f}x + {b:.2f}', xy=(0.75,0.05), xycoords='axes fraction')
 
     plt.savefig(f'media/uploads/{file_name}')
 
