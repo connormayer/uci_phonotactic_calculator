@@ -1,3 +1,4 @@
+from struct import calcsize
 import nltk
 import numpy as np
 import matplotlib.pyplot as plt
@@ -214,7 +215,18 @@ def get_pos_bigram_tok_score(word, pos_bi_tok_freqs):
 
     return score
 
-def plot(X, Y, labelX, labelY):
+def calculate_rsquared(actual, pred):
+    assert len(actual) == len(pred), "Actual and predicted lists need same length"
+    # Pearson correlation coefficients between every pair of variables (2 variable: 2x2 matrix)
+    #   Values along diagonal are 1 since every variable is perfectly related to itself
+    #   R = correlation between variable at indices 0 and 1
+    corr_matrix = np.corrcoef(actual, pred)
+    R = corr_matrix[0,1]
+    return R**2
+
+def plot(X, Y, labelX, labelY, file_name='plot.png'):
+    # put equation on the plot
+    #fig=plt.figure()
     plt.scatter(X,Y,s=5)
 
     m, b = np.polyfit(X, Y, 1)
@@ -225,7 +237,11 @@ def plot(X, Y, labelX, labelY):
     plt.ylabel(labelY)
     plt.title(f'{labelX} vs {labelY}')
 
-    plt.show()
+    r_sq = calculate_rsquared(Y, pred_points)
+
+    plt.annotate(f'R^2 = {r_sq:.3f}', xy=(0.8,0.05), xycoords='axes fraction')
+
+    plt.savefig(f'media/uploads/{file_name}')
 
 
 def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs, pos_bi_freqs, sound_idx, unigram_token_probs, \
@@ -278,6 +294,8 @@ def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs, p
                 str(pos_uni_tok_score),
                 str(pos_bi_tok_score)
             ])))
+
+    plot(uni_prob_list, uni_tok_prob_list, 'Unigram Prob', 'Unigram Tok Prob')
 
 def run(train, test, out):
     unigram_probs, bigram_probs, sound_idx, unigram_token_probs, bigram_token_probs = build_ngram_models(train)
