@@ -1,7 +1,9 @@
 from struct import calcsize
+
 import nltk
 import numpy as np
 import matplotlib.pyplot as plt
+import re
 
 from collections import defaultdict
 
@@ -18,45 +20,33 @@ def generate_bigrams(tokens):
 
     return bigrams
 
+def get_token_freqs(tokens, sound_idx):
+    # Note that this returns log frequencies
+    num_sounds = len(sound_idx)
+    unigram_weighted_freqs = defaultdict(int)
+    # This isn't really correct... 
+    bigram_weighted_freqs = np.ones((num_sounds, num_sounds))
+    
+    for token, freq in tokens:
+        for unigram in token:
+            unigram_weighted_freqs[unigram] += np.log(freq)
+
+        bigrams = generate_bigrams([token])
+
+        for s1, s2 in bigrams:
+            bigram_weighted_freqs[sound_idx.index(s2)][sound_idx.index(s1)] += np.log(freq)
+    
+    return unigram_weighted_freqs, bigram_weighted_freqs 
+
 def build_ngram_models(dataset):
     with open(dataset, 'r') as f:
         tokens = f.read()
 
-    # split using default e.g. s.split() not split(" ")
-    # if last part of split is a float, we have frequencies and can
-    #   do log-prob with tokens
-    #   - map word to frequency
-    #   - loop through words and add freq of unigrams to dict
-    #   - calculate log prob as below (unigram_probs)
-    line_splits = [s.split() for s in tokens.split("\n") if s]
-    unigram_token_freqs = defaultdict(float)
-    bigram_token_freqs = defaultdict(float)
-    try:
-        tokens = []
-        for line in line_splits:
-            freq = float(line[-1]) # might not work if frequencies are not given
-            word = line[:-1]
-            for segment in word:
-                unigram_token_freqs[segment] += np.log(freq)
-            word = ['#'] + word + ['#']
-            for i in range(len(word)-1):
-                bigram = (word[i], word[i+1])
-                bigram_token_freqs[bigram] += np.log(freq)
-            tokens.append(word)
-        total_count_uni = sum(unigram_token_freqs.values())
-        total_count_bi = sum(bigram_token_freqs.values())
-        unigram_token_probs = {key : np.log(value / total_count_uni) for key, value in unigram_token_freqs.items()}
-        bigram_token_probs = {key : np.log(value / (unigram_token_freqs[key[0]] if key[0] != '#' else total_count_uni)) \
-            for key, value in bigram_token_freqs.items() }
-    except:
-        unigram_token_probs = dict()
-        bigram_token_probs = dict()
-        tokens = line_splits
+    token_freqs = tokens.split('\n')
+    token_freqs = [re.split(',|\t', t) for t in token_freqs if t]
+    token_freqs = [(key.split(' '), float(val)) for (key, val) in token_freqs]
 
-
-
-
-    #tokens = [s.split(" ") for s in tokens.split("\n") if s]
+    tokens = [t[0] for t in token_freqs]
 
     unique_sounds = set(
         [item for sublist in tokens for item in sublist]
@@ -78,6 +68,18 @@ def build_ngram_models(dataset):
         count_matrix[sound_idx.index(s2)][sound_idx.index(s1)] += 1
 
     bigram_probs = np.log(count_matrix / np.sum(count_matrix, 0))
+
+    # Get token-weighted frequencies
+    unigram_token_freq, bigram_token_freq = get_token_freqs(token_freqs, sound_idx)
+    
+    # Unigram
+    total_weighted_sounds = sum(unigram_token_freq.values())
+    unigram_token_probs = {
+        key: np.log(value/total_weighted_sounds) 
+        for key, value in unigram_token_freq.items()
+    }
+    # Bigrams
+    bigram_token_probs = np.log(bigram_token_freq / np.sum(bigram_token_freq, 0))
 
     return unigram_probs, bigram_probs, sound_idx, unigram_token_probs, bigram_token_probs
 
@@ -270,8 +272,8 @@ def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs, p
             bigram_prob = get_bigram_prob(token, bigram_probs, sound_idx)
             pos_uni_score = 1 + get_pos_unigram_score(token, pos_uni_freqs)
             pos_bi_score = 1 + get_pos_bigram_score(token, pos_bi_freqs)
-            uni_tok_prob = get_unigram_token_score(token, unigram_token_probs)
-            bi_tok_prob = get_bigram_token_score(token, bigram_token_probs)
+            uni_tok_prob = get_unigram_prob(token, unigram_token_probs)
+            bi_tok_prob = get_bigram_prob(token, bigram_token_probs, sound_idx)
             pos_uni_tok_score = 1 + get_pos_unigram_tok_score(token, pos_uni_tok_freqs)
             pos_bi_tok_score = 1 + get_pos_bigram_tok_score(token, pos_bi_tok_freqs)
 
@@ -297,7 +299,7 @@ def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs, p
                 str(pos_bi_tok_score)
             ])))
 
-    plot(uni_prob_list, uni_tok_prob_list, 'Unigram Prob', 'Unigram Tok Prob')
+    # plot(uni_prob_list, uni_tok_prob_list, 'Unigram Prob', 'Unigram Tok Prob')
 
 def run(train, test, out):
     unigram_probs, bigram_probs, sound_idx, unigram_token_probs, bigram_token_probs = build_ngram_models(train)
