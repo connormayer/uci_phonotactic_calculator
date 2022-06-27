@@ -10,7 +10,7 @@
         <p>The general use case for this tool is as follows:</p>
         <ol>
             <li>
-                Choose a <i>training file</i>. You can either upload your own or choose one of the default training files (see the <a href="{% url 'about' %}">About</a> page for details on how these should be formatted and the <a href="{% url 'about' %}">Datasets</a> page for a description of the default files). This file is intended to represent the input over which phonotactic generalizations are formed, and will typically be something like a dictionary (a large list of word types). The models used to calculate the phonotactic acceptability metrics will be fit to this data.
+                Choose a <i>training file</i>. You can either upload your own or choose one of the default training files (see the <a href="{% url 'about' %}">About</a> page for details on how these should be formatted and the <a href="{% url 'media' %}">Datasets</a> page for a description of the default files). This file is intended to represent the input over which phonotactic generalizations are formed, and will typically be something like a dictionary (a large list of word types). The models used to calculate the phonotactic acceptability metrics will be fit to this data.
             </li>
             <li>
                 Upload a <i>test file</i>. The trained models will assign scores for each metric to the words in this file. This file may duplicate data in the training file (if you are interested in the scores assigned to existing words) or not (if you are interested in the predictions the various models make about how speakers generalize to new forms).
@@ -19,7 +19,7 @@
                 Choose which <i>model</i> to use. Currently the calculator supports two suites of models.
                 <ol>
                     <li>
-                        <b>Unigram/Bigram scores</b>: this computes a suite of metrics that are based on unigram/bigram frequencies (that is, the frequencies of individual sounds and the frequencies of adjacent pairs of sounds). This includes type- and token-weighted variants of the positional unigram/bigram method from Jusczyk et al. (1994) and Vitevich and Luce (2004), as well as type- and token-weighted variants of standard unigram/bigram probabilities.
+                        <b>Unigram/Bigram scores</b>: this computes a suite of metrics that are based on unigram/bigram frequencies (that is, the frequencies of individual sounds and the frequencies of adjacent pairs of sounds). This includes type- and token-weighted variants of the positional unigram/bigram method from Jusczyk et al. (1994) and Vitevitch and Luce (2004), as well as type- and token-weighted variants of standard unigram/bigram probabilities.
                     </li>
                     <li>
                         <b>RNN Model</b>: this computes an acceptability metric based on the recurrent neural network phonotactic model from Mayer and Nelson (2020). Unlike the unigram and bigram models, which compute probabilities based on local dependencies, this model allows long distance restrictions such as vowel or consonant harmony to be effectively modeled.
