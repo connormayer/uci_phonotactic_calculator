@@ -1,11 +1,12 @@
 <!-- templates/base.html -->
 
 {% load static %}
-
+<!DOCTYPE html>
 <html>
     <head>
         <title>UCI Phonotactic Calculator</title>
         <link href="{% static 'css/base.css' %}" rel="stylesheet">
+        {% include 'latexify/stylesheets.html' %}
     </head>
 
     <body>
@@ -35,5 +36,6 @@
     
         {% block content %}
         {% endblock content %}
+        {% include "latexify/scripts.html" %}
     </body>
 </html>
