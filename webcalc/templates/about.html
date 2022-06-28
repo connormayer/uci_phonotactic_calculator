@@ -89,7 +89,7 @@
                 <p>
                     <b>Positional unigram score</b> (<tt>pos_uni_prob</tt>): This is a type-weighted variant of unigram score from Vitevitch and Luce (2004). 
 
-                    {% latexify 'PosUniScore(w=x_1 \dots x_n) \approx 1 + \sum_{i=1}^{n} P(w_i = x_i)' math_block=True %}
+                    {% latexify 'PosUniScore(w=x_1 \dots x_n) = 1 + \sum_{i=1}^{n} P(w_i = x_i)' math_block=True %}
 
                     where
 
@@ -108,7 +108,7 @@
                 <p>
                     <b>Positional bigram score</b> (<tt>pos_bi_prob</tt>): This is a type-weighted variant of the bigram score from Vitevitch and Luce (2004). 
 
-                    {% latexify 'PosBiScore(w=x_1 \dots x_n) \approx 1 + \sum_{i=2}^{n} P(w_{i-1} = x_{i-1}, w_i = x_i)' math_block=True %}
+                    {% latexify 'PosBiScore(w=x_1 \dots x_n) = 1 + \sum_{i=2}^{n} P(w_{i-1} = x_{i-1}, w_i = x_i)' math_block=True %}
 
                     where
 
@@ -140,7 +140,7 @@
                     The token-weighted positional ungiram and bigram scores correspond to the metrics presented in Vitevitch and Luce (2004), though they use the base-10 logarithm rather than the natural logarithm.
                 </p>
                 <p>
-                    The token-weighted bigram measures are also Laplace smoothed.
+                    The token-weighted bigram measures are also Laplace smoothed by adding one to the log counts.
                 </p>
             </li>
         </ul> 
