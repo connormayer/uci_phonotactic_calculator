@@ -1,4 +1,5 @@
 import random
+import re
 import torch
 
 def get_corpus_data(filename):
@@ -9,7 +10,7 @@ def get_corpus_data(filename):
     raw_data = []
     file = open(filename,'r')
     for line in file:
-        line = line.rstrip()
+        line = re.split(',|\t', line.rstrip())[0]
         line = ['<s>'] + line.split(' ') + ['<e>']
         raw_data.append(line)
     return raw_data
