@@ -33,7 +33,7 @@
 
     <div style="padding:40px;margin:40px;border:1px solid #ccc">
         <h1>Provide Input for Calculations</h1>
-        <h3 style="color:blueviolet">Upload a training file or select a default file</h3>
+        <h3 style="color:blue">Upload a training file or select a default file</h3>
         <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form.as_p }}
@@ -44,7 +44,7 @@
         {% endif %}
         <button type="submit">Submit</button>
         </form><hr>
-        <h3 style="color:green"><a href="{% url 'uploadDefault' %}">Use default training files instead</a></h3>
+        <!-- <h3 style="color:green"><a href="{% url 'uploadDefault' %}">Use default training files instead</a></h3> -->
         
     </div>
 {% endblock content %}
