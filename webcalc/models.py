@@ -4,6 +4,7 @@ from src import ngram_calculator as calc
 from os import listdir
 from os.path import join, basename, relpath
 from webcalc_project import settings
+from src import utility as util
 
 from datetime import datetime
 
@@ -23,9 +24,11 @@ class UploadTrain(models.Model):
     # Uncomment this line when making migrating changes after modifying
     #   the DefaultFile model. Also comment out the next line.
     #default_objects = []
-    default_objects = DefaultFile.objects.all()
+    #default_objects = DefaultFile.objects.all()
     # second value in tuple is human-readable name (what gets displayed)
-    files_list = [(x.file_name, x.short_desc) for x in default_objects]
+    #files_list = [(x.file_name, x.short_desc) for x in default_objects]
+
+    files_list = util.get_default_files() # get using function from utility.py
     
     # upload files go to media\uploads
     training_file = models.FileField(upload_to='uploads', blank=True)

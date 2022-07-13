@@ -31,3 +31,10 @@ def clean_media_folder():
                 unlink(path)
         except Exception as e:
             print('Failed to delete %s. Reason: %s' % (path, e))
+
+def get_default_files():
+    file_name = join(settings.MEDIA_ROOT, 'default_file_list.txt')
+    with open(file_name) as file:
+        # each sublist is default file name, long desc, short desc
+        lines_info = [[x.strip() for x in line.split('~')] for line in file]
+        return [(x[0], x[2]) for x in lines_info]
