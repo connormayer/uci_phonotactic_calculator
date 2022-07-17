@@ -14,16 +14,16 @@
         </p>
         <ol>
             <li>
-                Both the training and the test file must in comma-separated format (.csv). 
+                Both the training and the test file must be in comma-separated format (.csv). 
             </li>
             <li>
-                The training file should consist of two columns with no headers. 
+                The training file should consist of one or two columns with no headers. 
                 <ol>
                     <li>
-                        The first column contains a word list, with each symbol (phoneme, orthographic letter, etc.) separated by spaces. For example, the word 'cat' represented in IPA would be "k æ t". You may use any transcription system or representation you like, so long as the individual symbols are separated by spaces. Because symbols are space-separated, they may be arbitrarily long: this allows the use of transcription systems like ARPABET, which use more than one character to represent individual sounds.
+                        The first column (mandatory) contains a word list, with each symbol (phoneme, orthographic letter, etc.) separated by spaces. For example, the word 'cat' represented in IPA would be "k æ t". You may use any transcription system or representation you like, so long as the individual symbols are separated by spaces. Because symbols are space-separated, they may be arbitrarily long: this allows the use of transcription systems like ARPABET, which use more than one character to represent individual sounds.
                     </li>
                     <li>
-                        The second column contains the corresponding word frequencies for each word. These must be expressed as raw counts. These values are used in the token-weighted variants of the unigram and bigram models, which ascribe greater influence to the phonotactics of more frequent words. If this column is not provided, the token-weighted metrics will not be computed, but the other metrics will be returned. 
+                        The second column (optional) contains the corresponding frequencies for each word. These must be expressed as raw counts. These values are used in the token-weighted variants of the unigram and bigram models, which ascribe greater influence to the phonotactics of more frequent words. If this column is not provided, the token-weighted metrics will not be computed, but the other metrics will be returned. 
                     </li>
                 </ol>
             </li>
