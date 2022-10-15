@@ -1,5 +1,6 @@
 from struct import calcsize
 
+import csv
 import nltk
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,7 +10,14 @@ from collections import defaultdict
 
 WORD_BOUNDARY = '#'
 
+####################
+# Helper functions #
+####################
+
 def generate_bigrams(tokens):
+    """
+    Returns a list of sound bigrams given a list of words
+    """
     bigrams = [
         x for token in tokens
         for x in nltk.ngrams(
@@ -19,6 +27,61 @@ def generate_bigrams(tokens):
     ]
 
     return bigrams
+
+def read_tokens(dataset):
+    """
+    Reads in a file containing tokens and optional frequencies and converts
+    it to a list of tokens and a list of token/frequency pairs.
+    """
+    with open(dataset, 'r') as f:
+        reader = csv.reader(f)
+    
+        tokens = []
+        token_freqs = []
+
+        for row in reader:
+            split_token = row[0].split(' ')
+            freq = row[1] if len(row) == 2 else 0
+            tokens.append(split_token)
+            token_freqs.append([split_token, freq])
+
+    return tokens, token_freqs
+
+###########################
+# Code for fitting models #
+###########################
+
+def fit_unigrams(tokens):
+    """
+    This function takes a set of word tokens and returns a dictionary whose
+    keys are unigrams and whose values are log unigram probabilities
+    """
+    flat_tokens = [segment for word in tokens for segment in word]
+    unigram_freq = nltk.FreqDist(flat_tokens)
+    total_sounds = sum(unigram_freq.values())
+    unigram_probs = {key: (np.log(value/total_sounds)) for key, value in unigram_freq.items()}
+    return unigram_probs
+
+def fit_bigrams(tokens, sound_idx, smoothed=False):
+    """
+    This function takes a set of word tokens and a list of sounds and
+    returns a count matrix of bigrams. The sound list is necessary because
+    we include counts of 0 for unattested bigram combinations.
+
+    If smoothed is True, start with a pseudo-count of 1 for every bigram
+    """
+    bigrams = generate_bigrams(tokens)
+    num_sounds = len(sound_idx)
+    if smoothed:
+        count_matrix = np.ones((num_sounds, num_sounds))
+    else:
+        count_matrix = np.zeros((num_sounds, num_sounds))
+
+    for s1, s2 in bigrams:
+        count_matrix[sound_idx.index(s2)][sound_idx.index(s1)] += 1
+
+    bigram_probs = np.log(count_matrix / np.sum(count_matrix, 0))
+    return bigram_probs
 
 def get_token_freqs(tokens, sound_idx):
     # Note that this returns log frequencies
@@ -38,24 +101,6 @@ def get_token_freqs(tokens, sound_idx):
     
     return unigram_weighted_freqs, bigram_weighted_freqs 
 
-def fit_unigrams(tokens):
-    flat_tokens = [segment for word in tokens for segment in word]
-    unigram_freq = nltk.FreqDist(flat_tokens)
-    total_sounds = sum(unigram_freq.values())
-    unigram_probs = {key: (np.log(value/total_sounds)) for key, value in unigram_freq.items()}
-    return unigram_probs
-
-def fit_bigrams(tokens, sound_idx):
-    bigrams = generate_bigrams(tokens)
-    num_sounds = len(sound_idx)
-    count_matrix = np.ones((num_sounds, num_sounds))
-
-    for s1, s2 in bigrams:
-        count_matrix[sound_idx.index(s2)][sound_idx.index(s1)] += 1
-
-    bigram_probs = np.log(count_matrix / np.sum(count_matrix, 0))
-    return bigram_probs
-
 def fit_token_ngrams(unigram_token_freq, bigram_token_freq):
     # Unigram
     total_weighted_sounds = sum(unigram_token_freq.values())
@@ -68,23 +113,6 @@ def fit_token_ngrams(unigram_token_freq, bigram_token_freq):
 
     return unigram_token_probs, bigram_token_probs
 
-def read_tokens(dataset):
-    with open(dataset, 'r') as f:
-        tokens = f.read()
-
-    token_freqs = tokens.split('\n')
-    token_freqs = [re.split(',|\t', t) for t in token_freqs if t]
-
-    # Tidy this up
-    try:
-        # If we have frequencies
-        token_freqs = [(key.split(' '), float(val)) for (key, val) in token_freqs]
-    except:
-        # If we don't
-        token_freqs = [(key.split(' '), 0) for (key,) in token_freqs]
-
-    tokens = [t[0] for t in token_freqs]
-    return tokens, token_freqs
 
 def build_ngram_models(dataset):
     tokens, token_freqs = read_tokens(dataset)
