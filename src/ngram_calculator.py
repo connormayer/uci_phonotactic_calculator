@@ -1,14 +1,33 @@
-from struct import calcsize
-
 import csv
 import nltk
 import numpy as np
-import matplotlib.pyplot as plt
-import re
 
 from collections import defaultdict
 
 WORD_BOUNDARY = '#'
+MAX_WORD_LEN = 100
+HEADER = [
+    'word',
+    'word_len',
+
+    'uni_prob',
+    'uni_prob_freq_weighted',
+
+    'bi_prob',
+    'bi_prob_freq_weighted',
+    'bi_prob_smoothed',
+    'bi_prob_freq_weighted_smoothed',
+
+    'pos_uni_score',
+    'pos_uni_score_freq_weighted',
+    'pos_uni_score_smoothed',
+    'pos_uni_score_freq_weighted_smoothed',
+
+    'pos_bi_score',
+    'pos_bi_score_freq_weighted',
+    'pos_bi_score_smoothed',
+    'pos_bi_score_freq_weighted_smoothed'
+]
 
 ####################
 # Helper functions #
@@ -16,7 +35,11 @@ WORD_BOUNDARY = '#'
 
 def generate_bigrams(token):
     """
-    Returns a list of sound bigrams given a single word token
+    Returns a list of sound bigrams given a single word token.
+
+    token: The list of symbols in the token.
+
+    returns: The list of bigrams of the token.
     """
     return nltk.ngrams([WORD_BOUNDARY] + token + [WORD_BOUNDARY], 2)
 
@@ -24,6 +47,11 @@ def read_tokens(dataset):
     """
     Reads in a file containing tokens and optional frequencies and converts
     it to a list of tokens and a list of token/frequency pairs.
+
+    dataset: The path to the dataset.
+
+    returns: A list of lists, where each sublist corresponds to a token and
+    consists of a list of the individual symbols.
     """
     with open(dataset, 'r') as f:
         reader = csv.reader(f)
@@ -37,18 +65,89 @@ def read_tokens(dataset):
 
     return token_freqs
 
+def write_results(results, outfile):
+    """
+    Writes the results of scoring the test dataset to a file.
+
+    results: The results to write.
+    outfile: The path to the output file.
+
+    returns: None
+    """
+    results = [HEADER] + results
+    with open(outfile, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerows(results)
+
 ###########################
 # Code for fitting models #
 ###########################
 
-#############################
-# Standard unigrams/bigrams #
-#############################
+def fit_ngram_models(token_freqs, sound_idx):
+    """
+    Fits all of the ngram models to the provided data and returns the fitted
+    models.
+
+    token_freqs: A list of tuples of word-frequency pairs.
+    sound_idx: The list of unique sounds used to map sound identity to matrix
+    dimensions.
+
+    returns: A list of lists of models. These models are in the same order as
+    defined in the HEADER file at the top of this file, and broken into sublists
+    based on their type (unigram/bigram/positional unigram/positional bigram).
+    """
+    unigram_models = []
+    # Get unigram probabilities
+    unigram_models.append(fit_unigrams(token_freqs))
+    unigram_models.append(fit_unigrams(token_freqs, token_weighted=True))
+
+    # Get bigram probabilities
+    bigram_models = []
+    bigram_models.append(fit_bigrams(token_freqs, sound_idx))
+    bigram_models.append(
+        fit_bigrams(token_freqs, sound_idx, token_weighted=True)
+    )
+    bigram_models.append(
+        fit_bigrams(token_freqs, sound_idx, smoothed=True)
+    )
+    bigram_models.append(
+        fit_bigrams(token_freqs, sound_idx, smoothed=True, token_weighted=True)
+    )
+
+    # Get positional unigram probabilities
+    pos_unigram_models = []
+    pos_unigram_models.append(fit_positional_unigrams(token_freqs))
+    pos_unigram_models.append(
+        fit_positional_unigrams(token_freqs, token_weighted=True)
+    )
+    pos_unigram_models.append(
+        fit_positional_unigrams(token_freqs, smoothed=True)
+    )
+    pos_unigram_models.append(
+        fit_positional_unigrams(token_freqs, smoothed=True, token_weighted=True)
+    )
+
+    # Get positional bigram probabilities
+    pos_bigram_models = []
+    pos_bigram_models.append(fit_positional_bigrams(token_freqs))
+    pos_bigram_models.append(
+        fit_positional_bigrams(token_freqs, token_weighted=True)
+    )
+    pos_bigram_models.append(
+        fit_positional_bigrams(token_freqs, smoothed=True)
+    )
+    pos_bigram_models.append(
+        fit_positional_bigrams(token_freqs, smoothed=True, token_weighted=True)
+    )
+
+    return unigram_models, bigram_models, pos_unigram_models, pos_bigram_models
 
 def fit_unigrams(token_freqs, token_weighted=False):
     """
     This function takes a set of word tokens and returns a dictionary whose
-    keys are unigrams and whose values are log unigram probabilities
+    keys are unigrams and whose values are log unigram probabilities. Smoothing 
+    isn't implemented for standard unigram scores: we assume the set of sounds
+    in the training data is the full set of sounds.
 
     token_freqs: A list of tuples of word-frequency pairs
     token_weighted: If true, counts are weighted by log frequency of token
@@ -72,13 +171,18 @@ def fit_unigrams(token_freqs, token_weighted=False):
 def fit_bigrams(token_freqs, sound_idx, token_weighted=False, smoothed=False):
     """
     This function takes a set of word tokens and a list of sounds and
-    returns a count matrix of bigrams. The sound list is necessary because
+    returns a matrix of bigrams probabilities. The sound list is necessary because
     we include counts of 0 for unattested bigram combinations.
 
-    If token_weighted is True, counts are weighted by the log frequency
+    token_freqs: A list of tuples of word-frequency pairs.
+
+    token_weighted: if True, counts are weighted by the log frequency
     of the words they occur in.
 
-    If smoothed is True, start with a pseudo-count of 1 for every bigram.
+    smoothed: if True, start with a pseudo-count of 1 for every bigram.
+
+    returns: A matrix of bigram probabilities, where rows correspond to the second
+    sound in the bigram and columns correspond to the first.
     """
     num_sounds = len(sound_idx)
 
@@ -96,13 +200,23 @@ def fit_bigrams(token_freqs, sound_idx, token_weighted=False, smoothed=False):
     bigram_probs = np.log(count_matrix / np.sum(count_matrix, 0))
     return bigram_probs
 
-###############################
-# Positional unigrams/bigrams #
-###############################
-
 def fit_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
     """
-    TODO DOCUMENTATION
+    This function takes a set of word tokens and returns a dictionary containing
+    positional unigram log scores.
+
+    token_freqs: A list of tuples of word-frequency pairs.
+
+    token_weighted: If True, counts are weighted by log frequency of token.
+
+    smoothed: If True, each start with a pseudo-count of 1 for every unigram in
+    every position up to MAX_WORD_LEN. Note that this smoothing does not allow
+    unseen unigrams to get probabilities > 0: rather it assigns known unigrams
+    in unknown positions probabilities > 0.
+
+    returns: A dictionary of dictionaries, where the first dictionary maps position
+    indices to unigrams, and the second maps unigrams to their scores in that
+    position.
     """
     pos_unigram_freqs = defaultdict(lambda: defaultdict(int))
 
@@ -112,7 +226,7 @@ def fit_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
         )
         max_idx = max([len(token) for token, _ in token_freqs])
 
-        for i in range(max_idx):
+        for i in range(MAX_WORD_LEN):
             for sound in unique_sounds:
                 pos_unigram_freqs[i][sound] = 1
 
@@ -125,8 +239,32 @@ def fit_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
 
     return pos_unigram_freqs
 
-def fit_positional_bigrams(token_freqs, token_weighted=False, smoothed=True):
+def fit_positional_bigrams(token_freqs, token_weighted=False, smoothed=False):
+    """
+    This function takes a set of word tokens and returns a dictionary containing
+    positional bigram scores.
+
+    token_freqs: A list of tuples of word-frequency pairs.
+
+    token_weighted: If True, counts are weighted by log frequency of token.
+
+    smoothed: If True, each start with a pseudo-count of 1 for every bigram in
+    every pair of positions up to MAX_WORD_LEN.
+
+    returns: A dictionary of dictionaries, where the first dictionary maps pairs of
+    position indices to bigrams, and the second maps bigram to their scores in those
+    positions.
+    """
     pos_bigram_freqs = defaultdict(lambda: defaultdict(int))
+
+    if smoothed:
+        unique_sounds = set(
+            [sound for token, _ in token_freqs for sound in token]
+        )
+        for i in range(MAX_WORD_LEN - 1):
+            for s1 in unique_sounds:
+                for s2 in unique_sounds:
+                    pos_bigram_freqs[(i, i+1)][(s1, s2)] = 1
 
     for token, freq in token_freqs:
         val = np.log(freq) if token_weighted else 1
@@ -134,7 +272,7 @@ def fit_positional_bigrams(token_freqs, token_weighted=False, smoothed=True):
             if idx < len(token) - 1:
                 pos_bigram_freqs[(idx, idx + 1)][(sound, token[idx + 1])] += val
 
-    pos_bigram_tok_freqs = normalize_positional_counts(pos_bigram_tok_freqs)
+    pos_bigram_freqs = normalize_positional_counts(pos_bigram_freqs)
     
     return pos_bigram_freqs
 
@@ -149,43 +287,80 @@ def normalize_positional_counts(counts):
 
     return counts
 
-###############
-# Other stuff #
-###############
-
-def build_ngram_models(dataset):
-    token_freqs = read_tokens(dataset)
-
-    unique_sounds = set(
-        [item for sublist in token_freqs for item, _ in sublist]
-    )
-    sound_idx = sorted(list(unique_sounds)) + ['#']
-
-    # Get type-weighted probabilities
-    unigram_probs = fit_unigrams(token_freqs)
-    bigram_probs = fit_bigrams(token_freqs, sound_idx)
-
-    # Get token-weighted probabilities
-    unigram_token_freq, bigram_token_freq = get_token_freqs(token_freqs, sound_idx)
-    unigram_token_probs, bigram_token_probs = fit_token_ngrams(unigram_token_freq, bigram_token_freq)
-
-    return unigram_probs, bigram_probs, sound_idx, unigram_token_probs, bigram_token_probs
-
 ###########################
 # Code for testing models #
 ###########################
 
+def score_corpus(token_freqs, fitted_models, sound_idx):
+    """
+    Given a dataset and a list of fitted models, returns the score for each 
+    word under each model.
+
+    token_freqs: A list of tuples of word-frequency pairs. Frequencies 
+    aren't used in this function.
+    sound_idx: The list of unique sounds used to map sound identity to matrix
+    dimensions.
+
+    fitted_models: A list of lists of models. These models are in the same order as
+    defined in the HEADER file at the top of this file, and broken into sublists
+    based on their type (unigram/bigram/positional unigram/positional bigram).
+
+    returns: A list of lists of scores. Each sublist corresponds to one word. Each
+    sublist contains the word itself, its length, and its score under each of the
+    ngram models.
+    """
+    uni_models, bi_models, pos_uni_models, pos_bi_models = fitted_models
+
+    results = []
+    
+    for token, _ in token_freqs:
+        row = [' '.join(token), len(token)]
+
+        for model in uni_models:
+            row.append(get_unigram_prob(token, model))
+
+        for model in bi_models:
+            row.append(get_bigram_prob(token, model, sound_idx))
+
+        for model in pos_uni_models:
+            row.append(get_pos_unigram_score(token, model))
+
+        for model in pos_bi_models:
+            row.append(get_pos_bigram_score(token, model))
+
+        results.append(row)
+
+    return results
+
 def get_unigram_prob(word, unigram_probs):
+    """
+    Calculcates the unigram probability of a word given a fitted unigram model
+
+    word: The test word
+    ungiram_probs: The fitted model
+
+    returns: The log probability of the word under the unigram model.
+    """
     prob = 0
     for sound in word:
         # Add basic smoothing for sounds that appear in test data but
         #   not training data. Use float('-inf') because we are
-        #   using log probabilities --> log(-inf) = 0
+        #   using log probabilities.
         prob += unigram_probs.get(sound, float('-inf'))
 
     return prob
 
 def get_bigram_prob(word, bigram_probs, sound_idx):
+    """
+    Calculcates the bigram probability of a word given a fitted bigram model
+
+    word: The test word
+    bigram_probs: The fitted model
+    sound_idx: The list of unique sounds used to map sound identity to matrix
+    dimensions.
+
+    returns: The log probability of the word under the bigram model.
+    """
     bigrams = generate_bigrams(word)
     prob = 0
     for s1, s2 in bigrams:
@@ -198,6 +373,16 @@ def get_bigram_prob(word, bigram_probs, sound_idx):
     return prob
 
 def get_pos_unigram_score(word, pos_uni_freqs):
+    """
+    Calculcates the positional unigram score of a word given a fitted 
+    positional unigram model.
+
+    word: The test word
+    pos_uni_freqs: The fitted positional unigram model
+
+    returns: The score of the word under the positional unigram model. Following
+    Vitevich & Luce (2004), we add 1 to these scores.
+    """
     score = 1
 
     for idx, sound in enumerate(word):
@@ -206,6 +391,16 @@ def get_pos_unigram_score(word, pos_uni_freqs):
     return score
 
 def get_pos_bigram_score(word, pos_bi_freqs):
+    """
+    Calculcates the positional bigram score of a word given a fitted 
+    positional bigram model.
+
+    word: The test word
+    pos_bi_freqs: The fitted positional bigram model
+
+    returns: The score of the word under the positional unigram model. Following
+    Vitevich & Luce (2004), we add 1 to these scores.
+    """
     score = 1
 
     for idx, sound in enumerate(word):
@@ -214,117 +409,28 @@ def get_pos_bigram_score(word, pos_bi_freqs):
 
     return score
 
-def get_unigram_token_score(word, unigram_token_probs):
-    if not unigram_token_probs:
-        return "N/A"
-    score = 0
-    for sound in word:
-        score += unigram_token_probs.get(sound, float('-inf'))
-    return score
-
-def get_bigram_token_score(word, bigram_token_probs):
-    if not bigram_token_probs:
-        return "N/A"
-    score = 0
-    expanded_word = ['#'] + word + ['#']
-    for i in range(len(expanded_word) - 1):
-        bigram = (expanded_word[i], expanded_word[i+1])
-        score += bigram_token_probs.get(bigram, float('-inf'))
-    return score
-
-def get_pos_unigram_tok_score(word, pos_uni_tok_freqs):
-    score = 1
-
-    for idx, sound in enumerate(word):
-        score += pos_uni_tok_freqs[idx][sound]
-
-    return score
-
-def get_pos_bigram_tok_score(word, pos_bi_tok_freqs):
-    score = 1
-
-    for idx, sound in enumerate(word):
-        if idx < len(word) - 1:
-            score += pos_bi_tok_freqs[(idx, idx + 1)][sound, word[idx + 1]]
-
-    return score
-
-def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs, 
-                 pos_bi_freqs, sound_idx, unigram_token_probs,
-                 bigram_token_probs, pos_uni_tok_freqs, pos_bi_tok_freqs):
-    token_freqs = read_tokens(dataset)
-
-    uni_prob_list = []
-    bi_prob_list = []
-    pos_uni_score_list = []
-    pos_bi_score_list = []
-    uni_tok_prob_list = []
-    bi_tok_prob_list = []
-    pos_uni_tok_score_list = []
-    pos_bi_tok_score_list = []
-
-    with open(outfile, 'w') as f:
-        f.write(','.join([
-            'word',
-            'word_len',
-            'uni_prob',
-            'bi_prob',
-            'pos_uni_freq',
-            'pos_bi_freq',
-            'uni_tok_prob',
-            'bi_tok_prob',
-            'pos_uni_tok',
-            'pos_bi_tok\n'
-        ]))
-
-        for token, _ in token_freqs:
-            word_len = len(token)
-            unigram_prob = get_unigram_prob(token, unigram_probs)
-            bigram_prob = get_bigram_prob(token, bigram_probs, sound_idx)
-            pos_uni_score = get_pos_unigram_score(token, pos_uni_freqs)
-            pos_bi_score = get_pos_bigram_score(token, pos_bi_freqs)
-            uni_tok_prob = get_unigram_prob(token, unigram_token_probs)
-            bi_tok_prob = get_bigram_prob(token, bigram_token_probs, sound_idx)
-            pos_uni_tok_score = get_pos_unigram_tok_score(token, pos_uni_tok_freqs)
-            pos_bi_tok_score = get_pos_bigram_tok_score(token, pos_bi_tok_freqs)
-
-            uni_prob_list.append(unigram_prob)
-            bi_prob_list.append(bigram_prob)
-            pos_uni_score_list.append(pos_uni_score)
-            pos_bi_score_list.append(pos_bi_score)
-            uni_tok_prob_list.append(uni_tok_prob)
-            bi_tok_prob_list.append(bi_tok_prob)
-            pos_uni_tok_score_list.append(pos_uni_tok_score)
-            pos_bi_tok_score_list.append(pos_bi_tok_score)
-
-            f.write('{}\n'.format(','.join([
-                ' '.join(token), 
-                str(word_len),
-                str(unigram_prob), 
-                str(bigram_prob), 
-                str(pos_uni_score), 
-                str(pos_bi_score),
-                str(uni_tok_prob),
-                str(bi_tok_prob),
-                str(pos_uni_tok_score),
-                str(pos_bi_tok_score)
-            ])))
-
 ##################
 # Entry function #
 ##################
 
 def run(train, test, out):
-    # TODO: Replace with individual calls
-    unigram_probs, bigram_probs, sound_idx, unigram_token_probs, bigram_token_probs = build_ngram_models(train)
-    # TODO: Replace with individual calls
-    pos_uni_freqs, pos_bi_freqs, pos_uni_tok_freqs, pos_bi_tok_freqs = build_positional_models(train)
+    """
+    Trains all of the n-gram models on the training set, evaluates them on
+    the test set, and writes the evaluation results to a file.
 
-    score_corpus(
-        test, out, 
-        unigram_probs, bigram_probs, 
-        pos_uni_freqs, pos_bi_freqs,
-        sound_idx, unigram_token_probs,
-        bigram_token_probs, pos_uni_tok_freqs,
-        pos_bi_tok_freqs
+    train: The path to the training file.
+    test: The path to the test file.
+    out: The path to the output file.
+
+    returns: None
+    """
+    train_token_freqs = read_tokens(train)
+    test_token_freqs = read_tokens(test)
+    unique_sounds = set(
+        [sound for token, _ in train_token_freqs for sound in token]
     )
+    sound_idx = sorted(list(unique_sounds)) + ['#']
+
+    fitted_models = fit_ngram_models(train_token_freqs, sound_idx)
+    results = score_corpus(test_token_freqs, fitted_models, sound_idx)
+    write_results(results, out)

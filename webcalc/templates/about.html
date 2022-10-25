@@ -48,9 +48,83 @@
         <h4>Unigram/bigram scores</h4>
 
         <p>
-            This is a suite of metrics that share the property of being sensitive only to the frequencies of individual sounds or adjacent pairs of sounds.
+            Here is a summary of the columns in the output file produced under this model class.
         </p>
 
+         <table>
+          <tr>
+            <th>Column name</th>
+            <th>Description</th>
+          </tr>
+          <tr>
+            <td><tt>word</td>
+            <td>The word</td>
+          </tr>
+          <tr>
+            <td><tt>word_len</tt></td>
+            <td>The number of symbols in the word</td>
+          </tr>
+          <tr>
+            <td><tt>uni_prob</tt></td>
+            <td>Unigram probability</td>
+          </tr>
+          <tr>
+            <td><tt>uni_prob_freq_weighted</tt></td>
+            <td>Frequency-weighted unigram probability</td>
+          </tr>
+          <tr>
+            <td><tt>bi_prob</tt></td>
+            <td>Bigram probability</td>
+          </tr>
+          <tr>
+            <td><tt>bi_prob_freq_weighted</tt></td>
+            <td>Frequency-weighted bigram probability</td>
+          </tr>
+          <tr>
+            <td><tt>bi_prob_smoothed</tt></td>
+            <td>Add-one smoothed bigram probability</td>
+          </tr>
+          <tr>
+            <td><tt>bi_prob_freq_weighted_smoothed</tt></td>
+            <td>Add-one smoothed, frequency-weighted bigram probability</td>
+          </tr>
+          <tr>
+            <td><tt>pos_uni_score</tt></td>
+            <td>Positional unigram score</td>
+          </tr>
+          <tr>
+            <td><tt>pos_uni_score_freq_weighted</tt></td>
+            <td>Frequency-weighted positional unigram score</td>
+          </tr>
+          <tr>
+            <td><tt>pos_uni_score_smoothed</tt></td>
+            <td>Add-one smoothed positional unigram score</td>
+          </tr>
+          <tr>
+            <td><tt>pos_uni_score_freq_weighted_smoothed</tt></td>
+            <td>Add-one smoothed, frequency-weighted positional unigram score</td>
+          </tr>
+          <tr>
+            <td><tt>pos_bi_score</tt></td>
+            <td>Positional bigram score</td>
+          </tr>
+          <tr>
+            <td><tt>pos_bi_score_freq_weighted</tt></td>
+            <td>Frequency-weighted positional bigram score</td>
+          </tr>
+          <tr>
+            <td><tt>pos_bi_score_smoothed</tt></td>
+            <td>Add-one smoothed positional bigram score</td>
+          </tr>
+          <tr>
+            <td><tt>pos_bi_score_freq_weighted_smoothed</tt></td>
+            <td>Add-one smoothed, frequency-weighted positional bigram score</td>
+          </tr>
+        </table> 
+
+        <p>
+            This is a suite of metrics that share the property of being sensitive only to the frequencies of individual sounds or adjacent pairs of sounds.
+        </p>
         <ul>
             <li>
                 <b>Unigram probability</b> (<tt>uni_prob</tt>): This is the standard unigram probability 
@@ -65,6 +139,9 @@
 
                 <p>
                     This metric reflects the probability of a word under a simple unigram model. The probability of a word is the product of the probability of its individual symbols. Note that the probability of the individual symbols is based only on their frequency of occurrence, not the position in which they occur.
+                </p>
+                <p>
+                    If the test data contains symbols that do no occur in the training data, the tokens containing them will be assigned probabilities of 0.
                 </p>
             </li>
             <li>
