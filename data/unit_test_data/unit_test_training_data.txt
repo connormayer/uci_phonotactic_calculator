@@ -1,5 +1,5 @@
-t a
-a t a
-t a t a
-a t t a
-t a a
+t a,10
+a t a,20
+t a t a,30
+a t t a,20
+t a a,10

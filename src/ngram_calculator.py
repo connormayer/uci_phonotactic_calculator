@@ -14,19 +14,11 @@ WORD_BOUNDARY = '#'
 # Helper functions #
 ####################
 
-def generate_bigrams(tokens):
+def generate_bigrams(token):
     """
-    Returns a list of sound bigrams given a list of words
+    Returns a list of sound bigrams given a single word token
     """
-    bigrams = [
-        x for token in tokens
-        for x in nltk.ngrams(
-            [WORD_BOUNDARY] + token + [WORD_BOUNDARY],
-            2
-        )
-    ]
-
-    return bigrams
+    return nltk.ngrams([WORD_BOUNDARY] + token + [WORD_BOUNDARY], 2)
 
 def read_tokens(dataset):
     """
@@ -36,103 +28,120 @@ def read_tokens(dataset):
     with open(dataset, 'r') as f:
         reader = csv.reader(f)
     
-        tokens = []
         token_freqs = []
 
         for row in reader:
             split_token = row[0].split(' ')
-            freq = row[1] if len(row) == 2 else 0
-            tokens.append(split_token)
+            freq = float(row[1]) if len(row) == 2 else 0
             token_freqs.append([split_token, freq])
 
-    return tokens, token_freqs
+    return token_freqs
 
 ###########################
 # Code for fitting models #
 ###########################
 
-def fit_unigrams(tokens):
+#############################
+# Standard unigrams/bigrams #
+#############################
+
+def fit_unigrams(token_freqs, token_weighted=False):
     """
     This function takes a set of word tokens and returns a dictionary whose
     keys are unigrams and whose values are log unigram probabilities
-    """
-    flat_tokens = [segment for word in tokens for segment in word]
-    unigram_freq = nltk.FreqDist(flat_tokens)
-    total_sounds = sum(unigram_freq.values())
-    unigram_probs = {key: (np.log(value/total_sounds)) for key, value in unigram_freq.items()}
-    return unigram_probs
 
-def fit_bigrams(tokens, sound_idx, smoothed=False):
+    token_freqs: A list of tuples of word-frequency pairs
+    token_weighted: If true, counts are weighted by log frequency of token
+
+    returns: A dictionary of unigram:probability pairs.
+    """
+    unigram_freqs = defaultdict(int)
+
+    for token, freq in token_freqs:
+        val = np.log(freq) if token_weighted else 1
+        for sound in token:
+            unigram_freqs[sound] += val
+
+    total_sounds = sum(unigram_freqs.values())
+    unigram_freqs = {
+        key: (np.log(value/total_sounds)) 
+        for key, value in unigram_freqs.items()
+    }
+    return unigram_freqs
+
+def fit_bigrams(token_freqs, sound_idx, token_weighted=False, smoothed=False):
     """
     This function takes a set of word tokens and a list of sounds and
     returns a count matrix of bigrams. The sound list is necessary because
     we include counts of 0 for unattested bigram combinations.
 
-    If smoothed is True, start with a pseudo-count of 1 for every bigram
+    If token_weighted is True, counts are weighted by the log frequency
+    of the words they occur in.
+
+    If smoothed is True, start with a pseudo-count of 1 for every bigram.
     """
-    bigrams = generate_bigrams(tokens)
     num_sounds = len(sound_idx)
+
     if smoothed:
         count_matrix = np.ones((num_sounds, num_sounds))
     else:
         count_matrix = np.zeros((num_sounds, num_sounds))
 
-    for s1, s2 in bigrams:
-        count_matrix[sound_idx.index(s2)][sound_idx.index(s1)] += 1
+    for token, freq in token_freqs:
+        val = np.log(freq) if token_weighted else 1
+        bigrams = generate_bigrams(token)
+        for s1, s2 in bigrams:
+            count_matrix[sound_idx.index(s2)][sound_idx.index(s1)] += val
 
     bigram_probs = np.log(count_matrix / np.sum(count_matrix, 0))
     return bigram_probs
 
-def get_token_freqs(tokens, sound_idx):
-    # Note that this returns log frequencies
-    num_sounds = len(sound_idx)
-    unigram_weighted_freqs = defaultdict(int)
-    # This isn't really correct... 
-    bigram_weighted_freqs = np.ones((num_sounds, num_sounds))
+###############################
+# Positional unigrams/bigrams #
+###############################
+
+def fit_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
+    """
+    TODO DOCUMENTATION
+    """
+    pos_unigram_freqs = defaultdict(lambda: defaultdict(int))
+
+    if smoothed:
+        unique_sounds = set(
+            [sound for token, _ in token_freqs for sound in token]
+        )
+        max_idx = max([len(token) for token, _ in token_freqs])
+
+        for i in range(max_idx):
+            for sound in unique_sounds:
+                pos_unigram_freqs[i][sound] = 1
+
+    for token, freq in token_freqs:
+        val = np.log(freq) if token_weighted else 1
+        for idx, sound in enumerate(token):
+            pos_unigram_freqs[idx][sound] += val
+
+    pos_unigram_freqs = normalize_positional_counts(pos_unigram_freqs)
+
+    return pos_unigram_freqs
+
+def fit_positional_bigrams(token_freqs, token_weighted=False, smoothed=True):
+    pos_bigram_freqs = defaultdict(lambda: defaultdict(int))
+
+    for token, freq in token_freqs:
+        val = np.log(freq) if token_weighted else 1
+        for idx, sound in enumerate(token):
+            if idx < len(token) - 1:
+                pos_bigram_freqs[(idx, idx + 1)][(sound, token[idx + 1])] += val
+
+    pos_bigram_tok_freqs = normalize_positional_counts(pos_bigram_tok_freqs)
     
-    for token, freq in tokens:
-        for unigram in token:
-            unigram_weighted_freqs[unigram] += np.log(freq)
-
-        bigrams = generate_bigrams([token])
-
-        for s1, s2 in bigrams:
-            bigram_weighted_freqs[sound_idx.index(s2)][sound_idx.index(s1)] += np.log(freq)
-    
-    return unigram_weighted_freqs, bigram_weighted_freqs 
-
-def fit_token_ngrams(unigram_token_freq, bigram_token_freq):
-    # Unigram
-    total_weighted_sounds = sum(unigram_token_freq.values())
-    unigram_token_probs = {
-        key: np.log(value/total_weighted_sounds) 
-        for key, value in unigram_token_freq.items()
-    }
-    # Bigrams
-    bigram_token_probs = np.log(bigram_token_freq / np.sum(bigram_token_freq, 0))
-
-    return unigram_token_probs, bigram_token_probs
-
-
-def build_ngram_models(dataset):
-    tokens, token_freqs = read_tokens(dataset)
-
-    unique_sounds = set(
-        [item for sublist in tokens for item in sublist]
-    )
-    sound_idx = sorted(list(unique_sounds)) + ['#']
-
-    # Get type-weighted probabilities
-    unigram_probs = fit_unigrams(tokens)
-    bigram_probs = fit_bigrams(tokens, sound_idx)
-
-    # Get token-weighted probabilities
-    unigram_token_freq, bigram_token_freq = get_token_freqs(token_freqs, sound_idx)
-    unigram_token_probs, bigram_token_probs = fit_token_ngrams(unigram_token_freq, bigram_token_freq)
-
-    return unigram_probs, bigram_probs, sound_idx, unigram_token_probs, bigram_token_probs
+    return pos_bigram_freqs
 
 def normalize_positional_counts(counts):
+    """
+    Normalizes positional counts by total counts for each position.
+    """
     for idx in counts.keys():
         total = sum(counts[idx].values())
         for gram in counts[idx].keys():
@@ -140,29 +149,31 @@ def normalize_positional_counts(counts):
 
     return counts
 
-def build_positional_models(dataset):
-    _, token_freqs = read_tokens(dataset)
+###############
+# Other stuff #
+###############
 
-    pos_unigram_freqs = defaultdict(lambda: defaultdict(int))
-    pos_bigram_freqs = defaultdict(lambda: defaultdict(int))
+def build_ngram_models(dataset):
+    token_freqs = read_tokens(dataset)
 
-    pos_unigram_tok_freqs = defaultdict(lambda: defaultdict(int))
-    pos_bigram_tok_freqs = defaultdict(lambda: defaultdict(int))
+    unique_sounds = set(
+        [item for sublist in token_freqs for item, _ in sublist]
+    )
+    sound_idx = sorted(list(unique_sounds)) + ['#']
 
-    for token, freq in token_freqs:
-        for idx, sound in enumerate(token):
-            pos_unigram_freqs[idx][sound] += 1
-            pos_unigram_tok_freqs[idx][sound] += np.log(freq)
-            if idx < len(token) - 1:
-                pos_bigram_freqs[(idx, idx + 1)][(sound, token[idx + 1])] += 1
-                pos_bigram_tok_freqs[(idx, idx + 1)][(sound, token[idx + 1])] += np.log(freq)
+    # Get type-weighted probabilities
+    unigram_probs = fit_unigrams(token_freqs)
+    bigram_probs = fit_bigrams(token_freqs, sound_idx)
 
-    pos_unigram_freqs = normalize_positional_counts(pos_unigram_freqs)
-    pos_bigram_freqs = normalize_positional_counts(pos_bigram_freqs)
-    pos_unigram_tok_freqs = normalize_positional_counts(pos_unigram_tok_freqs)
-    pos_bigram_tok_freqs = normalize_positional_counts(pos_bigram_tok_freqs)
+    # Get token-weighted probabilities
+    unigram_token_freq, bigram_token_freq = get_token_freqs(token_freqs, sound_idx)
+    unigram_token_probs, bigram_token_probs = fit_token_ngrams(unigram_token_freq, bigram_token_freq)
 
-    return pos_unigram_freqs, pos_bigram_freqs, pos_unigram_tok_freqs, pos_bigram_tok_freqs
+    return unigram_probs, bigram_probs, sound_idx, unigram_token_probs, bigram_token_probs
+
+###########################
+# Code for testing models #
+###########################
 
 def get_unigram_prob(word, unigram_probs):
     prob = 0
@@ -175,7 +186,7 @@ def get_unigram_prob(word, unigram_probs):
     return prob
 
 def get_bigram_prob(word, bigram_probs, sound_idx):
-    bigrams = generate_bigrams([word])
+    bigrams = generate_bigrams(word)
     prob = 0
     for s1, s2 in bigrams:
         try:
@@ -238,40 +249,10 @@ def get_pos_bigram_tok_score(word, pos_bi_tok_freqs):
 
     return score
 
-def calculate_rsquared(actual, pred):
-    assert len(actual) == len(pred), "Actual and predicted lists need same length"
-    # Pearson correlation coefficients between every pair of variables (2 variable: 2x2 matrix)
-    #   Values along diagonal are 1 since every variable is perfectly related to itself
-    #   R = correlation between variable at indices 0 and 1
-    corr_matrix = np.corrcoef(actual, pred)
-    R = corr_matrix[0,1]
-    return R**2
-
-def plot(X, Y, labelX, labelY, file_name='plot.png'):
-    #fig=plt.figure()
-    plt.scatter(X,Y,s=5)
-
-    m, b = np.polyfit(X, Y, 1)
-    pred_points = [m*x + b for x in X]
-    plt.plot(X, pred_points, '-')
-    
-    plt.xlabel(labelX)
-    plt.ylabel(labelY)
-    plt.title(f'{labelX} vs {labelY}')
-
-    r_sq = calculate_rsquared(Y, pred_points)
-
-    # place r^2 as annotation
-    plt.annotate(f'R^2 = {r_sq:.3f}', xy=(0.75,0.1), xycoords='axes fraction')
-    # place regression equation as annotation
-    plt.annotate(f'y = {m:.2f}x + {b:.2f}', xy=(0.75,0.05), xycoords='axes fraction')
-
-    plt.savefig(f'media/uploads/{file_name}')
-
 def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs, 
                  pos_bi_freqs, sound_idx, unigram_token_probs,
                  bigram_token_probs, pos_uni_tok_freqs, pos_bi_tok_freqs):
-    tokens, _ = read_tokens(dataset)
+    token_freqs = read_tokens(dataset)
 
     uni_prob_list = []
     bi_prob_list = []
@@ -296,7 +277,7 @@ def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs,
             'pos_bi_tok\n'
         ]))
 
-        for token in tokens:
+        for token, _ in token_freqs:
             word_len = len(token)
             unigram_prob = get_unigram_prob(token, unigram_probs)
             bigram_prob = get_bigram_prob(token, bigram_probs, sound_idx)
@@ -329,10 +310,14 @@ def score_corpus(dataset, outfile, unigram_probs, bigram_probs, pos_uni_freqs,
                 str(pos_bi_tok_score)
             ])))
 
-    # plot(uni_prob_list, uni_tok_prob_list, 'Unigram Prob', 'Unigram Tok Prob')
+##################
+# Entry function #
+##################
 
 def run(train, test, out):
+    # TODO: Replace with individual calls
     unigram_probs, bigram_probs, sound_idx, unigram_token_probs, bigram_token_probs = build_ngram_models(train)
+    # TODO: Replace with individual calls
     pos_uni_freqs, pos_bi_freqs, pos_uni_tok_freqs, pos_bi_tok_freqs = build_positional_models(train)
 
     score_corpus(
@@ -343,12 +328,3 @@ def run(train, test, out):
         bigram_token_probs, pos_uni_tok_freqs,
         pos_bi_tok_freqs
     )
-
-if __name__ == "__main__":
-    train_dataset = 'data/small_cmu_frequencies.txt'
-    test_dataset = 'data/english_test_data.csv'
-    outfile = 'media/uploads/english_output.csv'
-
-    run(train_dataset, test_dataset, outfile)
-
-    
