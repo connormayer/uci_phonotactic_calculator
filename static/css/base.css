@@ -1,5 +1,8 @@
 body {
     background-color: lightyellow;
+    max-width:1000px;
+    margin:0 auto;
+    position:relative;
 }
 
 .top-header {
