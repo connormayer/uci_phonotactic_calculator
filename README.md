@@ -9,6 +9,6 @@ This repository contains source code for the [UCI Phonotactic Calculator website
 
 ## Citing the UCI Phonotactic Calculator
 
-If you publish work that uses maxent.ot, please cite this repository.
+If you publish work that uses the UCI Phonotactic Calculator, please cite this repository.
 
 > `Mayer, C., Kondur, A., & Sundara, M.(2022). UCI Phonotactic Calculator (Version 0.1.0) [Computer software]. https://doi.org/10.5281/zenodo.7443706`
