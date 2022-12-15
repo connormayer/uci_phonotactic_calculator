@@ -70,11 +70,13 @@ class UploadTrainView(CreateView):
         # If not valid, return form_invalid without calling run
         ###########
 
-        if not util.valid_file(train_file):
-            messages.warning(self.request, 'Invalid training file format: Add spaces to separate phonemes')
+        train_success, message = util.valid_file(train_file)
+        if not train_success:
+            messages.warning(self.request, 'Invalid training file format: {}'.format(message))
             return self.form_invalid(form)
-        elif not util.valid_file(test_file):
-            messages.warning(self.request, 'Invalid test file format: Add spaces to separate phonemes')
+        test_success, message = util.valid_file(test_file)
+        if not test_success:
+            messages.warning(self.request, 'Invalid test file format: {}'.format(message))
             return self.form_invalid(form)
 
         test_file_name_sub = basename((self.model.objects.last()).test_file.name)[:4]
