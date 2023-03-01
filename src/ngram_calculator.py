@@ -434,3 +434,21 @@ def run(train, test, out):
     fitted_models = fit_ngram_models(train_token_freqs, sound_idx)
     results = score_corpus(test_token_freqs, fitted_models, sound_idx)
     write_results(results, out)
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description = "Calculate a suite of unigram/bigram scores for a data set."
+    )
+    parser.add_argument(
+        'train_file', type=str, help='Path to the input corpus file.'
+    )
+    parser.add_argument(
+        'test_file', type=str, help='Path to test data file' 
+    )
+    parser.add_argument(
+        'output_file', type=str, help='Path to output file with word judgements' 
+    )
+    args = parser.parse_args()
+    run(args.train_file, args.test_file, args.output_file)
