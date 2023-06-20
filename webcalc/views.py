@@ -1,5 +1,6 @@
 from audioop import reverse
 from email.policy import default
+from typing import Any, Dict
 from django.shortcuts import render
 from django.views.generic.edit import CreateView
 from django.views.generic.base import TemplateView
@@ -16,7 +17,7 @@ from src import utility as util
 from src.rnn_src import main as rnn
 
 # Create your views here.
-from .models import UploadTrain, DefaultFile, UploadWithDefault
+from .models import UploadTrain, DefaultFile, UploadWithDefault, GroupDefaultDatasets
 
 class UploadTrainView(CreateView):
     model = UploadTrain
@@ -91,16 +92,50 @@ class UploadTrainView(CreateView):
 
         return response
 
-class MediaView(TemplateView):
+class MediaView(CreateView):
+    model = GroupDefaultDatasets
     template_name = 'media.html'
-    model = DefaultFile
+    fields = '__all__'
+    success_url = reverse_lazy('mediaGrouped')
+
+    # TODO: ADD FIELD THAT ALLOWS USERS TO SPECIFY GROUPBY METHOD
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         #media_path = join(settings.MEDIA_ROOT, 'default')
         #files = [f for f in listdir(media_path) if isfile(join(media_path, f))]
         #context['myfiles'] = files
-        context['objects'] = self.model.objects.all()
+
+        # TODO: CHANGE THIS TO A UTIL FUNCTION THAT GETS FILES GROUPED AS NECESSARY
+        context['objects'] = util.get_default_files() #self.model.objects.all()
+        return context
+
+    def form_valid(self, form):
+        response = super(MediaView, self).form_valid(form)
+        return response
+
+class GroupedMediaView(TemplateView):
+    template_name = 'mediaGrouped.html'
+    model = GroupDefaultDatasets
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        grouping_method = (self.model.objects.last()).grouping_method
+
+        context['grouping_method'] = "\"" + grouping_method[0].upper() + grouping_method[1:] + "\""
+        context['objects'] = util.group_datasets(util.get_default_files(), grouping_method)
+        return context
+
+class DescriptionsView(TemplateView):
+    template_name = 'descriptions.html'
+    model = GroupDefaultDatasets
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['objects'] = util.get_default_files()
+
         return context
 
 class OutputView(TemplateView):

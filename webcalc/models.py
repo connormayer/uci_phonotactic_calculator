@@ -8,6 +8,9 @@ from src import utility as util
 
 from datetime import datetime
 
+# TODO: REMOVE DEFAULTFILE AND UPLOADWITHDEFAULT MODELS
+# TODO: ADD MODEL FOR GROUPING MEDIA FILES ON DATASETS PAGE
+
 # When making changes to this model, comment/uncomment
 #   default_objects in UploadTrain model.
 class DefaultFile(models.Model):
@@ -28,7 +31,9 @@ class UploadTrain(models.Model):
     # second value in tuple is human-readable name (what gets displayed)
     #files_list = [(x.file_name, x.short_desc) for x in default_objects]
 
-    files_list = util.get_default_files() # get using function from utility.py
+    datasets = util.get_default_files() # get using function from utility.py
+
+    files_list = [(dataset.file, dataset.short_desc) for dataset in datasets]
     
     # upload files go to media\uploads
     training_file = models.FileField(upload_to='uploads', blank=True)
@@ -50,6 +55,12 @@ class UploadTrain(models.Model):
         #     calc.run(train_file, test_file, out_file)
         return super(UploadTrain, self).save(*args, **kwargs)
 
+class GroupDefaultDatasets(models.Model):
+    # first three attributes (file name, long desc, short desc) not used for grouping 
+    attributes_for_grouping = util.Dataset._fields[3:]
+    attribute_tuples = [(x, x[0].upper() + x[1:]) for x in attributes_for_grouping]
+
+    grouping_method = models.CharField(choices=attribute_tuples, max_length=100, blank=True)
 
 class UploadWithDefault(models.Model):
     default_objects = []#DefaultFile.objects.all()

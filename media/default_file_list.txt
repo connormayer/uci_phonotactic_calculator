@@ -1,3 +1,3 @@
-english_training_data.txt ~ Training file with English words from CMU Pronouncing Dictionary ~ CMU English
-english_training_data_onlyA.txt ~ Training file with English words starting with 'A' from CMU Pronouncing Dictionary ~ CMU English A
-small_cmu_frequencies.txt ~ Training file with English words from CMU Pronouncing Dictionary and their frequencies ~ CMU English with Freqs
+english_training_data.txt ~ Training file with English words from CMU Pronouncing Dictionary ~ CMU English ~ no_freq ~ adult ~ english
+english_training_data_onlyA.txt ~ Training file with English words starting with 'A' from CMU Pronouncing Dictionary ~ CMU English A ~ no_freq ~ adult ~ english
+small_cmu_frequencies.txt ~ Training file with English words from CMU Pronouncing Dictionary and their frequencies ~ CMU English with Freqs ~ freq ~ adult ~ english
