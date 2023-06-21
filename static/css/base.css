@@ -1,5 +1,8 @@
 body {
     background-color: lightyellow;
+    max-width:1000px;
+    margin:0 auto;
+    position:relative;
 }
 
 .top-header {
@@ -28,4 +31,14 @@ body {
 
 li {
     margin: 1em 0;
+}
+
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  padding: 10px;
+}
+
+th {
+  text-align: left;
 }

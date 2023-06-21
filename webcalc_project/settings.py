@@ -25,11 +25,13 @@ SECRET_KEY = 'lfy!v6$$p_6ea(942x1&rn5)=v9t%7x1#$umf-yi(h=otq*%y0'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'phonotactics.socsci.uci.edu']
+
+X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 
 # Application definition
-
+# additions: added latexify
 INSTALLED_APPS = [
     'webcalc.apps.WebcalcConfig',
     'django.contrib.admin',
@@ -53,8 +55,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 ROOT_URLCONF = 'webcalc_project.urls'
 
@@ -125,4 +125,5 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+#STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')

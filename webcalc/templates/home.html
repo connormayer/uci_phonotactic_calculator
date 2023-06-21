@@ -5,6 +5,8 @@
     <div style="padding:40px;margin:40px;border:1px solid #ccc">
         <h3> Welcome to the UCI Phonotactic Calculator! </h3>
 
+        <h3><p style="color:red">This is a work in progress! If you notice any bugs or have any comments, please contact Connor Mayer at <a href="mailto:cjmayer@uci.edu">cjmayer@uci.edu</a>.</p></h3>
+
         <p>This is a research tool that allows users to calculate a variety of <i>phonotactic acceptability metrics</i>. These metrics are intended to capture how probable/acceptable a word is based on the sounds it contains and the order in which those sounds are sequenced. This is sometimes referred to as <i>phonotactic probability</i>, though we prefer the term <i>acceptability</i> because not all of the metrics employed here can be interpreted as probabilities. For example, a nonce word like [stik] 'steek' might have a relatively high phonotactic acceptability score in English even though it is not a real word, because there are many words that begin with [st], end with [ik], and so on. In Spanish, however, this word would have a low acceptability score because there are no Spanish words that begin with the sequence [st]. A sensitivity to the phonotactic constraints of one's language(s) is an important component of linguistic competence, and the various metrics computed by this tool instantiate different models of how this sensitivity is operationalized.</p>
 
         <p>The general use case for this tool is as follows:</p>
@@ -27,7 +29,19 @@
                 See the <a href="{% url 'about' %}">About</a> page for a detailed description of how these models differ and how to interpret the scores.
             </li>
         </ol>
+        <p>
         The UCI Phonotactic Calculator was developed by <a href="http://connormayer.com">Connor Mayer</a> (UCI), Arya Kondur (UCI), and <a href="https://linguistics.ucla.edu/person/megha-sundara/">Megha Sundara</a> (UCLA). Please direct all inquiries to Connor Mayer (<a href="mailto:cjmayer@uci.edu">cjmayer@uci.edu</a>).
+        </p>
+        <h3>Citing the UCI Phonotactic Calculator</h3>
+
+        <p>
+        If you publish work that uses the UCI Phonotactic Calculator, please cite the GitHub repository:
+        </p>
+        <p>
+        <blockquote>
+        Mayer, C., Kondur, A., &amp; Sundara, M. (2022). UCI Phonotactic Calculator (Version 0.1.0) [Computer software]. https://doi.org/10.5281/zenodo.7443706
+        </blockquote>
+        </p>
         <!-- <object data = "/media/descriptions/home.txt" width = "100%" height = "250"></object> -->
     </div>
 

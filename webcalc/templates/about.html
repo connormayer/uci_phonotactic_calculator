@@ -14,16 +14,16 @@
         </p>
         <ol>
             <li>
-                Both the training and the test file must in comma-separated format (.csv). 
+                Both the training and the test file must be in comma-separated format (.csv). 
             </li>
             <li>
-                The training file should consist of two columns with no headers. 
+                The training file should consist of one or two columns with no headers. 
                 <ol>
                     <li>
-                        The first column contains a word list, with each symbol (phoneme, orthographic letter, etc.) separated by spaces. For example, the word 'cat' represented in IPA would be "k æ t". You may use any transcription system or representation you like, so long as the individual symbols are separated by spaces. Because symbols are space-separated, they may be arbitrarily long: this allows the use of transcription systems like ARPABET, which use more than one character to represent individual sounds.
+                        The first column (mandatory) contains a word list, with each symbol (phoneme, orthographic letter, etc.) separated by spaces. For example, the word 'cat' represented in IPA would be "k æ t". You may use any transcription system or representation you like, so long as the individual symbols are separated by spaces. Because symbols are space-separated, they may be arbitrarily long: this allows the use of transcription systems like ARPABET, which use more than one character to represent individual sounds.
                     </li>
                     <li>
-                        The second column contains the corresponding word frequencies for each word. These must be expressed as raw counts. These values are used in the token-weighted variants of the unigram and bigram models, which ascribe greater influence to the phonotactics of more frequent words. If this column is not provided, the token-weighted metrics will not be computed, but the other metrics will be returned. 
+                        The second column (optional) contains the corresponding frequencies for each word. These must be expressed as raw counts. These values are used in the token-weighted variants of the unigram and bigram models, which ascribe greater influence to the phonotactics of more frequent words. If this column is not provided, the token-weighted metrics will not be computed, but the other metrics will be returned. 
                     </li>
                 </ol>
             </li>
@@ -42,109 +42,215 @@
             The UCI Phonotactic Calculator currently supports two broad classes of models. We refrain here from any discussion of the appropriateness of each model, and discuss only how each score is computed.
         </p>
         <p>
-            In the equations below, {% latexify '\Sigma' math_inline=True %} represents the set of symbols that comprise the training data (the set of phonemes, characters, etc.) and {% latexify 'w = x_1 \dots x_n' math_inline=True %} refers to a word {% latexify 'w' math_inline=True %} that consists of symbols {% latexify 'x_1' math_inline=True %} through {% latexify 'x_n' math_inline=True %}.
+            In the equations below, {% latexify 'w = x_1 \dots x_n' math_inline=True %} refers to a word {% latexify 'w' math_inline=True %} that consists of symbols {% latexify 'x_1' math_inline=True %} through {% latexify 'x_n' math_inline=True %} (where a symbol might be a phoneme, a character, etc.).
         </p>
 
-        <h4>Unigram/bigram scores</h4>
+        <h3>Unigram/bigram scores</h3>
 
         <p>
-            This is a suite of metrics that share the property of being sensitive only to the frequencies of individual sounds or adjacent pairs of sounds.
+            This is a suite of metrics that share the property of being sensitive only to the frequencies of individual sounds or adjacent pairs of sounds. Here is a summary of the columns in the output file produced under this model class.
         </p>
 
-        <ul>
-            <li>
-                <b>Unigram probability</b> (<tt>uni_prob</tt>): This is the standard unigram probability 
+         <table>
+          <tr>
+            <th>Column name</th>
+            <th>Description</th>
+          </tr>
+          <tr>
+            <td><tt>word</td>
+            <td>The word</td>
+          </tr>
+          <tr>
+            <td><tt>word_len</tt></td>
+            <td>The number of symbols in the word</td>
+          </tr>
+          <tr>
+            <td><tt>uni_prob</tt></td>
+            <td>Unigram probability</td>
+          </tr>
+          <tr>
+            <td><tt>uni_prob_freq_weighted</tt></td>
+            <td>Frequency-weighted unigram probability</td>
+          </tr>
+          <tr>
+            <td><tt>bi_prob</tt></td>
+            <td>Bigram probability</td>
+          </tr>
+          <tr>
+            <td><tt>bi_prob_freq_weighted</tt></td>
+            <td>Frequency-weighted bigram probability</td>
+          </tr>
+          <tr>
+            <td><tt>bi_prob_smoothed</tt></td>
+            <td>Add-one smoothed bigram probability</td>
+          </tr>
+          <tr>
+            <td><tt>bi_prob_freq_weighted_smoothed</tt></td>
+            <td>Add-one smoothed, frequency-weighted bigram probability</td>
+          </tr>
+          <tr>
+            <td><tt>pos_uni_score</tt></td>
+            <td>Positional unigram score</td>
+          </tr>
+          <tr>
+            <td><tt>pos_uni_score_freq_weighted</tt></td>
+            <td>Frequency-weighted positional unigram score</td>
+          </tr>
+          <tr>
+            <td><tt>pos_uni_score_smoothed</tt></td>
+            <td>Add-one smoothed positional unigram score</td>
+          </tr>
+          <tr>
+            <td><tt>pos_uni_score_freq_weighted_smoothed</tt></td>
+            <td>Add-one smoothed, frequency-weighted positional unigram score</td>
+          </tr>
+          <tr>
+            <td><tt>pos_bi_score</tt></td>
+            <td>Positional bigram score</td>
+          </tr>
+          <tr>
+            <td><tt>pos_bi_score_freq_weighted</tt></td>
+            <td>Frequency-weighted positional bigram score</td>
+          </tr>
+          <tr>
+            <td><tt>pos_bi_score_smoothed</tt></td>
+            <td>Add-one smoothed positional bigram score</td>
+          </tr>
+          <tr>
+            <td><tt>pos_bi_score_freq_weighted_smoothed</tt></td>
+            <td>Add-one smoothed, frequency-weighted positional bigram score</td>
+          </tr>
+        </table> 
 
-                {% latexify 'P(w=x_1 \dots x_n) \approx \prod_{i=1}^{n} P(x_i)' math_block=True %}
+        <p>
+            These columns can be broken down into four broad classes:
+            <ol>
+                <li> unigram probabilities (<tt>uni_prob</tt>, <tt>uni_prob_freq_weighted</tt>) </li>
+                <li> bigram probabilities (<tt>bi_prob</tt>, <tt>bi_prob_freq_weighted</tt>, <tt>bi_prob_smoothed</tt>, <tt>bi_prob_freq_weighted_smoothed</tt>) </li>
+                <li> positional unigram scores (<tt>pos_uni_score</tt>, <tt>pos_uni_score_freq_weighted</tt>, <tt>pos_uni_score_smoothed</tt>, <tt>pos_uni_score_freq_weighted_smoothed</tt>) </li>
+                <li> positional bigram scores (<tt>pos_bi_score</tt>, <tt>pos_bi_score_freq_weighted</tt>, <tt>pos_bi_score_smoothed</tt>, <tt>pos_bi_score_freq_weighted_smoothed</tt>) </li>
+            </ol>
+        </p>
+        <p>
+            Each of these classes has <it>frequency-weighted</it> and <it>smoothed</it> variants.
+            <ul>
+                <li>Frequency-weighted (or token-weighted) variants weight the occurrence of each unigram/bigram or positional unigram/bigram by the log token frequency of the word type it appears in. This effectively means that sound sequences in high frequency words 'count for more' than sound sequences in low-frequency words.</li>
+                <li> Smoothed variants assign a small part of the total share of probability to unseen configurations by assigning them pseudo-counts of 1 (add-one smoothing). For example, in an unsmoothed bigram probability model, any word that contains a bigram not found in the corpus data will be assigned a probability of 0. In the smoothed model, it will be assigned a low probability as though it had been observed once in the training data. Note that smoothed models will still assign zero probabilities if the training data contains any symbols not observed in the test data.
+            </ul>
+            This document will first describe the unweighted (or type-weighted) and unsmoothed variants of each metric. Frequency weighting and smoothing is described in more detail afterwards.
+        </p>
+        <p>
+            <h4>Unigram probability (<tt>uni_prob</tt>) </h4> 
+
+            This is the standard unigram probability 
+
+            {% latexify 'P(w=x_1 \dots x_n) \approx \prod_{i=1}^{n} P(x_i)' math_block=True %}
+
+            where
+
+            {% latexify 'P(x) = \frac{C(x)}{\displaystyle\sum_{y \in \Sigma} C(y)}' math_block=True %}
+
+            where {% latexify 'C(x)' math_inline=True %} is the number of times the symbol {% latexify 'x' math_inline=True %} occurs in the training data.
+
+            <p>
+                This metric reflects the probability of a word under a simple unigram model. The probability of a word is the product of the probability of its individual symbols. Note that the probability of the individual symbols is based only on their frequency of occurrence, not the position in which they occur.
+            </p>
+            <p>
+                If the test data contains symbols that do no occur in the training data, the tokens containing them will be assigned probabilities of 0.
+            </p>
+        </p>
+        <p>
+            <h4>Bigram probability (<tt>bi_prob</tt>)</h4>
+
+            This is the standard bigram probability 
+
+            {% latexify 'P(w=x_1 \dots x_n) \approx \prod_{i=2}^{n} P(x_i|x_{i-1})' math_block=True %}
+
+            where
+
+            {% latexify 'P(x|y) = \frac{C(yx)}{C(y)}' math_block=True %}
+
+            where {% latexify 'C(y)' math_inline=True %} is the number of times the symbol {% latexify 'y' math_inline=True %} occurs in the training data and {% latexify 'C(yx)' math_inline=True %} is the number of times the sequence {% latexify 'yx' math_inline=True %} occurs in the training data.
+
+            <p>
+                Each word is padded with a special start and end symbol, which allows us to calculate bigram probabilities for symbols that begin and end words.
+            </p>
+            <p>
+                This metric reflects the probability of words under a simple bigram model. The probability of a word is the product of the probability of all the bigrams it contains. Note that the probability of the bigrams is based only on their frequency of occurrence, not the position in which they occur or their sequencing with respect to one another.
+            </p>
+        </p>
+            <p>
+                <h4>Positional unigram score (<tt>pos_uni_prob</tt>)</h4> 
+
+                This is a type-weighted variant of unigram score from Vitevitch and Luce (2004). 
+
+                {% latexify 'PosUniScore(w=x_1 \dots x_n) = 1 + \sum_{i=1}^{n} P(w_i = x_i)' math_block=True %}
 
                 where
 
-                {% latexify 'P(x) = \frac{C(x)}{\displaystyle\sum_{y \in \Sigma} C(y)}' math_block=True %}
+                {% latexify 'P(w_i = x) = \frac{C(w_i = x)}{\displaystyle\sum_{y \in \Sigma} C(w_i = y)}' math_block=True %}
 
-                where {% latexify 'C(x)' math_inline=True %} is the number of times the symbol {% latexify 'x' math_inline=True %} occurs in the training data.
+                where {% latexify 'w_i' math_inline=True %} refers to the {% latexify 'i^{\text{th}}' math_inline=True %} position in a word and {% latexify 'C(w_i = x)' math_inline=True %} is the number of times in the training data the symbol {% latexify 'x' math_inline=True %} occurs in the {% latexify 'i^{\text{th}}' math_inline=True %} position of a word.
+            </p>
+            <p>
+                Vitevitch and Luce (2004) add 1 to the sum of the unigram probabilities "to aid in locating these values when you cut and paste the output in the right field to another program." They recommend subtracting 1 from these values before reporting them.
+            </p>
+            <p>
+                Under this metric, the score assigned to a word is based on the sum of the probability of its individual symb1ols occuring at their respective positions. Note that the ordering of the symbols with respect to one another does not affect the score, only their relative frequencies within their given positions. Higher scores represent words with more probable phonotactics, but note that this score cannot be interpreted as a probability.
+            </p>
+            <p>
+                <h4>Positional bigram score (<tt>pos_bi_prob</tt>)</h4> 
 
-                <p>
-                    This metric reflects the probability of a word under a simple unigram model. The probability of a word is the product of the probability of its individual symbols. Note that the probability of the individual symbols is based only on their frequency of occurrence, not the position in which they occur.
-                </p>
-            </li>
-            <li>
-                <b>Bigram probability</b> (<tt>bi_prob</tt>): This is the standard bigram probability 
+                This is a type-weighted variant of the bigram score from Vitevitch and Luce (2004). 
 
-                {% latexify 'P(w=x_1 \dots x_n) \approx \prod_{i=2}^{n} P(x_i|x_{i-1})' math_block=True %}
+                {% latexify 'PosBiScore(w=x_1 \dots x_n) = 1 + \sum_{i=2}^{n} P(w_{i-1} = x_{i-1}, w_i = x_i)' math_block=True %}
 
                 where
 
-                {% latexify 'P(x|y) = \frac{C(yx)}{C(y)}' math_block=True %}
+                {% latexify 'P(w_{i-1} = y, w_i = x) = \frac{C(w_{i-1} = y, w_i = x)}{\displaystyle\sum_{z \in \Sigma}\sum_{v \in \Sigma} C(w_{i-1} = z, w_i = v)}' math_block=True %}
 
-                where {% latexify 'C(y)' math_inline=True %} is the number of times the symbol {% latexify 'y' math_inline=True %} occurs in the training data and {% latexify 'C(yx)' math_inline=True %} is the number of times the sequence {% latexify 'yx' math_inline=True %} occurs in the training data. For bigram probabilities these counts are <i>Laplace Smoothed</i>: each possible bigram sequence begins with a count of 1, rather than 0. This means that bigram sequences not observed in the training data (that is, where {% latexify 'C(yx) = 0' math_inline=True %}) are treated as though they have been observed once, which gives them a small, rather than zero, probability.
+                where {% latexify 'w_i' math_inline=True %} refers to the {% latexify 'i^{\text{th}}' math_inline=True %} position in a word and {% latexify 'C(w_{i-1} = y, w_i = x)' math_inline=True %} is the number of times in the training data the sequence {% latexify 'yx' math_inline=True %} occurs at the {% latexify '(i-1)^{\text{th}}' math_inline=True %} and {% latexify 'i^{\text{th}}' math_inline=True %} positions of a word.
+            </p>
+            <p>
+                Vitevitch and Luce (2004) add 1 to the sum of the bigram probabilities "to aid in locating these values when you cut and paste the output in the right field to another program." They recommend subtracting 1 from these values before reporting them.
+            </p>
+            <p>
+                Under this metric, the score assigned to a word is based on the sum of the probability of each contiguous pair of symbols occuring at their respective positions. Higher scores represent words with more probable phonotactics, but note that this score cannot be interpreted as a probability.
+            </p>
 
-                <p>
-                    Each word is padded with a special start and end symbol, which allows us to calculate bigram probabilities for symbols that begin and end words.
-                </p>
-                <p>
-                    This metric reflects the probability of words under a simple bigram model. The probability of a word is the product of the probability of all the bigrams it contains. Note that the probability of the bigrams is based only on their frequency of occurrence, not the position in which they occur or their sequencing with respect to one another.
-                </p>
-            </li>
-            <li>
-                <p>
-                    <b>Positional unigram score</b> (<tt>pos_uni_prob</tt>): This is a type-weighted variant of unigram score from Vitevitch and Luce (2004). 
+            <p>
+                <h4>Token-weighted variants</h4>
 
-                    {% latexify 'PosUniScore(w=x_1 \dots x_n) = 1 + \sum_{i=1}^{n} P(w_i = x_i)' math_block=True %}
+                Assuming that the training data consists of a list of word types (e.g., a dictionary), the above metrics can be described as <i>type-weighted</i>: the frequency of individual word types has no bearing on the scores assigned by the metrics.
+            </p>
+            <p>
+                The calculator also includes <i>token-weighted</i> variants of each of the above measures, where the phonotactic properties of frequent word types are weighted higher than those in less frequent word types. These are included under all the column names containing <tt>freq_weighted</tt>.
+            </p>
+            <p>
+                These measures are computed by changing the count function {% latexify 'C' math_inline=True %} such that it is the number of occurrences of the configuration in question multiplied by the natural log of the count of the word containing each occurrence.
+            </p>
+            <p>
+                For example, suppose we have a corpus containing two word types "kæt", which occurs 1000 times, and "tæk", which occurs 50 times. Under a token-weighted unigram model, {% latexify 'C(æ) = ln(1000) + ln(50) \approx 10.82' math_inline=True %}, while in a type-weighted unigram model {% latexify 'C(æ) = 1 + 1 = 2' math_inline=True %}. 
+            </p>
+            <p>
+                The token-weighted positional ungiram and bigram scores correspond to the metrics presented in Vitevitch and Luce (2004), though they use the base-10 logarithm rather than the natural logarithm.
+            </p>
+            <p>
+                <h4>Smoothing</h4>
 
-                    where
-
-                    {% latexify 'P(w_i = x) = \frac{C(w_i = x)}{\displaystyle\sum_{y \in \Sigma} C(w_i = y)}' math_block=True %}
-
-                    where {% latexify 'w_i' math_inline=True %} refers to the {% latexify 'i^{\text{th}}' math_inline=True %} position in a word and {% latexify 'C(w_i = x)' math_inline=True %} is the number of times in the training data the symbol {% latexify 'x' math_inline=True %} occurs in the {% latexify 'i^{\text{th}}' math_inline=True %} position of a word.
-                </p>
-                <p>
-                    Vitevitch and Luce (2004) add 1 to the sum of the unigram probabilities " to aid in locating these values when you cut and paste the output in the right field to another program." They recommend subtracting 1 from these values before reporting them.
-                </p>
-                <p>
-                    Under this metric, the score assigned to a word is based on the sum of the probability of its individual symb1ols occuring at their respective positions. Note that the ordering of the symbols with respect to one another does not affect the score, only their relative frequencies within their given positions. Higher scores represent words with more probable phonotactics, but note that this score cannot be interpreted as a probability.
-                </p>
-            </li>
-            <li>
-                <p>
-                    <b>Positional bigram score</b> (<tt>pos_bi_prob</tt>): This is a type-weighted variant of the bigram score from Vitevitch and Luce (2004). 
-
-                    {% latexify 'PosBiScore(w=x_1 \dots x_n) = 1 + \sum_{i=2}^{n} P(w_{i-1} = x_{i-1}, w_i = x_i)' math_block=True %}
-
-                    where
-
-                    {% latexify 'P(w_{i-1} = y, w_i = x) = \frac{C(w_{i-1} = y, w_i = x)}{\displaystyle\sum_{z \in \Sigma}\sum_{v \in \Sigma} C(w_{i-1} = z, w_i = v)}' math_block=True %}
-
-                    where {% latexify 'w_i' math_inline=True %} refers to the {% latexify 'i^{\text{th}}' math_inline=True %} position in a word and {% latexify 'C(w_{i-1} = y, w_i = x)' math_inline=True %} is the number of times in the training data the sequence {% latexify 'yx' math_inline=True %} occurs at the {% latexify '(i-1)^{\text{th}}' math_inline=True %} and {% latexify 'i^{\text{th}}' math_inline=True %} positions of a word.
-                </p>
-                <p>
-                    Vitevitch and Luce (2004) add 1 to the sum of the bigram probabilities " to aid in locating these values when you cut and paste the output in the right field to another program." They recommend subtracting 1 from these values before reporting them.
-                </p>
-                <p>
-                    Under this metric, the score assigned to a word is based on the sum of the probability of each contiguous pair of symbols occuring at their respective positions. Higher scores represent words with more probable phonotactics, but note that this score cannot be interpreted as a probability.
-                </p>
-            </li>
-            <li>
-                <p>
-                    <b>Token-weighted variants</b>: Assuming that the training data consists of a list of word types (e.g., a dictionary), the above metrics can be described as <i>type-weighted</i>: the frequency of individual word types has no bearing on the scores assigned by the metrics.
-                </p>
-                <p>
-                    The calculator also includes <i>token-weighted</i> variants of each of the above measures, where the phonotactic properties of frequent word types are weighted higher than those in less frequent word types. These are included under the column names <tt>uni_tok_prob, bi_tok_prob, pos_uni_tok, pos_bi_tok</tt>.
-                </p>
-                <p>
-                    These measures are computed by changing the count function {% latexify 'C' math_inline=True %} such that it is the number of occurrences of the configuration in question multiplied by the natural log of the count of the word containing each occurrence.
-                </p>
-                <p>
-                    For example, suppose we have a corpus containing two word types "kæt", which occurs 1000 times, and "tæk", which occurs 50 times. Under a token-weighted unigram model, {% latexify 'C(æ) = ln(1000) + ln(50) \approx 10.82' math_inline=True %}, while in a type-weighted unigram model {% latexify 'C(æ) = 1 + 1 = 2' math_inline=True %}. 
-                </p>
-                <p>
-                    The token-weighted positional ungiram and bigram scores correspond to the metrics presented in Vitevitch and Luce (2004), though they use the base-10 logarithm rather than the natural logarithm.
-                </p>
-                <p>
-                    The token-weighted bigram measures are also Laplace smoothed by adding one to the log counts.
-                </p>
-            </li>
+                The calculator also includes add-one smoothed (or Laplace Smoothed) variants of each measure except for unigram probabilities.
+            </p>
+            <p>
+                Under add-one smoothing, each configuration we could (unigrams, bigrams, positional unigrams, positional bigrams) begins with a default count of 1, rather than 0. This means that configurations that are not observed in the training data (that is, where {% latexify 'C(x) = 0' math_inline=True %} for some configuration {% latexify 'x' math_inline=True %}) are treated as though they have been observed once, which gives them a small, rather than zero, probability. This effectively spreads some of the probability mass from attested configurations onto unattested ones.
+            </p>
+            <p>
+                Smoothing in these models assigns non-zero probabilities to unattested sequences of known symbols, but not to unknown symbols (which is why there is no smoothing for unigram probabilities). Any words in the test data containing symbols not found in the training data are assigned probabilities of zero.
+            </p>
+            <p>
+                In the token-weighted versions of the metrics, smoothing is also done by adding one to the log-weighted counts. 
+            </p>
         </ul> 
-        <h4>RNN Model</h4>
+        <h3>RNN Model</h3>
         <p>
             The RNN model implements the simple recurrent neural network model of phonotactics presented in <a href="https://www.socsci.uci.edu/~cjmayer/papers/cmayer_mnelson_neural_phonotactics_2019.pdf">Mayer and Nelson (2020)</a>. The primary difference between this model and the unigram/bigram models above is that it is not restricted to a fixed context window: while the unigram/bigram measures are restricted to considering individual sounds or contiguous pairs of sounds, the RNN model can (in principle) learn phonotactic constraints that span arbitrarily long distances. We refer the reader to the original paper for details of how these scores are computed.
         </p>
