@@ -9,14 +9,7 @@
     </head>
 
     <div style="padding:40px;margin:40px;border:1px solid #ccc">
-        <center><h1>File List</h1></center>
-        <h3 style="color:red">The below are default datasets that are not grouped. To group them by a certain attribute, select one from the following:</h3>
-        <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Submit</button>
-        </form><hr>
-        <h3 style="color:red">To view a longer description for each dataset, click on the Description section in the header.</h3>
+        <h1>Datasets Grouped by {{ grouping_method }}</h1>
         <table>
             <tr class="table-header">
                 <td><h2>File</h2></td>

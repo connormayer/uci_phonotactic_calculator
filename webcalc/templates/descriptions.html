@@ -1,4 +1,4 @@
-<!-- templates/media.html -->
+<!-- templates/descriptions.html -->
 {% extends 'base.html' %}
 
 {% load static %}
@@ -10,13 +10,7 @@
 
     <div style="padding:40px;margin:40px;border:1px solid #ccc">
         <center><h1>File List</h1></center>
-        <h3 style="color:red">The below are default datasets that are not grouped. To group them by a certain attribute, select one from the following:</h3>
-        <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Submit</button>
-        </form><hr>
-        <h3 style="color:red">To view a longer description for each dataset, click on the Description section in the header.</h3>
+        <h3 style="color:red">The below are default datasets, each with a description of what the dataset contains.</h3>
         <table>
             <tr class="table-header">
                 <td><h2>File</h2></td>
@@ -28,7 +22,7 @@
             {% for obj in objects %}
                 <tr class="table-row">
                     <td><a href = "/media/default/{{ obj.file_name }}" download><h2>{{ obj.file }}</h2></a></td>
-                    <td><h3>{{ obj.short_desc }}</h3></td>
+                    <td><h3>{{ obj.long_desc }}</h3></td>
                     <td><h3>{{ obj.frequency }}</h3></td>
                     <td><h3>{{ obj.audience }}</h3></td>
                     <td><h3>{{ obj.language }}</h3></td>
