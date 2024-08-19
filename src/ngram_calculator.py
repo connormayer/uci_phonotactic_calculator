@@ -11,7 +11,9 @@ HEADER = [
     'word_len',
 
     'uni_prob',
+    'uni_prob_smoothed',
     'uni_prob_freq_weighted',
+    'uni_prob_freq_weighted_smoothed',
 
     'bi_prob',
     'bi_prob_freq_weighted',
@@ -99,7 +101,11 @@ def fit_ngram_models(token_freqs, sound_idx):
     unigram_models = []
     # Get unigram probabilities
     unigram_models.append(fit_unigrams(token_freqs))
+    unigram_models.append(fit_unigrams(token_freqs, smoothed=True))
     unigram_models.append(fit_unigrams(token_freqs, token_weighted=True))
+    unigram_models.append(
+        fit_unigrams(token_freqs, smoothed=True, token_weighted=True)
+    )
 
     # Get bigram probabilities
     bigram_models = []
@@ -142,7 +148,7 @@ def fit_ngram_models(token_freqs, sound_idx):
 
     return unigram_models, bigram_models, pos_unigram_models, pos_bigram_models
 
-def fit_unigrams(token_freqs, token_weighted=False):
+def fit_unigrams(token_freqs, token_weighted=False, smoothed=False):
     """
     This function takes a set of word tokens and returns a dictionary whose
     keys are unigrams and whose values are log unigram probabilities. Smoothing 
@@ -151,10 +157,12 @@ def fit_unigrams(token_freqs, token_weighted=False):
 
     token_freqs: A list of tuples of word-frequency pairs
     token_weighted: If true, counts are weighted by log frequency of token
+    smoothed: if True, start with a pseudo-count of 1 for every unigram
 
     returns: A dictionary of unigram:probability pairs.
     """
-    unigram_freqs = defaultdict(int)
+    default_func = lambda: int(smoothed)
+    unigram_freqs = defaultdict(default_func)
 
     for token, freq in token_freqs:
         val = np.log(freq) if token_weighted else 1
