@@ -73,6 +73,14 @@
             <td>Frequency-weighted unigram probability</td>
           </tr>
           <tr>
+            <td><tt>uni_prob_smoothed</tt></td>
+            <td>Add-one smoothed unigram probability</td>
+          </tr>
+          <tr>
+            <td><tt>uni_prob_freq_weighted_smoothed</tt></td>
+            <td>Add-one smoothed, frequency-weighted unigram probability</td>
+          </tr>
+          <tr>
             <td><tt>bi_prob</tt></td>
             <td>Bigram probability</td>
           </tr>
@@ -125,7 +133,7 @@
         <p>
             These columns can be broken down into four broad classes:
             <ol>
-                <li> unigram probabilities (<tt>uni_prob</tt>, <tt>uni_prob_freq_weighted</tt>) </li>
+                <li> unigram probabilities (<tt>uni_prob</tt>, <tt>uni_prob_freq_weighted</tt>, <tt>uni_prob_smoothed</tt>, <tt>uni_prob_freq_weighted_smoothed</tt>) </li>
                 <li> bigram probabilities (<tt>bi_prob</tt>, <tt>bi_prob_freq_weighted</tt>, <tt>bi_prob_smoothed</tt>, <tt>bi_prob_freq_weighted_smoothed</tt>) </li>
                 <li> positional unigram scores (<tt>pos_uni_score</tt>, <tt>pos_uni_score_freq_weighted</tt>, <tt>pos_uni_score_smoothed</tt>, <tt>pos_uni_score_freq_weighted_smoothed</tt>) </li>
                 <li> positional bigram scores (<tt>pos_bi_score</tt>, <tt>pos_bi_score_freq_weighted</tt>, <tt>pos_bi_score_smoothed</tt>, <tt>pos_bi_score_freq_weighted_smoothed</tt>) </li>
@@ -238,7 +246,7 @@
             <p>
                 <h4>Smoothing</h4>
 
-                The calculator also includes add-one smoothed (or Laplace Smoothed) variants of each measure except for unigram probabilities.
+                The calculator also includes add-one smoothed (or Laplace Smoothed) variants of each measure.
             </p>
             <p>
                 Under add-one smoothing, each configuration we could (unigrams, bigrams, positional unigrams, positional bigrams) begins with a default count of 1, rather than 0. This means that configurations that are not observed in the training data (that is, where {% latexify 'C(x) = 0' math_inline=True %} for some configuration {% latexify 'x' math_inline=True %}) are treated as though they have been observed once, which gives them a small, rather than zero, probability. This effectively spreads some of the probability mass from attested configurations onto unattested ones.
