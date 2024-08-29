@@ -11,8 +11,8 @@ HEADER = [
     'word_len',
 
     'uni_prob',
-    'uni_prob_smoothed',
     'uni_prob_freq_weighted',
+    'uni_prob_smoothed',
     'uni_prob_freq_weighted_smoothed',
 
     'bi_prob',
@@ -55,7 +55,7 @@ def read_tokens(dataset):
     returns: A list of lists, where each sublist corresponds to a token and
     consists of a list of the individual symbols.
     """
-    with open(dataset, 'r') as f:
+    with open(dataset, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
     
         token_freqs = []
@@ -77,7 +77,7 @@ def write_results(results, outfile):
     returns: None
     """
     results = [HEADER] + results
-    with open(outfile, 'w') as f:
+    with open(outfile, 'w', encoding='utf-8') as f:
         writer = csv.writer(f)
         writer.writerows(results)
 
