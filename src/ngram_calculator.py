@@ -1,6 +1,7 @@
 import csv
 import nltk
 import numpy as np
+import argparse
 
 from collections import defaultdict
 
@@ -28,7 +29,9 @@ HEADER = [
     'pos_bi_score',
     'pos_bi_score_freq_weighted',
     'pos_bi_score_smoothed',
-    'pos_bi_score_freq_weighted_smoothed'
+    'pos_bi_score_freq_weighted_smoothed',
+
+    'neighborhood_density'  # Added new header for neighborhood density
 ]
 
 ####################
@@ -299,7 +302,7 @@ def normalize_positional_counts(counts):
 # Code for testing models #
 ###########################
 
-def score_corpus(token_freqs, fitted_models, sound_idx):
+def score_corpus(token_freqs, fitted_models, sound_idx, neighborhood_calculator):
     """
     Given a dataset and a list of fitted models, returns the score for each 
     word under each model.
@@ -308,6 +311,7 @@ def score_corpus(token_freqs, fitted_models, sound_idx):
     aren't used in this function.
     sound_idx: The list of unique sounds used to map sound identity to matrix
     dimensions.
+    neighborhood_calculator: An instance of PhonemeNeighborhoodDensityCalculator
 
     fitted_models: A list of lists of models. These models are in the same order as
     defined in the HEADER file at the top of this file, and broken into sublists
@@ -336,6 +340,10 @@ def score_corpus(token_freqs, fitted_models, sound_idx):
         for model in pos_bi_models:
             row.append(get_pos_bigram_score(token, model))
 
+        # Compute neighborhood density and add it to the row
+        neighborhood_density = neighborhood_calculator.compute_neighborhood_density(token)
+        row.append(neighborhood_density)
+
         results.append(row)
 
     return results
@@ -345,7 +353,7 @@ def get_unigram_prob(word, unigram_probs):
     Calculcates the unigram probability of a word given a fitted unigram model
 
     word: The test word
-    ungiram_probs: The fitted model
+    unigram_probs: The fitted model
 
     returns: The log probability of the word under the unigram model.
     """
@@ -394,7 +402,7 @@ def get_pos_unigram_score(word, pos_uni_freqs):
     score = 1
 
     for idx, sound in enumerate(word):
-        score += pos_uni_freqs[idx][sound]
+        score += pos_uni_freqs[idx].get(sound, 0)
 
     return score
 
@@ -406,16 +414,79 @@ def get_pos_bigram_score(word, pos_bi_freqs):
     word: The test word
     pos_bi_freqs: The fitted positional bigram model
 
-    returns: The score of the word under the positional unigram model. Following
+    returns: The score of the word under the positional bigram model. Following
     Vitevich & Luce (2004), we add 1 to these scores.
     """
     score = 1
 
     for idx, sound in enumerate(word):
         if idx < len(word) - 1:
-            score += pos_bi_freqs[(idx, idx + 1)][sound, word[idx + 1]]
+            score += pos_bi_freqs[(idx, idx + 1)].get((sound, word[idx + 1]), 0)
 
     return score
+
+##############################
+# Phoneme Neighborhood Class #
+##############################
+
+class PhonemeNeighborhoodDensityCalculator:
+    def __init__(self, phoneme_words):
+        # Assume phoneme_words is a list of phoneme sequences
+        self.phoneme_words = [' '.join(word).upper() for word, _ in phoneme_words]
+        self.phoneme_word_set = set(self.phoneme_words)
+
+        # Extract all phonemes present in the phoneme list
+        self.all_phonemes = set()
+        for word in self.phoneme_words:
+            phonemes_in_word = word.split()
+            self.all_phonemes.update(phonemes_in_word)
+
+    def get_neighbors(self, phoneme_seq):
+        # Convert phoneme sequence to uppercase
+        phoneme_seq_upper = [p.upper() for p in phoneme_seq]
+
+        # Update phoneme set with any new phonemes from input
+        self.all_phonemes.update(phoneme_seq_upper)
+
+        # Generate possible one-edit-away sequences
+        neighbor_sequences = self.generate_one_edit_away_sequences(phoneme_seq_upper, self.all_phonemes)
+
+        # Find valid neighbors in the word set
+        neighbors_upper = neighbor_sequences.intersection(self.phoneme_word_set)
+
+        # Remove the input word if it's in the neighbors
+        input_word_upper = ' '.join(phoneme_seq_upper)
+        neighbors_upper.discard(input_word_upper)
+
+        # Return the list of neighbor words
+        return list(neighbors_upper)
+
+    def compute_neighborhood_density(self, phoneme_seq):
+        neighbors = self.get_neighbors(phoneme_seq)
+        num_neighbors = len(neighbors)
+        return num_neighbors
+
+    @staticmethod
+    def generate_one_edit_away_sequences(seq, phoneme_set):
+        edits = set()
+        seq_length = len(seq)
+        # Substitutions
+        for i in range(seq_length):
+            for phoneme in phoneme_set:
+                if phoneme != seq[i]:
+                    new_seq = seq[:i] + [phoneme] + seq[i+1:]
+                    edits.add(' '.join(new_seq))
+        # Insertions
+        for i in range(seq_length + 1):
+            for phoneme in phoneme_set:
+                new_seq = seq[:i] + [phoneme] + seq[i:]
+                edits.add(' '.join(new_seq))
+        # Deletions
+        if seq_length > 1:
+            for i in range(seq_length):
+                new_seq = seq[:i] + seq[i+1:]
+                edits.add(' '.join(new_seq))
+        return edits
 
 ##################
 # Entry function #
@@ -424,7 +495,8 @@ def get_pos_bigram_score(word, pos_bi_freqs):
 def run(train, test, out):
     """
     Trains all of the n-gram models on the training set, evaluates them on
-    the test set, and writes the evaluation results to a file.
+    the test set, computes neighborhood densities, and writes the evaluation
+    results to a file.
 
     train: The path to the training file.
     test: The path to the test file.
@@ -440,14 +512,16 @@ def run(train, test, out):
     sound_idx = sorted(list(unique_sounds)) + ['#']
 
     fitted_models = fit_ngram_models(train_token_freqs, sound_idx)
-    results = score_corpus(test_token_freqs, fitted_models, sound_idx)
+
+    # Initialize the neighborhood density calculator using the training data
+    neighborhood_calculator = PhonemeNeighborhoodDensityCalculator(train_token_freqs)
+
+    results = score_corpus(test_token_freqs, fitted_models, sound_idx, neighborhood_calculator)
     write_results(results, out)
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(
-        description = "Calculate a suite of unigram/bigram scores for a data set."
+        description = "Calculate a suite of unigram/bigram scores and neighborhood densities for a data set."
     )
     parser.add_argument(
         'train_file', type=str, help='Path to the input corpus file.'
