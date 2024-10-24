@@ -1,9 +1,14 @@
 from django.test import TestCase
 from src import ngram_calculator
-
+from src.ngram_calculator import PhonemeNeighborhoodDensityCalculator
 import numpy as np
+import os
 
-TRAINING_FILE = 'data/unit_test_data/unit_test_training_data.txt'
+# Construct file paths relative to the current file's directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TRAINING_FILE = os.path.join(BASE_DIR, 'data/unit_test_data/unit_test_training_data.txt')
+PHONEME_LIST_FILE = os.path.join(BASE_DIR, 'data/unit_test_data/test_phoneme_list.txt')
+INPUT_FILE = os.path.join(BASE_DIR, 'data/unit_test_data/test_phoneme_sequences.txt')
 
 class FitNGramsTestCase(TestCase):
     """
@@ -19,8 +24,8 @@ class FitNGramsTestCase(TestCase):
 
     def testFitUnigrams(self):
         unigram_freqs = ngram_calculator.fit_unigrams(self.token_freqs)
-        self.assertEqual(unigram_freqs['t'], np.log(7/16))
-        self.assertEqual(unigram_freqs['a'], np.log(9/16))
+        self.assertAlmostEqual(unigram_freqs['t'], np.log(7/16))
+        self.assertAlmostEqual(unigram_freqs['a'], np.log(9/16))
 
     def testFitUnigramsWeighted(self):
         unigram_freqs = ngram_calculator.fit_unigrams(
@@ -70,6 +75,7 @@ class FitNGramsTestCase(TestCase):
                 [6/12, 1/10, 1/8]  # #
             ])
         )
+        self.assertTrue(np.allclose(bigram_probs, expected_probs))
 
     def testFitBigramsWeighted(self):
         bigram_probs = ngram_calculator.fit_bigrams(
@@ -138,14 +144,14 @@ class FitNGramsTestCase(TestCase):
         pos_unigram_freqs = ngram_calculator.fit_positional_unigrams(
             self.token_freqs
         )
-        self.assertEqual(pos_unigram_freqs[0]['t'], 3/5)
-        self.assertEqual(pos_unigram_freqs[0]['a'], 2/5)
-        self.assertEqual(pos_unigram_freqs[1]['t'], 2/5)
-        self.assertEqual(pos_unigram_freqs[1]['a'], 3/5)
-        self.assertEqual(pos_unigram_freqs[2]['t'], 2/4)
-        self.assertEqual(pos_unigram_freqs[2]['a'], 2/4)
-        self.assertEqual(pos_unigram_freqs[3]['t'], 0/2)
-        self.assertEqual(pos_unigram_freqs[3]['a'], 2/2)
+        self.assertAlmostEqual(pos_unigram_freqs[0]['t'], 3/5)
+        self.assertAlmostEqual(pos_unigram_freqs[0]['a'], 2/5)
+        self.assertAlmostEqual(pos_unigram_freqs[1]['t'], 2/5)
+        self.assertAlmostEqual(pos_unigram_freqs[1]['a'], 3/5)
+        self.assertAlmostEqual(pos_unigram_freqs[2]['t'], 2/4)
+        self.assertAlmostEqual(pos_unigram_freqs[2]['a'], 2/4)
+        self.assertAlmostEqual(pos_unigram_freqs[3]['t'], 0/2)
+        self.assertAlmostEqual(pos_unigram_freqs[3]['a'], 2/2)
 
     def testFitPositionalUnigramsWeighted(self):
         pos_unigram_freqs = ngram_calculator.fit_positional_unigrams(
@@ -165,27 +171,27 @@ class FitNGramsTestCase(TestCase):
         total_2 = t_2 + a_2
         total_3 = t_3 + a_3
 
-        self.assertEqual(pos_unigram_freqs[0]['t'], t_0 / total_0)
-        self.assertEqual(pos_unigram_freqs[0]['a'], a_0 / total_0)
-        self.assertEqual(pos_unigram_freqs[1]['t'], t_1 / total_1)
-        self.assertEqual(pos_unigram_freqs[1]['a'], a_1 / total_1)
-        self.assertEqual(pos_unigram_freqs[2]['t'], t_2 / total_2)
-        self.assertEqual(pos_unigram_freqs[2]['a'], a_2 / total_2)
-        self.assertEqual(pos_unigram_freqs[3]['t'], t_3 / total_3)
-        self.assertEqual(pos_unigram_freqs[3]['a'], a_3 / total_3)
+        self.assertAlmostEqual(pos_unigram_freqs[0]['t'], t_0 / total_0)
+        self.assertAlmostEqual(pos_unigram_freqs[0]['a'], a_0 / total_0)
+        self.assertAlmostEqual(pos_unigram_freqs[1]['t'], t_1 / total_1)
+        self.assertAlmostEqual(pos_unigram_freqs[1]['a'], a_1 / total_1)
+        self.assertAlmostEqual(pos_unigram_freqs[2]['t'], t_2 / total_2)
+        self.assertAlmostEqual(pos_unigram_freqs[2]['a'], a_2 / total_2)
+        self.assertAlmostEqual(pos_unigram_freqs[3]['t'], t_3 / total_3)
+        self.assertAlmostEqual(pos_unigram_freqs[3]['a'], a_3 / total_3)
 
     def testFitPositionalUnigramsSmoothed(self):
         pos_unigram_freqs = ngram_calculator.fit_positional_unigrams(
             self.token_freqs, smoothed=True
         )
-        self.assertEqual(pos_unigram_freqs[0]['t'], 4/7)
-        self.assertEqual(pos_unigram_freqs[0]['a'], 3/7)
-        self.assertEqual(pos_unigram_freqs[1]['t'], 3/7)
-        self.assertEqual(pos_unigram_freqs[1]['a'], 4/7)
-        self.assertEqual(pos_unigram_freqs[2]['t'], 3/6)
-        self.assertEqual(pos_unigram_freqs[2]['a'], 3/6)
-        self.assertEqual(pos_unigram_freqs[3]['t'], 1/4)
-        self.assertEqual(pos_unigram_freqs[3]['a'], 3/4)
+        self.assertAlmostEqual(pos_unigram_freqs[0]['t'], 4/7)
+        self.assertAlmostEqual(pos_unigram_freqs[0]['a'], 3/7)
+        self.assertAlmostEqual(pos_unigram_freqs[1]['t'], 3/7)
+        self.assertAlmostEqual(pos_unigram_freqs[1]['a'], 4/7)
+        self.assertAlmostEqual(pos_unigram_freqs[2]['t'], 3/6)
+        self.assertAlmostEqual(pos_unigram_freqs[2]['a'], 3/6)
+        self.assertAlmostEqual(pos_unigram_freqs[3]['t'], 1/4)
+        self.assertAlmostEqual(pos_unigram_freqs[3]['a'], 3/4)
 
     def testFitPositionalUnigramsSmoothedWeighted(self):
         pos_unigram_freqs = ngram_calculator.fit_positional_unigrams(
@@ -205,34 +211,34 @@ class FitNGramsTestCase(TestCase):
         total_2 = t_2 + a_2
         total_3 = t_3 + a_3
 
-        self.assertEqual(pos_unigram_freqs[0]['t'], t_0 / total_0)
-        self.assertEqual(pos_unigram_freqs[0]['a'], a_0 / total_0)
-        self.assertEqual(pos_unigram_freqs[1]['t'], t_1 / total_1)
-        self.assertEqual(pos_unigram_freqs[1]['a'], a_1 / total_1)
-        self.assertEqual(pos_unigram_freqs[2]['t'], t_2 / total_2)
-        self.assertEqual(pos_unigram_freqs[2]['a'], a_2 / total_2)
-        self.assertEqual(pos_unigram_freqs[3]['t'], t_3 / total_3)
-        self.assertEqual(pos_unigram_freqs[3]['a'], a_3 / total_3)
+        self.assertAlmostEqual(pos_unigram_freqs[0]['t'], t_0 / total_0)
+        self.assertAlmostEqual(pos_unigram_freqs[0]['a'], a_0 / total_0)
+        self.assertAlmostEqual(pos_unigram_freqs[1]['t'], t_1 / total_1)
+        self.assertAlmostEqual(pos_unigram_freqs[1]['a'], a_1 / total_1)
+        self.assertAlmostEqual(pos_unigram_freqs[2]['t'], t_2 / total_2)
+        self.assertAlmostEqual(pos_unigram_freqs[2]['a'], a_2 / total_2)
+        self.assertAlmostEqual(pos_unigram_freqs[3]['t'], t_3 / total_3)
+        self.assertAlmostEqual(pos_unigram_freqs[3]['a'], a_3 / total_3)
 
     def testFitPositionalBigrams(self):
         pos_bigram_freqs = ngram_calculator.fit_positional_bigrams(
             self.token_freqs
         )
 
-        self.assertEqual(pos_bigram_freqs[(0, 1)][('t', 'a')], 3/5)
-        self.assertEqual(pos_bigram_freqs[(0, 1)][('a', 't')], 2/5)
-        self.assertEqual(pos_bigram_freqs[(0, 1)][('t', 't')], 0/5)
-        self.assertEqual(pos_bigram_freqs[(0, 1)][('a', 'a')], 0/5)
+        self.assertAlmostEqual(pos_bigram_freqs[(0, 1)][('t', 'a')], 3/5)
+        self.assertAlmostEqual(pos_bigram_freqs[(0, 1)][('a', 't')], 2/5)
+        self.assertAlmostEqual(pos_bigram_freqs[(0, 1)][('t', 't')], 0/5)
+        self.assertAlmostEqual(pos_bigram_freqs[(0, 1)][('a', 'a')], 0/5)
 
-        self.assertEqual(pos_bigram_freqs[(1, 2)][('t', 'a')], 1/4)
-        self.assertEqual(pos_bigram_freqs[(1, 2)][('a', 't')], 1/4)
-        self.assertEqual(pos_bigram_freqs[(1, 2)][('t', 't')], 1/4)
-        self.assertEqual(pos_bigram_freqs[(1, 2)][('a', 'a')], 1/4)
+        self.assertAlmostEqual(pos_bigram_freqs[(1, 2)][('t', 'a')], 1/4)
+        self.assertAlmostEqual(pos_bigram_freqs[(1, 2)][('a', 't')], 1/4)
+        self.assertAlmostEqual(pos_bigram_freqs[(1, 2)][('t', 't')], 1/4)
+        self.assertAlmostEqual(pos_bigram_freqs[(1, 2)][('a', 'a')], 1/4)
 
-        self.assertEqual(pos_bigram_freqs[(2, 3)][('t', 'a')], 2/2)
-        self.assertEqual(pos_bigram_freqs[(2, 3)][('a', 't')], 0/2)
-        self.assertEqual(pos_bigram_freqs[(2, 3)][('t', 't')], 0/2)
-        self.assertEqual(pos_bigram_freqs[(2, 3)][('a', 'a')], 0/2)
+        self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('t', 'a')], 2/2)
+        self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('a', 't')], 0/2)
+        self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('t', 't')], 0/2)
+        self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('a', 'a')], 0/2)
 
     def testFitPositionalBigramsWeighted(self):
         pos_bigram_freqs = ngram_calculator.fit_positional_bigrams(
@@ -258,40 +264,40 @@ class FitNGramsTestCase(TestCase):
         total_12 = ta_12 + at_12 + aa_12 + tt_12
         total_23 = ta_23 + at_23 + aa_23 + tt_23
 
-        self.assertEqual(pos_bigram_freqs[(0, 1)][('t', 'a')], ta_01 / total_01)
-        self.assertEqual(pos_bigram_freqs[(0, 1)][('a', 't')], at_01 / total_01)
-        self.assertEqual(pos_bigram_freqs[(0, 1)][('t', 't')], tt_01 / total_01)
-        self.assertEqual(pos_bigram_freqs[(0, 1)][('a', 'a')], aa_01 / total_01)
+        self.assertAlmostEqual(pos_bigram_freqs[(0, 1)][('t', 'a')], ta_01 / total_01)
+        self.assertAlmostEqual(pos_bigram_freqs[(0, 1)][('a', 't')], at_01 / total_01)
+        self.assertAlmostEqual(pos_bigram_freqs[(0, 1)][('t', 't')], tt_01 / total_01)
+        self.assertAlmostEqual(pos_bigram_freqs[(0, 1)][('a', 'a')], aa_01 / total_01)
 
-        self.assertEqual(pos_bigram_freqs[(1, 2)][('t', 'a')], ta_12 / total_12)
-        self.assertEqual(pos_bigram_freqs[(1, 2)][('a', 't')], at_12 / total_12)
-        self.assertEqual(pos_bigram_freqs[(1, 2)][('t', 't')], tt_12 / total_12)
-        self.assertEqual(pos_bigram_freqs[(1, 2)][('a', 'a')], aa_12 / total_12)
+        self.assertAlmostEqual(pos_bigram_freqs[(1, 2)][('t', 'a')], ta_12 / total_12)
+        self.assertAlmostEqual(pos_bigram_freqs[(1, 2)][('a', 't')], at_12 / total_12)
+        self.assertAlmostEqual(pos_bigram_freqs[(1, 2)][('t', 't')], tt_12 / total_12)
+        self.assertAlmostEqual(pos_bigram_freqs[(1, 2)][('a', 'a')], aa_12 / total_12)
 
-        self.assertEqual(pos_bigram_freqs[(2, 3)][('t', 'a')], ta_23 / total_23)
-        self.assertEqual(pos_bigram_freqs[(2, 3)][('a', 't')], at_23 / total_23)
-        self.assertEqual(pos_bigram_freqs[(2, 3)][('t', 't')], tt_23 / total_23)
-        self.assertEqual(pos_bigram_freqs[(2, 3)][('a', 'a')], aa_23 / total_23)
+        self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('t', 'a')], ta_23 / total_23)
+        self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('a', 't')], at_23 / total_23)
+        self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('t', 't')], tt_23 / total_23)
+        self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('a', 'a')], aa_23 / total_23)
 
     def testFitPositionalBigramsSmoothed(self):
         pos_bigram_freqs = ngram_calculator.fit_positional_bigrams(
             self.token_freqs, smoothed=True
         )
 
-        self.assertEqual(pos_bigram_freqs[(0, 1)][('t', 'a')], 4/9)
-        self.assertEqual(pos_bigram_freqs[(0, 1)][('a', 't')], 3/9)
-        self.assertEqual(pos_bigram_freqs[(0, 1)][('t', 't')], 1/9)
-        self.assertEqual(pos_bigram_freqs[(0, 1)][('a', 'a')], 1/9)
+        self.assertAlmostEqual(pos_bigram_freqs[(0, 1)][('t', 'a')], 4/9)
+        self.assertAlmostEqual(pos_bigram_freqs[(0, 1)][('a', 't')], 3/9)
+        self.assertAlmostEqual(pos_bigram_freqs[(0, 1)][('t', 't')], 1/9)
+        self.assertAlmostEqual(pos_bigram_freqs[(0, 1)][('a', 'a')], 1/9)
 
-        self.assertEqual(pos_bigram_freqs[(1, 2)][('t', 'a')], 2/8)
-        self.assertEqual(pos_bigram_freqs[(1, 2)][('a', 't')], 2/8)
-        self.assertEqual(pos_bigram_freqs[(1, 2)][('t', 't')], 2/8)
-        self.assertEqual(pos_bigram_freqs[(1, 2)][('a', 'a')], 2/8)
+        self.assertAlmostEqual(pos_bigram_freqs[(1, 2)][('t', 'a')], 2/8)
+        self.assertAlmostEqual(pos_bigram_freqs[(1, 2)][('a', 't')], 2/8)
+        self.assertAlmostEqual(pos_bigram_freqs[(1, 2)][('t', 't')], 2/8)
+        self.assertAlmostEqual(pos_bigram_freqs[(1, 2)][('a', 'a')], 2/8)
 
-        self.assertEqual(pos_bigram_freqs[(2, 3)][('t', 'a')], 3/6)
-        self.assertEqual(pos_bigram_freqs[(2, 3)][('a', 't')], 1/6)
-        self.assertEqual(pos_bigram_freqs[(2, 3)][('t', 't')], 1/6)
-        self.assertEqual(pos_bigram_freqs[(2, 3)][('a', 'a')], 1/6)
+        self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('t', 'a')], 3/6)
+        self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('a', 't')], 1/6)
+        self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('t', 't')], 1/6)
+        self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('a', 'a')], 1/6)
 
     def testFitPositionalBigramsSmoothedWeighted(self):
         pos_bigram_freqs = ngram_calculator.fit_positional_bigrams(
@@ -381,7 +387,7 @@ class TestNGramsTestCase(TestCase):
 
         test_word = ['b', 'l', 'a', 'h']
         prob = ngram_calculator.get_bigram_prob(
-            test_word, self.unigram_probs, self.unique_sounds
+            test_word, self.bigram_probs, self.unique_sounds  # Corrected parameter
         )
         self.assertEqual(prob, float('-inf'))
 
@@ -410,3 +416,33 @@ class TestNGramsTestCase(TestCase):
 
         self.assertEqual(score, expected_score)
 
+class TestPhonemeNeighborhoodDensityCalculator(TestCase):
+    def setUp(self):
+        # Initialize the calculator with the test lexicon
+        self.calculator = PhonemeNeighborhoodDensityCalculator(PHONEME_LIST_FILE)
+
+    def test_compute_neighborhood_density(self):
+        # Updated phoneme sequences and their expected neighborhood densities
+        test_cases = {
+            'P IH N': 4,
+            'K AE T': 2,
+            'D AA G': 1,  # Updated from 'D OG' to 'D AA G'
+        }
+
+        for phoneme_seq_str, expected_density in test_cases.items():
+            phoneme_seq = phoneme_seq_str.split()
+            calculated_density = self.calculator.compute_neighborhood_density(phoneme_seq)
+            self.assertEqual(
+                calculated_density, expected_density,
+                f"Failed for input: {phoneme_seq_str}"
+            )
+
+    def test_process_input_file(self):
+        # Use the test input file containing phoneme sequences to process
+        expected_results = {
+            'P IH N': 4,
+            'K AE T': 2,
+            'D AA G': 1,  # Updated from 'D OG' to 'D AA G'
+        }
+        results = self.calculator.process_input_file(INPUT_FILE)
+        self.assertEqual(results, expected_results)
