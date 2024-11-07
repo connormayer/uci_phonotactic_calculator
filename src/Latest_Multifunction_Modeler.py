@@ -165,7 +165,7 @@ def read_lexicon(lexicon_file):
 def main():
     # File paths relative to the script's directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    input_file = os.path.join(script_dir, '..', 'data', 'sample_test_data', 'english_test_data.csv')
+    input_file = os.path.join(script_dir, '..', 'data', 'sample_test_data', 'sample_informational_text.txt')
     lexicon_file = os.path.join(script_dir, '..', 'data', 'english.csv')
     output_file = os.path.join(script_dir, 'output.csv')
 
