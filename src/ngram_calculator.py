@@ -344,7 +344,7 @@ def get_unigram_prob(word, unigram_probs):
     Calculcates the unigram probability of a word given a fitted unigram model
 
     word: The test word
-    ungiram_probs: The fitted model
+    unigram_probs: The fitted model
 
     returns: The log probability of the word under the unigram model.
     """
