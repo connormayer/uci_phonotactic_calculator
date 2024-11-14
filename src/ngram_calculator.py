@@ -87,63 +87,62 @@ def write_results(results, outfile):
 
 def fit_ngram_models(token_freqs, sound_idx):
     """
-    Fits all of the ngram models to the provided data and returns the fitted
+    Fits all of the n-gram models to the provided data and returns the fitted
     models.
 
     token_freqs: A list of tuples of word-frequency pairs.
     sound_idx: The list of unique sounds used to map sound identity to matrix
     dimensions.
 
-    returns: A list of lists of models. These models are in the same order as
-    defined in the HEADER file at the top of this file, and broken into sublists
-    based on their type (unigram/bigram/positional unigram/positional bigram).
+    returns: A tuple of lists of models. These models are in the same order as
+    defined in the HEADER at the top of this file, and broken into sublists
+    based on their type (unigram, bigram, positional unigram, positional bigram).
     """
-    unigram_models = []
-    # Get unigram probabilities
-    unigram_models.append(fit_unigrams(token_freqs))
-    unigram_models.append(fit_unigrams(token_freqs, smoothed=True))
-    unigram_models.append(fit_unigrams(token_freqs, token_weighted=True))
+    # Unigram models
+    unigram_models = []  # List to hold unigram models
+    unigram_models.append(fit_unigrams(token_freqs))  # uni_prob
+    unigram_models.append(fit_unigrams(token_freqs, token_weighted=True))  # uni_prob_freq_weighted
+    unigram_models.append(fit_unigrams(token_freqs, smoothed=True))  # uni_prob_smoothed
     unigram_models.append(
-        fit_unigrams(token_freqs, smoothed=True, token_weighted=True)
+        fit_unigrams(token_freqs, smoothed=True, token_weighted=True)  # uni_prob_freq_weighted_smoothed
     )
 
-    # Get bigram probabilities
-    bigram_models = []
-    bigram_models.append(fit_bigrams(token_freqs, sound_idx))
+    # Bigram models
+    bigram_models = []  # List to hold bigram models
+    bigram_models.append(fit_bigrams(token_freqs, sound_idx))  # bi_prob
     bigram_models.append(
-        fit_bigrams(token_freqs, sound_idx, token_weighted=True)
+        fit_bigrams(token_freqs, sound_idx, token_weighted=True)  # bi_prob_freq_weighted
     )
     bigram_models.append(
-        fit_bigrams(token_freqs, sound_idx, smoothed=True)
-    )
+        fit_bigrams(token_freqs, sound_idx, smoothed=True))  # bi_prob_smoothed
     bigram_models.append(
-        fit_bigrams(token_freqs, sound_idx, smoothed=True, token_weighted=True)
+        fit_bigrams(token_freqs, sound_idx, smoothed=True, token_weighted=True)  # bi_prob_freq_weighted_smoothed
     )
 
-    # Get positional unigram probabilities
-    pos_unigram_models = []
-    pos_unigram_models.append(fit_positional_unigrams(token_freqs))
+    # Positional unigram models
+    pos_unigram_models = []  # List to hold positional unigram models
+    pos_unigram_models.append(fit_positional_unigrams(token_freqs))  # pos_uni_score
     pos_unigram_models.append(
-        fit_positional_unigrams(token_freqs, token_weighted=True)
+        fit_positional_unigrams(token_freqs, token_weighted=True)  # pos_uni_score_freq_weighted
     )
     pos_unigram_models.append(
-        fit_positional_unigrams(token_freqs, smoothed=True)
+        fit_positional_unigrams(token_freqs, smoothed=True)  # pos_uni_score_smoothed
     )
     pos_unigram_models.append(
-        fit_positional_unigrams(token_freqs, smoothed=True, token_weighted=True)
+        fit_positional_unigrams(token_freqs, smoothed=True, token_weighted=True)  # pos_uni_score_freq_weighted_smoothed
     )
 
-    # Get positional bigram probabilities
-    pos_bigram_models = []
-    pos_bigram_models.append(fit_positional_bigrams(token_freqs))
+    # Positional bigram models
+    pos_bigram_models = []  # List to hold positional bigram models
+    pos_bigram_models.append(fit_positional_bigrams(token_freqs))  # pos_bi_score
     pos_bigram_models.append(
-        fit_positional_bigrams(token_freqs, token_weighted=True)
+        fit_positional_bigrams(token_freqs, token_weighted=True)  # pos_bi_score_freq_weighted
     )
     pos_bigram_models.append(
-        fit_positional_bigrams(token_freqs, smoothed=True)
+        fit_positional_bigrams(token_freqs, smoothed=True)  # pos_bi_score_smoothed
     )
     pos_bigram_models.append(
-        fit_positional_bigrams(token_freqs, smoothed=True, token_weighted=True)
+        fit_positional_bigrams(token_freqs, smoothed=True, token_weighted=True)  # pos_bi_score_freq_weighted_smoothed
     )
 
     return unigram_models, bigram_models, pos_unigram_models, pos_bigram_models
@@ -345,7 +344,7 @@ def get_unigram_prob(word, unigram_probs):
     Calculcates the unigram probability of a word given a fitted unigram model
 
     word: The test word
-    ungiram_probs: The fitted model
+    unigram_probs: The fitted model
 
     returns: The log probability of the word under the unigram model.
     """
