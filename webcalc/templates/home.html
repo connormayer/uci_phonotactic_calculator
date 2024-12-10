@@ -14,18 +14,10 @@
             <li>
                 Upload a <i>test file</i>. The trained models will assign scores for each metric to the words in this file. This file may duplicate data in the training file (if you are interested in the scores assigned to existing words) or not (if you are interested in the predictions the various models make about how speakers generalize to new forms).
             </li>
-            <li>
-                Choose which <i>model</i> to use. Currently the calculator supports two suites of models.
-                <ol>
-                    <li>
-                        <b>Unigram/Bigram scores</b>: this computes a suite of metrics that are based on unigram/bigram frequencies (that is, the frequencies of individual sounds and the frequencies of adjacent pairs of sounds). This includes type- and token-weighted variants of the positional unigram/bigram method from Jusczyk et al. (1994) and Vitevitch and Luce (2004), as well as type- and token-weighted variants of standard unigram/bigram probabilities.
-                    </li>
-                    <li>
-                        <b>RNN Model</b>: this computes an acceptability metric based on the recurrent neural network phonotactic model from Mayer and Nelson (2020). Unlike the unigram and bigram models, which compute probabilities based on local dependencies, this model allows long distance restrictions such as vowel or consonant harmony to be effectively modeled.
-                </ol>
-                See the <a href="{% url 'about' %}">About</a> page for a detailed description of how these models differ and how to interpret the scores.
-            </li>
         </ol>
+        <p>
+            The calculator computes a suite of metrics that are based on unigram/bigram frequencies (that is, the frequencies of individual sounds and the frequencies of adjacent pairs of sounds). This includes type- and token-weighted variants of the positional unigram/bigram method from Jusczyk et al. (1994) and Vitevitch and Luce (2004), as well as type- and token-weighted variants of standard unigram/bigram probabilities. See the <a href="{% url 'about' %}">About</a> page for a detailed description of how these models differ and how to interpret the scores.
+        </p>
         <p>
         The UCI Phonotactic Calculator was developed by <a href="http://connormayer.com">Connor Mayer</a> (UCI), Arya Kondur (UCI), and <a href="https://linguistics.ucla.edu/person/megha-sundara/">Megha Sundara</a> (UCLA). Please direct all inquiries to Connor Mayer (<a href="mailto:cjmayer@uci.edu">cjmayer@uci.edu</a>).
         </p>

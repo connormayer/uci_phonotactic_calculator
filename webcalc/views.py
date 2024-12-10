@@ -13,14 +13,13 @@ from os.path import isfile, join, basename
 
 from src import ngram_calculator as calc
 from src import utility as util
-from src.rnn_src import main as rnn
 
 # Create your views here.
 from .models import UploadTrain, DefaultFile, UploadWithDefault
 
 class UploadTrainView(CreateView):
     model = UploadTrain
-    fields = '__all__'#['training_file', 'test_file', 'training_model']
+    fields = ['training_file', 'default_training_file', 'test_file']
     template_name = 'home.html'
     success_url = reverse_lazy('output')
 
@@ -34,9 +33,7 @@ class UploadTrainView(CreateView):
         context = self.get_context_data()
         form.data = form.data.copy()  # make copy of form data
         form.data['default_training_file'] = ''
-        form.data['training_model'] = '' # reset training model dropdown selection in form
         context['form'] = form # set form in context to updated form
-        #messages.warning(self.request, 'Bad file formatting')
         return response
 
     def form_valid(self, form):
@@ -85,11 +82,7 @@ class UploadTrainView(CreateView):
 
         out_file = join(media_path, 'uploads', basename(new_outfile_name))
         
-        model = (self.model.objects.last()).training_model
-        if model == 'simple':
-            calc.run(train_file, test_file, out_file)
-        elif model == 'complex':
-            rnn.run(train_file, test_file, out_file)#print('run rnn')
+        calc.run(train_file, test_file, out_file)
 
         return response
 
@@ -126,7 +119,7 @@ class AboutView(TemplateView):
 
 class UploadDefaultView(CreateView):
     model = UploadWithDefault
-    fields = '__all__'
+    fields = ['training_file', 'default_training_file', 'test_file']
     template_name = 'uploadDefault.html'
     success_url = reverse_lazy('output')
 

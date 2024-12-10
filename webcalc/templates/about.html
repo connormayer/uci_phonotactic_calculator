@@ -36,19 +36,10 @@
         </ol>
 
         <hr>
-        <h3>The metrics</h3>
-
-        <p>
-            The UCI Phonotactic Calculator currently supports two broad classes of models. We refrain here from any discussion of the appropriateness of each model, and discuss only how each score is computed.
-        </p>
-        <p>
-            In the equations below, {% latexify 'w = x_1 \dots x_n' math_inline=True %} refers to a word {% latexify 'w' math_inline=True %} that consists of symbols {% latexify 'x_1' math_inline=True %} through {% latexify 'x_n' math_inline=True %} (where a symbol might be a phoneme, a character, etc.).
-        </p>
 
         <h3>Unigram/bigram scores</h3>
-
         <p>
-            This is a suite of metrics that share the property of being sensitive only to the frequencies of individual sounds or adjacent pairs of sounds. Here is a summary of the columns in the output file produced under this model class.
+            The UCI Phonotactic Calculator currently supports a suite of unigram and bigram metrics that share the property of being sensitive only to the frequencies of individual sounds or adjacent pairs of sounds. Here is a summary of the columns in the output file produced under this model class.
         </p>
 
          <table>
@@ -149,6 +140,10 @@
         </p>
         <p>
             <h4>Unigram probability (<tt>uni_prob</tt>) </h4> 
+
+            <p>
+                In the equations below, {% latexify 'w = x_1 \dots x_n' math_inline=True %} refers to a word {% latexify 'w' math_inline=True %} that consists of symbols {% latexify 'x_1' math_inline=True %} through {% latexify 'x_n' math_inline=True %} (where a symbol might be a phoneme, a character, etc.).
+            </p>
 
             This is the standard unigram probability 
 
@@ -258,21 +253,8 @@
                 In the token-weighted versions of the metrics, smoothing is also done by adding one to the log-weighted counts. 
             </p>
         </ul> 
-        <h3>RNN Model</h3>
-        <p>
-            The RNN model implements the simple recurrent neural network model of phonotactics presented in <a href="https://www.socsci.uci.edu/~cjmayer/papers/cmayer_mnelson_neural_phonotactics_2019.pdf">Mayer and Nelson (2020)</a>. The primary difference between this model and the unigram/bigram models above is that it is not restricted to a fixed context window: while the unigram/bigram measures are restricted to considering individual sounds or contiguous pairs of sounds, the RNN model can (in principle) learn phonotactic constraints that span arbitrarily long distances. We refer the reader to the original paper for details of how these scores are computed.
-        </p>
-        <p>
-            The scores computed by this model are <i>perplexities</i> rather than probabilities. Lower perplexities correspond to higher probabilities.
-        </p>
-        <p>
-            This model is run separately from the unigram/bigram models above because it is more time-consuming to train. The model is run with the default settings described in the paper. Readers who are interested in changing the parameters of this model are encouraged to use the command-line interface available on the project's <a href="https://github.com/MaxAndrewNelson/Phonotactic_LM">Github repository</a>.
-        </p>
         <hr>
         <h4>References</h4>
-        <p>
-            Mayer, C., &amp; Nelson, M. (2020). Phonotactic learning with neural language models. <i>Proceedings of the Society for Computation in Linguistics.</i> Vol. 3. Article 16.
-        </p>
         <p>
             Vitevitch, M.S., &amp Luce, P.A. (2004). A web-based interface to calculate phonotactic probability for words and nonwords in English. <i>Behavior Research Methods, Instruments, &amp; Computers, 36</i>(3), 481-487.      
         </p>
