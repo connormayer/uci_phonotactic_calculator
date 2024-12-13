@@ -38,7 +38,6 @@ class UploadTrainView(CreateView):
 
     def form_valid(self, form):
         response = super(UploadTrainView, self).form_valid(form)
-
         util.clean_media_folder()
         
         media_path = settings.MEDIA_ROOT
@@ -77,9 +76,9 @@ class UploadTrainView(CreateView):
             return self.form_invalid(form)
 
         test_file_name_sub = basename((self.model.objects.last()).test_file.name)[:4]
-        old_outfile_name = (self.model.objects.last()).out_file
-        new_outfile_name = old_outfile_name.replace('.csv', '') + '_' + test_file_name_sub + '.csv'
-
+        upload_timestamp = self.model.objects.last().current_time.timestamp()
+        timestamp_str = str(upload_timestamp).replace('.', '_')
+        new_outfile_name = 'outfile_' + test_file_name_sub + '_' + timestamp_str + '.csv'
         out_file = join(media_path, 'uploads', basename(new_outfile_name))
         
         calc.run(train_file, test_file, out_file)
@@ -92,25 +91,21 @@ class MediaView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        #media_path = join(settings.MEDIA_ROOT, 'default')
-        #files = [f for f in listdir(media_path) if isfile(join(media_path, f))]
-        #context['myfiles'] = files
         context['objects'] = self.model.objects.all()
         return context
 
 class OutputView(TemplateView):
     model = UploadTrain
-    #fields = ['training_file', test]
     template_name = 'output.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         test_file_name_sub = basename((self.model.objects.last()).test_file.name)[:4]
-        old_outfile_name = (self.model.objects.last()).out_file
-        new_outfile_name = old_outfile_name.replace('.csv', '') + '_' + test_file_name_sub + '.csv'
-
-        context['output_file'] = new_outfile_name#(self.model.objects.last()).out_file
+        upload_timestamp = self.model.objects.last().current_time.timestamp()
+        timestamp_str = str(upload_timestamp).replace('.', '_')
+        new_outfile_name = 'outfile_' + test_file_name_sub + '_' + timestamp_str + '.csv'
+        context['output_file'] = new_outfile_name
         return context
 
 class AboutView(TemplateView):
@@ -150,12 +145,10 @@ class UploadDefaultView(CreateView):
             return self.form_invalid(form)
 
         test_file_name_sub = basename((self.model.objects.last()).test_file.name)[:4]
-        old_outfile_name = (self.model.objects.last()).out_file
-        new_outfile_name = old_outfile_name.replace('.csv', '') + '_' + test_file_name_sub + '.csv'
-
+        upload_timestamp = self.model.objects.last().current_time.timestamp()
+        timestamp_str = str(upload_timestamp).replace('.', '_')
+        new_outfile_name = 'outfile_' + test_file_name_sub + '_' + timestamp_str + '.csv'
         out_file = join(media_path, 'uploads', basename(new_outfile_name))
         calc.run(train_file, test_file, out_file)
-
-        # clear media folder here
 
         return response

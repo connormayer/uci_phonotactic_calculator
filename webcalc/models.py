@@ -32,8 +32,7 @@ class UploadTrain(models.Model):
     default_training_file = models.CharField(choices=files_list, max_length=200, blank=True)
     test_file = models.FileField(upload_to='uploads')
     training_model = models.CharField(default='simple', max_length=128)
-    timeStr = datetime.now().strftime('%m_%d_%H%M')
-    out_file = "outfile_" + timeStr + ".csv"
+    current_time = models.DateTimeField(default=datetime.now)
 
     def save(self, *args, **kwargs):
         return super(UploadTrain, self).save(*args, **kwargs)
