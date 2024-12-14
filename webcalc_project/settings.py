@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'latexify',
+    'django_crontab'
 ]
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -127,3 +128,9 @@ USE_TZ = True
 STATIC_URL = '/static/'
 #STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+
+CRONJOBS = [
+    ('*/10 * * * *', 'webcalc.cron.clean_media_folder', '>> ' + os.path.join(BASE_DIR,'logs/clean_media_cron.log' + ' 2>&1 '))
+]
+
+SILENCED_SYSTEM_CHECKS = ['models.W042']

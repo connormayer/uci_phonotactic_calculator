@@ -38,7 +38,6 @@ class UploadTrainView(CreateView):
 
     def form_valid(self, form):
         response = super(UploadTrainView, self).form_valid(form)
-        util.clean_media_folder()
         
         media_path = settings.MEDIA_ROOT
 
