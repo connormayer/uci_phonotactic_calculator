@@ -8,8 +8,8 @@ from webcalc_project import settings
 
 from django.contrib import messages
 
-from os import listdir
-from os.path import isfile, join, basename
+from os import listdir, makedirs
+from os.path import isfile, join, basename, dirname, exists
 
 from src import ngram_calculator as calc
 from src import utility as util
@@ -38,11 +38,12 @@ class UploadTrainView(CreateView):
 
     def form_valid(self, form):
         response = super(UploadTrainView, self).form_valid(form)
+        objects = self.model.objects.last()
         
         media_path = settings.MEDIA_ROOT
 
-        uploaded_training = ((self.model.objects.last()).training_file.name != '')
-        default_training = ((self.model.objects.last()).default_training_file != '')
+        uploaded_training = objects.training_file.name != ''
+        default_training = objects.default_training_file != ''
 
         # This may not be needed
         if uploaded_training and default_training:
@@ -54,12 +55,12 @@ class UploadTrainView(CreateView):
                 messages.warning(self.request, 'Please upload a training file or select a default file')
                 return self.form_invalid(form)
             else:
-                train_file = join(media_path, 'default', basename((self.model.objects.last()).default_training_file))
+                train_file = join(media_path, 'default', basename(objects.default_training_file))
         else:
-            train_file = join(media_path, 'uploads', basename((self.model.objects.last()).training_file.name))
+            train_file = join(media_path, 'uploads', basename(objects.training_file.name))
 
         
-        test_file = join(media_path, 'uploads', basename((self.model.objects.last()).test_file.name))
+        test_file = join(media_path, 'uploads', basename(objects.test_file.name))
 
         # Validate training and test files here
         # If not valid, return form_invalid without calling run
@@ -74,11 +75,16 @@ class UploadTrainView(CreateView):
             messages.warning(self.request, 'Invalid test file format: {}'.format(message))
             return self.form_invalid(form)
 
-        test_file_name_sub = basename((self.model.objects.last()).test_file.name)[:4]
-        upload_timestamp = self.model.objects.last().current_time.timestamp()
-        timestamp_str = str(upload_timestamp).replace('.', '_')
-        new_outfile_name = 'outfile_' + test_file_name_sub + '_' + timestamp_str + '.csv'
-        out_file = join(media_path, 'uploads', basename(new_outfile_name))
+        outfile_name = util.get_filename(
+            basename(objects.test_file.name),
+            objects.current_time.timestamp()
+        )
+        directory = join(media_path, 'uploads', dirname(outfile_name))
+        
+        if not exists(directory):
+            makedirs(directory)
+
+        out_file = join(media_path, 'uploads', outfile_name)
         
         calc.run(train_file, test_file, out_file)
 
@@ -99,12 +105,13 @@ class OutputView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        test_file_name_sub = basename((self.model.objects.last()).test_file.name)[:4]
-        upload_timestamp = self.model.objects.last().current_time.timestamp()
-        timestamp_str = str(upload_timestamp).replace('.', '_')
-        new_outfile_name = 'outfile_' + test_file_name_sub + '_' + timestamp_str + '.csv'
-        context['output_file'] = new_outfile_name
+        objects = self.model.objects.last()
+        file_name = util.get_filename(
+            basename(objects.test_file.name),
+            objects.current_time.timestamp()
+        )
+        context['output_file'] = file_name
+        context['human_readable_output_file'] = basename(file_name)
         return context
 
 class AboutView(TemplateView):
@@ -129,11 +136,12 @@ class UploadDefaultView(CreateView):
 
     def form_valid(self, form):
         response = super(UploadDefaultView, self).form_valid(form)
+        objects = self.model.objects.last()
 
         media_path = settings.MEDIA_ROOT
         
-        train_file = join(media_path, 'default', basename((self.model.objects.last()).training_file))
-        test_file = join(media_path, 'uploads', basename((self.model.objects.last()).test_file.name))
+        train_file = join(media_path, 'default', basename(objects.training_file))
+        test_file = join(media_path, 'uploads', basename(objects.test_file.name))
 
         # Validate test file here
         # If not valid, return form_invalid without calling run
@@ -143,11 +151,18 @@ class UploadDefaultView(CreateView):
         if not util.valid_file(test_file):
             return self.form_invalid(form)
 
-        test_file_name_sub = basename((self.model.objects.last()).test_file.name)[:4]
-        upload_timestamp = self.model.objects.last().current_time.timestamp()
-        timestamp_str = str(upload_timestamp).replace('.', '_')
-        new_outfile_name = 'outfile_' + test_file_name_sub + '_' + timestamp_str + '.csv'
-        out_file = join(media_path, 'uploads', basename(new_outfile_name))
+        outfile_name = util.get_filename(
+            basename(objects.test_file.name),
+            objects.current_time.timestamp()
+        )
+        
+        directory = join(media_path, 'uploads', dirname(outfile_name))
+        
+        if not exists(directory):
+            makedirs(directory)
+
+        out_file = join(media_path, 'uploads', outfile_name)
+        
         calc.run(train_file, test_file, out_file)
 
         return response

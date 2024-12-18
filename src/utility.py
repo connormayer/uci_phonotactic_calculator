@@ -1,4 +1,5 @@
-# src\utility.py
+from os import path
+
 def valid_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         tokens = f.read()
@@ -13,3 +14,10 @@ def valid_file(file_path):
         return (False, 'Phonemes must be separated by spaces.')
 
     return (True, "")
+
+def get_filename(test_file, timestamp):
+    timestamp_str = str(timestamp).replace('.', '_')
+    base_name, ext = path.splitext(test_file)
+    outfile = base_name + "_scores" + ext
+    folder_name = outfile[:4] + '_' + timestamp_str
+    return path.join(folder_name, outfile)
