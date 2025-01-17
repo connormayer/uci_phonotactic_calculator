@@ -16,35 +16,56 @@ HEADER = [
     'uni_prob_smoothed',
     'uni_prob_freq_weighted_smoothed',
 
-    'bi_prob',
-    'bi_prob_freq_weighted',
-    'bi_prob_smoothed',
-    'bi_prob_freq_weighted_smoothed',
+    'bi_cond_pos_wb',
+    'bi_cond_pos_wb_freq_weighted',
+    'bi_cond_pos_wb_smoothed',
+    'bi_cond_pos_wb_freq_weighted_smoothed',
 
-    'bi_prob_no_boundary',
-    'bi_prob_freq_weighted_no_boundary',
-    'bi_prob_smoothed_no_boundary',
-    'bi_prob_freq_weighted_smoothed_no_boundary',
+    'bi_cond_pos_noWB',
+    'bi_cond_pos_noWB_freq_weighted',
+    'bi_cond_pos_noWB_smoothed',
+    'bi_cond_pos_noWB_freq_weighted_smoothed',
 
-    'pos_uni_score',
-    'pos_uni_score_freq_weighted',
-    'pos_uni_score_smoothed',
-    'pos_uni_score_freq_weighted_smoothed',
+    'bi_cond_nonpos_wb',
+    'bi_cond_nonpos_wb_freq_weighted',
+    'bi_cond_nonpos_wb_smoothed',
+    'bi_cond_nonpos_wb_freq_weighted_smoothed',
 
-    'non_pos_uni_score',
-    'non_pos_uni_score_freq_weighted',
-    'non_pos_uni_score_smoothed',
-    'non_pos_uni_score_freq_weighted_smoothed',
+    'bi_cond_nonpos_noWB',
+    'bi_cond_nonpos_noWB_freq_weighted',
+    'bi_cond_nonpos_noWB_smoothed',
+    'bi_cond_nonpos_noWB_freq_weighted_smoothed',
 
-    'pos_bi_score',
-    'pos_bi_score_freq_weighted',
-    'pos_bi_score_smoothed',
-    'pos_bi_score_freq_weighted_smoothed',
+    'uni_joint_pos',
+    'uni_joint_pos_freq_weighted',
+    'uni_joint_pos_smoothed',
+    'uni_joint_pos_freq_weighted_smoothed',
 
-    'non_pos_bi_score',
-    'non_pos_bi_score_freq_weighted',
-    'non_pos_bi_score_smoothed',
-    'non_pos_bi_score_freq_weighted_smoothed'
+    'uni_joint_nonpos',
+    'uni_joint_nonpos_freq_weighted',
+    'uni_joint_nonpos_smoothed',
+    'uni_joint_nonpos_freq_weighted_smoothed',
+
+    'bi_joint_pos_wb',
+    'bi_joint_pos_wb_freq_weighted',
+    'bi_joint_pos_wb_smoothed',
+    'bi_joint_pos_wb_freq_weighted_smoothed',
+
+    'bi_joint_pos_noWB',
+    'bi_joint_pos_noWB_freq_weighted',
+    'bi_joint_pos_noWB_smoothed',
+    'bi_joint_pos_noWB_freq_weighted_smoothed',
+
+    'bi_joint_nonpos_wb',
+    'bi_joint_nonpos_wb_freq_weighted',
+    'bi_joint_nonpos_wb_smoothed',
+    'bi_joint_nonpos_wb_freq_weighted_smoothed',
+
+    'bi_joint_nonpos_noWB',
+    'bi_joint_nonpos_noWB_freq_weighted',
+    'bi_joint_nonpos_noWB_smoothed',
+    'bi_joint_nonpos_noWB_freq_weighted_smoothed',
+
 ]
 
 
@@ -103,75 +124,97 @@ def write_results(results, outfile):
 ###########################
 
 def fit_ngram_models(token_freqs, sound_idx):
-    """
-    Fits all of the ngram models to the provided data and returns the fitted
-    models.
-
-    token_freqs: A list of tuples of word-frequency pairs.
-    sound_idx: The list of unique sounds used to map sound identity to matrix
-    dimensions.
-
-    returns: A tuple of lists of models. These models are in the same order as
-    defined in the HEADER variable.
-    """
     # Get unigram probabilities
-    unigram_models = []
-    unigram_models.append(fit_unigrams(token_freqs))  # uni_prob
-    unigram_models.append(fit_unigrams(token_freqs, token_weighted=True))  # uni_prob_freq_weighted
-    unigram_models.append(fit_unigrams(token_freqs, smoothed=True))  # uni_prob_smoothed
-    unigram_models.append(fit_unigrams(token_freqs, smoothed=True, token_weighted=True))  # uni_prob_freq_weighted_smoothed
+    uni_models = []
+    uni_models.append(fit_unigrams(token_freqs))  # uni_prob
+    uni_models.append(fit_unigrams(token_freqs, token_weighted=True))  # uni_prob_freq_weighted
+    uni_models.append(fit_unigrams(token_freqs, smoothed=True))  # uni_prob_smoothed
+    uni_models.append(fit_unigrams(token_freqs, smoothed=True, token_weighted=True))  # uni_prob_freq_weighted_smoothed
 
-    # Get bigram probabilities with word boundaries
-    bigram_models = []
-    bigram_models.append(fit_bigrams(token_freqs, sound_idx))  # bi_prob
-    bigram_models.append(fit_bigrams(token_freqs, sound_idx, token_weighted=True))  # bi_prob_freq_weighted
-    bigram_models.append(fit_bigrams(token_freqs, sound_idx, smoothed=True))  # bi_prob_smoothed    
-    bigram_models.append(fit_bigrams(token_freqs, sound_idx, smoothed=True, token_weighted=True))  # bi_prob_freq_weighted_smoothed
+    # Get bigram conditional, positional, with word boundaries
+    bi_cond_pos_wb_models = []
+    bi_cond_pos_wb_models.append(fit_positional_bigrams(token_freqs, conditional=True, use_word_boundaries=True))  # bi_cond_pos_wb
+    bi_cond_pos_wb_models.append(fit_positional_bigrams(token_freqs, token_weighted=True, conditional=True, use_word_boundaries=True))  # bi_cond_pos_wb_freq_weighted
+    bi_cond_pos_wb_models.append(fit_positional_bigrams(token_freqs, smoothed=True, conditional=True, use_word_boundaries=True))  # bi_cond_pos_wb_smoothed
+    bi_cond_pos_wb_models.append(fit_positional_bigrams(token_freqs, smoothed=True, token_weighted=True, conditional=True, use_word_boundaries=True))  # bi_cond_pos_wb_freq_weighted_smoothed
+    
+    # Get bigram conditional, positional, without word boundaries
+    bi_cond_pos_noWB_models = []
+    bi_cond_pos_noWB_models.append(fit_positional_bigrams(token_freqs, conditional=True, use_word_boundaries=False))  # bi_cond_pos_noWB
+    bi_cond_pos_noWB_models.append(fit_positional_bigrams(token_freqs, token_weighted=True, conditional=True, use_word_boundaries=False))  # bi_cond_pos_noWB_freq_weighted
+    bi_cond_pos_noWB_models.append(fit_positional_bigrams(token_freqs, smoothed=True, conditional=True, use_word_boundaries=False))  # bi_cond_pos_noWB_smoothed
+    bi_cond_pos_noWB_models.append(fit_positional_bigrams(token_freqs, smoothed=True, token_weighted=True, conditional=True, use_word_boundaries=False))  # bi_cond_pos_noWB_freq_weighted_smoothed
 
-    # Get bigram probabilities without word boundaries
-    bigram_models_no_boundary = []
-    bigram_models_no_boundary.append(fit_bigrams(token_freqs, sound_idx, use_word_boundaries=False))  # bi_prob_no_boundary
-    bigram_models_no_boundary.append(fit_bigrams(token_freqs, sound_idx, token_weighted=True, use_word_boundaries=False))  # bi_prob_freq_weighted_no_boundary
-    bigram_models_no_boundary.append(fit_bigrams(token_freqs, sound_idx, smoothed=True, use_word_boundaries=False))  # bi_prob_smoothed_no_boundary
-    bigram_models_no_boundary.append(fit_bigrams(token_freqs, sound_idx, smoothed=True, token_weighted=True, use_word_boundaries=False))  # bi_prob_freq_weighted_smoothed_no_boundary
+    # Get bigram conditional non-positional models with word boundaries
+    bi_cond_nonpos_wb_models = []
+    bi_cond_nonpos_wb_models.append(fit_bigrams(token_freqs, sound_idx))  # bi_cond_nonpos_wb
+    bi_cond_nonpos_wb_models.append(fit_bigrams(token_freqs, sound_idx, token_weighted=True))  # bi_cond_nonpos_wb_freq_weighted
+    bi_cond_nonpos_wb_models.append(fit_bigrams(token_freqs, sound_idx, smoothed=True))  # bi_cond_nonpos_wb_smoothed
+    bi_cond_nonpos_wb_models.append(fit_bigrams(token_freqs, sound_idx, smoothed=True, token_weighted=True))  # bi_cond_nonpos_wb_freq_weighted_smoothed
 
-    # Get positional unigram probabilities
-    pos_unigram_models = []
-    pos_unigram_models.append(fit_positional_unigrams(token_freqs))  # pos_uni_score
-    pos_unigram_models.append(fit_positional_unigrams(token_freqs, token_weighted=True))  # pos_uni_score_freq_weighted
-    pos_unigram_models.append(fit_positional_unigrams(token_freqs, smoothed=True))  # pos_uni_score_smoothed
-    pos_unigram_models.append(fit_positional_unigrams(token_freqs, smoothed=True, token_weighted=True))  # pos_uni_score_freq_weighted_smoothed
+    # Get bigram conditional non-positional models without word boundaries
+    bi_cond_nonpos_noWB_models = []
+    bi_cond_nonpos_noWB_models.append(fit_bigrams(token_freqs, sound_idx, use_word_boundaries=False))  # bi_cond_nonpos_noWB
+    bi_cond_nonpos_noWB_models.append(fit_bigrams(token_freqs, sound_idx, token_weighted=True, use_word_boundaries=False))  # bi_cond_nonpos_noWB_freq_weighted
+    bi_cond_nonpos_noWB_models.append(fit_bigrams(token_freqs, sound_idx, smoothed=True, use_word_boundaries=False))  # bi_cond_nonpos_noWB_smoothed
+    bi_cond_nonpos_noWB_models.append(fit_bigrams(token_freqs, sound_idx, smoothed=True, token_weighted=True, use_word_boundaries=False))  # bi_cond_nonpos_noWB_freq_weighted_smoothed
+    
+    # Get positional unigram joint probabilities
+    uni_joint_pos_models = []
+    uni_joint_pos_models.append(fit_positional_unigrams(token_freqs))  # uni_joint_pos
+    uni_joint_pos_models.append(fit_positional_unigrams(token_freqs, token_weighted=True))  # uni_joint_pos_freq_weighted
+    uni_joint_pos_models.append(fit_positional_unigrams(token_freqs, smoothed=True))  # uni_joint_pos_smoothed
+    uni_joint_pos_models.append(fit_positional_unigrams(token_freqs, smoothed=True, token_weighted=True))  # uni_joint_pos_freq_weighted_smoothed
 
-    # Get non-positional unigram probabilities
-    non_pos_unigram_models = []
-    non_pos_unigram_models.append(fit_non_positional_unigrams(token_freqs))  # non_pos_uni_score
-    non_pos_unigram_models.append(fit_non_positional_unigrams(token_freqs, token_weighted=True))  # non_pos_uni_score_freq_weighted    
-    non_pos_unigram_models.append(fit_non_positional_unigrams(token_freqs, smoothed=True))  # non_pos_uni_score_smoothed
-    non_pos_unigram_models.append(fit_non_positional_unigrams(token_freqs, smoothed=True, token_weighted=True))  # non_pos_uni_score_freq_weighted_smoothed
+    # Non-Positional Unigram Joint Probabilities
+    uni_joint_nonpos_models = []
+    uni_joint_nonpos_models.append(fit_non_positional_unigrams(token_freqs))  # uni_joint_nonpos
+    uni_joint_nonpos_models.append(fit_non_positional_unigrams(token_freqs, token_weighted=True))  # uni_joint_nonpos_freq_weighted
+    uni_joint_nonpos_models.append(fit_non_positional_unigrams(token_freqs, smoothed=True))  # uni_joint_nonpos_smoothed
+    uni_joint_nonpos_models.append(fit_non_positional_unigrams(token_freqs, smoothed=True, token_weighted=True))  # uni_joint_nonpos_freq_weighted_smoothed
 
-    # Get positional bigram probabilities
-    pos_bigram_models = []
-    pos_bigram_models.append(fit_positional_bigrams(token_freqs))  # pos_bi_score
-    pos_bigram_models.append(fit_positional_bigrams(token_freqs, token_weighted=True))  # pos_bi_score_freq_weighted    
-    pos_bigram_models.append(fit_positional_bigrams(token_freqs, smoothed=True))  # pos_bi_score_smoothed
-    pos_bigram_models.append(fit_positional_bigrams(token_freqs, smoothed=True, token_weighted=True))  # pos_bi_score_freq_weighted_smoothed
+    # Bigram Joint Positional Models with Word Boundaries
+    bi_joint_pos_wb_models = []
+    bi_joint_pos_wb_models.append(fit_positional_bigrams(token_freqs, use_word_boundaries=True))  # bi_joint_pos_wb
+    bi_joint_pos_wb_models.append(fit_positional_bigrams(token_freqs, token_weighted=True, use_word_boundaries=True))  # bi_joint_pos_wb_freq_weighted
+    bi_joint_pos_wb_models.append(fit_positional_bigrams(token_freqs, smoothed=True, use_word_boundaries=True))  # bi_joint_pos_wb_smoothed
+    bi_joint_pos_wb_models.append(fit_positional_bigrams(token_freqs, smoothed=True, token_weighted=True, use_word_boundaries=True))  # bi_joint_pos_wb_freq_weighted_smoothed
 
-    # Get non-positional bigram probabilities
-    non_pos_bigram_models = []
-    non_pos_bigram_models.append(fit_non_positional_bigrams(token_freqs))  # non_pos_bi_score
-    non_pos_bigram_models.append(fit_non_positional_bigrams(token_freqs, token_weighted=True))  # non_pos_bi_score_freq_weighted    
-    non_pos_bigram_models.append(fit_non_positional_bigrams(token_freqs, smoothed=True))  # non_pos_bi_score_smoothed
-    non_pos_bigram_models.append(fit_non_positional_bigrams(token_freqs, smoothed=True, token_weighted=True))  # non_pos_bi_score_freq_weighted_smoothed
+    # Bigram Joint Positional Models without Word Boundaries
+    bi_joint_pos_noWB_models = []
+    bi_joint_pos_noWB_models.append(fit_positional_bigrams(token_freqs, use_word_boundaries=False))  # bi_joint_pos_noWB
+    bi_joint_pos_noWB_models.append(fit_positional_bigrams(token_freqs, token_weighted=True, use_word_boundaries=False))  # bi_joint_pos_noWB_freq_weighted
+    bi_joint_pos_noWB_models.append(fit_positional_bigrams(token_freqs, smoothed=True, use_word_boundaries=False))  # bi_joint_pos_noWB_smoothed
+    bi_joint_pos_noWB_models.append(fit_positional_bigrams(token_freqs, smoothed=True, token_weighted=True, use_word_boundaries=False))  # bi_joint_pos_noWB_freq_weighted_smoothed
+
+    # Bigram Joint Non-Positional Models with Word Boundaries
+    bi_joint_nonpos_wb_models = []
+    bi_joint_nonpos_wb_models.append(fit_non_positional_bigrams(token_freqs, use_word_boundaries=True))  # bi_joint_nonpos_wb
+    bi_joint_nonpos_wb_models.append(fit_non_positional_bigrams(token_freqs, token_weighted=True, use_word_boundaries=True))  # bi_joint_nonpos_wb_freq_weighted
+    bi_joint_nonpos_wb_models.append(fit_non_positional_bigrams(token_freqs, smoothed=True, use_word_boundaries=True))  # bi_joint_nonpos_wb_smoothed
+    bi_joint_nonpos_wb_models.append(fit_non_positional_bigrams(token_freqs, smoothed=True, token_weighted=True, use_word_boundaries=True))  # bi_joint_nonpos_wb_freq_weighted_smoothed
+
+    # Bigram Joint Non-Positional Models without Word Boundaries
+    bi_joint_nonpos_noWB_models = []
+    bi_joint_nonpos_noWB_models.append(fit_non_positional_bigrams(token_freqs, use_word_boundaries=False))  # bi_joint_nonpos_noWB
+    bi_joint_nonpos_noWB_models.append(fit_non_positional_bigrams(token_freqs, token_weighted=True, use_word_boundaries=False))  # bi_joint_nonpos_noWB_freq_weighted
+    bi_joint_nonpos_noWB_models.append(fit_non_positional_bigrams(token_freqs, smoothed=True, use_word_boundaries=False))  # bi_joint_nonpos_noWB_smoothed
+    bi_joint_nonpos_noWB_models.append(fit_non_positional_bigrams(token_freqs, smoothed=True, token_weighted=True, use_word_boundaries=False))  # bi_joint_nonpos_noWB_freq_weighted_smoothed
 
     return (
-        unigram_models,
-        bigram_models,
-        bigram_models_no_boundary,
-        pos_unigram_models,
-        non_pos_unigram_models,
-        pos_bigram_models,
-        non_pos_bigram_models
-    )
+        uni_models,
+        bi_cond_pos_wb_models,
+        bi_cond_pos_noWB_models,
+        bi_cond_nonpos_wb_models,
+        bi_cond_nonpos_noWB_models,
+        uni_joint_pos_models,
+        uni_joint_nonpos_models,
+        bi_joint_pos_wb_models,
+        bi_joint_pos_noWB_models,
+        bi_joint_nonpos_wb_models,
+        bi_joint_nonpos_noWB_models,
+)
+
 
 def fit_unigrams(token_freqs, token_weighted=False, smoothed=False):
     """
@@ -267,35 +310,40 @@ def fit_non_positional_unigrams(token_freqs, token_weighted=False, smoothed=Fals
 
     return unigram_freqs
 
-def fit_positional_bigrams(token_freqs, token_weighted=False, smoothed=False):
+def fit_positional_bigrams(token_freqs, token_weighted=False, smoothed=False, conditional=False, use_word_boundaries=False):
     """
-    Fits positional bigram scores.
+    Fits positional bigram probabilities.
 
-    returns: A dictionary mapping position pairs to dictionaries of bigrams and their scores.
+    returns: A dictionary mapping position pairs to dictionaries of bigrams and their probabilities.
     """
     pos_bigram_freqs = defaultdict(lambda: defaultdict(int))
 
+    # Define unique_sounds before using it
+    unique_sounds = set(
+        [sound for token, _ in token_freqs for sound in token]
+    )
+    if use_word_boundaries:
+        unique_sounds.add(WORD_BOUNDARY)
+
     if smoothed:
-        unique_sounds = set(
-            [sound for token, _ in token_freqs for sound in token]
-        )
-        for i in range(MAX_WORD_LEN - 1):
+        max_len = MAX_WORD_LEN + 2 if use_word_boundaries else MAX_WORD_LEN
+        for i in range(max_len - 1):
             for s1 in unique_sounds:
                 for s2 in unique_sounds:
                     pos_bigram_freqs[(i, i+1)][(s1, s2)] = 1
 
     for token, freq in token_freqs:
-        val = np.log(freq) if token_weighted else 1
-        for idx in range(len(token) - 1):
-            s1 = token[idx]
-            s2 = token[idx + 1]
+        val = freq if token_weighted else 1
+        bigrams = generate_bigrams(token, use_word_boundaries)
+        for idx in range(len(bigrams)):
+            s1, s2 = bigrams[idx]
             pos_bigram_freqs[(idx, idx + 1)][(s1, s2)] += val
 
-    pos_bigram_freqs = normalize_positional_counts(pos_bigram_freqs)
+    pos_bigram_freqs = normalize_positional_counts(pos_bigram_freqs, conditional=conditional)
 
     return pos_bigram_freqs
 
-def fit_non_positional_bigrams(token_freqs, token_weighted=False, smoothed=False):
+def fit_non_positional_bigrams(token_freqs, token_weighted=False, smoothed=False, use_word_boundaries=True):
     """
     Fits non-positional bigram scores.
 
@@ -303,15 +351,18 @@ def fit_non_positional_bigrams(token_freqs, token_weighted=False, smoothed=False
     """
     bigram_freqs = defaultdict(int)
 
+    unique_sounds = set(sound for token, _ in token_freqs for sound in token)
+    if use_word_boundaries:
+        unique_sounds.add(WORD_BOUNDARY)
+
     if smoothed:
-        unique_sounds = set(sound for token, _ in token_freqs for sound in token)
         for s1 in unique_sounds:
             for s2 in unique_sounds:
                 bigram_freqs[(s1, s2)] = 1
 
     for token, freq in token_freqs:
         val = np.log(freq) if token_weighted else 1
-        bigrams = nltk.ngrams(token, 2)
+        bigrams = generate_bigrams(token, use_word_boundaries)
         for bigram in bigrams:
             bigram_freqs[bigram] += val
 
@@ -321,16 +372,36 @@ def fit_non_positional_bigrams(token_freqs, token_weighted=False, smoothed=False
 
     return bigram_freqs
 
-def normalize_positional_counts(counts):
+def normalize_positional_counts(counts, conditional=False):
     """
     Normalizes positional counts by total counts for each position.
     """
-    for idx in counts.keys():
-        total = sum(counts[idx].values())
-        for gram in counts[idx].keys():
-            counts[idx][gram] /= total
-
+    if not conditional:
+        for idx in counts.keys():
+            total = sum(counts[idx].values())
+            if total > 0:
+                # Normalize counts by total count
+                for gram in counts[idx].keys():
+                    counts[idx][gram] /= total
+            else:
+                # Handle the case when total is zero
+                for gram in counts[idx].keys():
+                    counts[idx][gram] = 0  # Set to zero or a default value
+    else:
+        # Iterate over each pair of indices
+        for idx in counts.keys():
+            preceding_sound_dict = defaultdict(int)
+            for gram, count in counts[idx].items():
+                preceding_sound_dict[gram[0]] += count
+            for gram in counts[idx].keys():
+                total = preceding_sound_dict[gram[0]]
+                if total > 0:
+                    counts[idx][gram] /= total
+                else:
+                    # Handle the case when total is zero
+                    counts[idx][gram] = 0  # Set to zero or a default value
     return counts
+
 
 ###########################
 # Code for testing models #
@@ -353,50 +424,80 @@ def score_corpus(token_freqs, fitted_models, sound_idx):
     ngram models.
     """
     (
-        unigram_models,
-        bigram_models,
-        bigram_models_no_boundary,
-        pos_unigram_models,
-        non_pos_unigram_models,
-        pos_bigram_models,
-        non_pos_bigram_models
-    ) = fitted_models
+        uni_models,
+        bi_cond_pos_wb_models,
+        bi_cond_pos_noWB_models,
+        bi_cond_nonpos_wb_models,
+        bi_cond_nonpos_noWB_models,
+        uni_joint_pos_models,
+        uni_joint_nonpos_models,
+        bi_joint_pos_wb_models,
+        bi_joint_pos_noWB_models,
+        bi_joint_nonpos_wb_models,
+        bi_joint_nonpos_noWB_models,
+        ) = fitted_models
 
     results = []
+
 
     for token, _ in token_freqs:
         row = [' '.join(token), len(token)]
 
         # Unigram probabilities
-        for model in unigram_models:
+        for model in uni_models:
             prob = get_unigram_prob(token, model)
-            row.append(prob if not np.isinf(prob) else '')  # Replace -inf with empty string
+            row.append(prob if not np.isinf(prob) else '')
 
-        # Bigram probabilities with word boundaries
-        for model in bigram_models:
+        # Bigram conditional positional with word boundaries
+        for model in bi_cond_pos_wb_models:
+            score = get_pos_bigram_score(token, model, conditional=True, use_word_boundaries=True)
+            row.append(score if not np.isinf(score) else '')
+        
+        # Bigram conditional positional without word boundaries
+        for model in bi_cond_pos_noWB_models:
+            score = get_pos_bigram_score(token, model, conditional=True, use_word_boundaries=False)
+            row.append(score if not np.isinf(score) else '')
+
+        # Bigram conditional non-positional with word boundaries
+        for model in bi_cond_nonpos_wb_models:
             prob = get_bigram_prob(token, model, sound_idx)
             row.append(prob if not np.isinf(prob) else '')
 
-        # Bigram probabilities without word boundaries
-        for model in bigram_models_no_boundary:
+        # Bigram conditional non-positional without word boundaries
+        for model in bi_cond_nonpos_noWB_models:
             prob = get_bigram_prob(token, model, sound_idx, use_word_boundaries=False)
             row.append(prob if not np.isinf(prob) else '')
+        
+        # Positional unigram joint probabilities
+        for model in uni_joint_pos_models:
+            score = get_pos_unigram_score(token, model)
+            row.append(score)
 
-        # Positional unigram scores
-        for model in pos_unigram_models:
-            row.append(get_pos_unigram_score(token, model))
+        # Non-positional unigram joint probabilities
+        for model in uni_joint_nonpos_models:
+            score = get_non_pos_unigram_score(token, model)
+            row.append(score)
 
-        # Non-positional unigram scores
-        for model in non_pos_unigram_models:
-            row.append(get_non_pos_unigram_score(token, model))
+        # Positional bigram joint probabilities with word boundaries
+        for model in bi_joint_pos_wb_models:
+            score = get_pos_bigram_score(token, model, conditional=False, use_word_boundaries=True)
+            row.append(score if not np.isinf(score) else '')
 
-        # Positional bigram scores
-        for model in pos_bigram_models:
-            row.append(get_pos_bigram_score(token, model))
+        # Positional bigram joint probabilities without word boundaries
+        for model in bi_joint_pos_noWB_models:
+            score = get_pos_bigram_score(token, model, conditional=False)
+            row.append(score if not np.isinf(score) else '')
 
-        # Non-positional bigram scores
-        for model in non_pos_bigram_models:
-            row.append(get_non_pos_bigram_score(token, model))
+        # Non-positional bigram joint probabilities with word boundaries
+        for model in bi_joint_nonpos_wb_models:
+            score = get_non_pos_bigram_score(token, model, use_word_boundaries=True)
+            row.append(score)
+
+        # Non-positional bigram joint probabilities without word boundaries
+        for model in bi_joint_nonpos_noWB_models:
+            score = get_non_pos_bigram_score(token, model)
+            row.append(score)
+
 
         results.append(row)
 
@@ -427,9 +528,10 @@ def get_bigram_prob(word, bigram_probs, sound_idx, use_word_boundaries=True):
             idx_s1 = sound_idx.index(s1)
             idx_s2 = sound_idx.index(s2)
             prob += bigram_probs[idx_s2][idx_s1]
-        except:
+        except ValueError:
             prob += float('-inf')
     return prob
+
 
 def get_pos_unigram_score(word, pos_uni_freqs):
     """
@@ -451,26 +553,42 @@ def get_non_pos_unigram_score(word, unigram_freqs):
         score += unigram_freqs.get(sound, 0)
     return score
 
-def get_pos_bigram_score(word, pos_bi_freqs):
+def get_pos_bigram_score(word, pos_bi_freqs, conditional=False, use_word_boundaries=False):
     """
     Calculates the positional bigram score of a word.
 
     returns: The score of the word under the positional bigram model.
     """
-    score = 1
-    for idx in range(len(word) - 1):
-        bigram = (word[idx], word[idx + 1])
-        score += pos_bi_freqs[(idx, idx + 1)].get(bigram, 0)
+
+    if use_word_boundaries:
+        word = [WORD_BOUNDARY] + word + [WORD_BOUNDARY]
+    score = 0  # Start with 0 for log probabilities
+    bigrams = list(nltk.ngrams(word, 2))
+    for idx in range(len(bigrams)):
+        bigram = bigrams[idx]
+        position = (idx, idx + 1)
+        prob = pos_bi_freqs[position].get(bigram, 0)
+        if prob > 0:
+            score += np.log(prob)
+        else:
+            score += float('-inf')
     return score
 
-def get_non_pos_bigram_score(word, bigram_freqs):
+
+def get_non_pos_bigram_score(word, bigram_freqs, use_word_boundaries=False):
     """
     Calculates the non-positional bigram score of a word.
     """
-    score = 1
+    if use_word_boundaries:
+        word = [WORD_BOUNDARY] + word + [WORD_BOUNDARY]
+    score = 0  # Use 0 for log probabilities
     bigrams = nltk.ngrams(word, 2)
     for bigram in bigrams:
-        score += bigram_freqs.get(bigram, 0)
+        prob = bigram_freqs.get(bigram, 0)
+        if prob > 0:
+            score += np.log(prob)
+        else:
+            score += float('-inf')
     return score
 
 ##################
