@@ -1,6 +1,7 @@
-# src\utility.py
+# src/utility.py
 
-from distutils.command.upload import upload
+# Removed the problematic distutils import:
+# from distutils.command.upload import upload
 from tempfile import TemporaryFile
 from webcalc_project import settings
 from os import listdir, unlink
@@ -26,7 +27,7 @@ def valid_file(file_path):
 def clean_media_folder():
     uploads_folder = join(settings.MEDIA_ROOT, 'uploads')
     cur_time = int(time.time())
-    limit = 10*60 # 10 minutes time limit --> 10*60 seconds
+    limit = 10*60 # 10 minutes in seconds
     for filename in listdir(uploads_folder):
         path = join(uploads_folder, filename)
         last_mod_time = getmtime(path)
