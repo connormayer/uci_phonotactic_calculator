@@ -29,6 +29,7 @@ ALLOWED_HOSTS = ['127.0.0.1', 'phonotactics.socsci.uci.edu']
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Application definition
 # additions: added latexify
