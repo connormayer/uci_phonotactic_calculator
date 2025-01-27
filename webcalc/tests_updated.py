@@ -1,3 +1,11 @@
+# FileName: tests_updated.py
+# version 1.0
+# Summary: [Short summary of functions contained within]
+# Tags: [comma delineated tags associated with this file]
+
+#Run command, from parent directory
+#"python manage.py test"
+
 from django.test import TestCase
 from src import ngram_calculator
 

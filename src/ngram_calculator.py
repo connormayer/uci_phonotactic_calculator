@@ -1,3 +1,11 @@
+# FileName: ngram_calculator.py 
+# version 1.0
+# Summary: [Short summary of functions contained within]
+# Tags: [comma delineated tags associated with this file]
+
+#Run command, from parent directory
+#"python src/ngram_calculator.py data/english.csv data/sample_test_data/english_test_data.csv src/output.csv"
+
 import csv
 import nltk
 import numpy as np
