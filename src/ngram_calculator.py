@@ -314,13 +314,10 @@ def _fit_bigram_matrix(
 
     # Fill counts
     for token, freq in token_freqs:
-        if token_weighted:
-            if log_boundaries_weight:
-                val = np.log(freq) if freq > 0 else 0
-            else:
-                val = freq
+        if token_weighted and freq > 0:
+            val = np.log(freq)
         else:
-            val = 1.0
+            val = 1.0 #else 1.0
 
         bigrams = generate_bigrams(token, use_word_boundaries)
         for (prev, nxt) in bigrams:
