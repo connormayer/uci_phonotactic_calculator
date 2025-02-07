@@ -1,3 +1,9 @@
+# FileName: tests.py
+
+# version 1.2
+
+# Summary: runs tests to verify unigram and bigram probabilities for joint/conditional, positional/non-positional, and word boundaries/no word boundaries. 
+
 from django.test import TestCase
 from src import ngram_calculator
 
@@ -18,12 +24,12 @@ class FitNGramsTestCase(TestCase):
         ))) + ['#']
 
     def testFitUnigrams(self):
-        unigram_freqs = ngram_calculator.fit_unigrams(self.token_freqs)
+        unigram_freqs = ngram_calculator.fit_non_positional_unigram_probabilities(self.token_freqs)
         self.assertEqual(unigram_freqs['t'], np.log(7/16))
         self.assertEqual(unigram_freqs['a'], np.log(9/16))
 
     def testFitUnigramsWeighted(self):
-        unigram_freqs = ngram_calculator.fit_unigrams(
+        unigram_freqs = ngram_calculator.fit_non_positional_unigram_probabilities(
             self.token_freqs, token_weighted=True
         )
 
@@ -49,10 +55,10 @@ class FitNGramsTestCase(TestCase):
 
         expected_probs = np.log(
             np.array([
-            #    a_   t_   #_
-                [1/9, 6/7, 2/5], # a 
-                [3/9, 1/7, 3/5], # t
-                [5/9, 0/7, 0/5]  # #
+                #    a_   t_   #_
+                [1/9, 6/7, 2/5],  # a 
+                [3/9, 1/7, 3/5],  # t
+                [5/9, 0/7, 0/5]   # #
             ])
         )
         self.assertTrue(np.allclose(bigram_probs, expected_probs))
@@ -64,12 +70,13 @@ class FitNGramsTestCase(TestCase):
 
         expected_probs = np.log(
             np.array([
-            #    a_   t_   #_
-                [2/12, 7/10, 3/8], # a 
-                [4/12, 2/10, 4/8], # t
-                [6/12, 1/10, 1/8]  # #
+                #    a_   t_   #_
+                [2/12, 7/10, 3/8],  # a 
+                [4/12, 2/10, 4/8],  # t
+                [6/12, 1/10, 1/8]   # #
             ])
         )
+        self.assertTrue(np.allclose(bigram_probs, expected_probs))
 
     def testFitBigramsWeighted(self):
         bigram_probs = ngram_calculator.fit_bigrams(
@@ -94,10 +101,10 @@ class FitNGramsTestCase(TestCase):
 
         expected_probs = np.log(
             np.array([
-            #    a_   t_   #_
-                [a_a/a_c, t_a/t_c, wb_a/wb_c], # a 
-                [a_t/a_c, t_t/t_c, wb_t/wb_c], # t
-                [a_wb/a_c, t_wb/t_c, wb_wb/wb_c]  # #
+                #    a_        t_       #_
+                [a_a/a_c, t_a/t_c, wb_a/wb_c],  # a 
+                [a_t/a_c, t_t/t_c, wb_t/wb_c],  # t
+                [a_wb/a_c, t_wb/t_c, wb_wb/wb_c]   # #
             ])
         )
         self.assertTrue(np.allclose(bigram_probs, expected_probs))
@@ -126,10 +133,10 @@ class FitNGramsTestCase(TestCase):
 
         expected_probs = np.log(
             np.array([
-            #    a_   t_   #_
-                [a_a/a_c, t_a/t_c, wb_a/wb_c], # a 
-                [a_t/a_c, t_t/t_c, wb_t/wb_c], # t
-                [a_wb/a_c, t_wb/t_c, wb_wb/wb_c]  # #
+                #    a_        t_       #_
+                [a_a/a_c, t_a/t_c, wb_a/wb_c],  # a 
+                [a_t/a_c, t_t/t_c, wb_t/wb_c],  # t
+                [a_wb/a_c, t_wb/t_c, wb_wb/wb_c]   # #
             ])
         )
         self.assertTrue(np.allclose(bigram_probs, expected_probs))
@@ -333,13 +340,21 @@ class FitNGramsTestCase(TestCase):
         self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('a', 'a')], aa_23 / total_23)
 
 class TestNGramsTestCase(TestCase):
+    """
+    Tests "get" functions: get_unigram_prob, get_bigram_prob, 
+    get_pos_unigram_score, get_pos_bigram_score, etc.
+    """
     def setUp(self):
+        """
+        We re-use the same training data, but pre-fit the models
+        that we'll query in the following tests.
+        """
         self.token_freqs = ngram_calculator.read_tokens(TRAINING_FILE)
         self.unique_sounds = sorted(list(set(
             [sound for token, _ in self.token_freqs for sound in token]
         ))) + ['#']
 
-        self.unigram_probs = ngram_calculator.fit_unigrams(self.token_freqs)
+        self.unigram_probs = ngram_calculator.fit_non_positional_unigram_probabilities(self.token_freqs)
         self.bigram_probs = ngram_calculator.fit_bigrams(
             self.token_freqs, self.unique_sounds
         )
@@ -370,6 +385,8 @@ class TestNGramsTestCase(TestCase):
         a_idx = self.unique_sounds.index('a')
         hash_idx = self.unique_sounds.index('#')
 
+        # Because get_bigram_prob likely includes boundaries (added via generate_bigrams),
+        # the expected log-prob is the sum of the log-probs for those transitions.
         expected_prob = 0
         expected_prob += self.bigram_probs[t_idx, hash_idx]
         expected_prob += self.bigram_probs[a_idx, t_idx]
@@ -409,4 +426,3 @@ class TestNGramsTestCase(TestCase):
         expected_score += self.pos_bigram_freqs[(2, 3)][('t', 'a')]
 
         self.assertEqual(score, expected_score)
-

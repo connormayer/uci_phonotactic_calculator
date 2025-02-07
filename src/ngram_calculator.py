@@ -1,5 +1,5 @@
 # FileName: ngram_calculator.py 
-# version 1.0
+# version 1.2
 # Summary: [Contains functions to fit and calculate n-gram probabilities (both positional & non-positional)]
 # Tags: [ngram, bigram, phonotactics, csv, log-probabilities]
 
@@ -85,7 +85,7 @@ def generate_bigrams(token, use_word_boundaries=True):
     Returns a list of sound bigrams given a single word token.
 
     token: The list of symbols in the token.
-    use_word_boundaries: Whether to include word boundary markers.
+    use_word_boundaries: Whether to include word boundary markers (default=True).
 
     returns: The list of bigrams of the token.
     """
@@ -103,7 +103,6 @@ def read_tokens(dataset):
     returns: A list of lists, where each sublist corresponds to a token and
     consists of a list of the individual symbols, plus a frequency if provided.
     """
-    import csv
     with open(dataset, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
         token_freqs = []
@@ -132,12 +131,30 @@ def write_results(results, outfile):
 ###########################
 
 def fit_ngram_models(token_freqs, sound_idx):
-    # Get unigram probabilities
+    """
+    Fits a suite of n-gram models (both positional and non-positional)
+    for use in scoring a test corpus. The models include:
+    
+    - Non-positional unigram probabilities (uni_prob) via
+      fit_non_positional_unigram_probabilities().
+    - Positional bigrams (conditional and joint, with and without word boundaries)
+      via fit_positional_bigrams().
+    - Non-positional bigrams (conditional) via fit_bigrams() and joint via
+      fit_non_positional_bigrams().
+    - Positional unigram joint probabilities via fit_positional_unigrams().
+    - Non-positional unigram joint probabilities via fit_non_positional_unigrams().
+    
+    token_freqs: List of [token, frequency] pairs.
+    sound_idx: Sorted list of sounds (including the boundary marker).
+
+    returns: A tuple of fitted models in a fixed order.
+    """
+    # Get non-positional unigram probabilities (for uni_prob columns)
     uni_models = []
-    uni_models.append(fit_unigrams(token_freqs))  # uni_prob
-    uni_models.append(fit_unigrams(token_freqs, token_weighted=True))  # uni_prob_freq_weighted
-    uni_models.append(fit_unigrams(token_freqs, smoothed=True))  # uni_prob_smoothed
-    uni_models.append(fit_unigrams(token_freqs, smoothed=True, token_weighted=True))  # uni_prob_freq_weighted_smoothed
+    uni_models.append(fit_non_positional_unigram_probabilities(token_freqs))  # uni_prob
+    uni_models.append(fit_non_positional_unigram_probabilities(token_freqs, token_weighted=True))  # uni_prob_freq_weighted
+    uni_models.append(fit_non_positional_unigram_probabilities(token_freqs, smoothed=True))  # uni_prob_smoothed
+    uni_models.append(fit_non_positional_unigram_probabilities(token_freqs, smoothed=True, token_weighted=True))  # uni_prob_freq_weighted_smoothed
 
     # Get bigram conditional, positional, with word boundaries
     bi_cond_pos_wb_models = []
@@ -224,13 +241,14 @@ def fit_ngram_models(token_freqs, sound_idx):
     )
 
 
-def fit_unigrams(token_freqs, token_weighted=False, smoothed=False):
+def fit_non_positional_unigram_probabilities(token_freqs, token_weighted=False, smoothed=False):
     """
-    Fits unigram probabilities (returns a dict of {sound: log(prob)}).
+    Fits non-positional unigram probabilities (returns a dict of {sound: log(prob)}).
 
-    For weighting, we add np.log(freq) if freq>0. 
-    For smoothing, we initialize each sound's count with 1 in linear space
-    but effectively store that as an integer offset for the "counts."
+    This function is used for the uni_prob columns.
+    - When token_weighted is True, each occurrence is weighted by np.log(freq)
+      (if freq > 0); otherwise, each occurrence counts as 1.
+    - Smoothing: if smoothed=True, each sound’s count is initialized with 1.
     """
     default_func = lambda: int(smoothed)
     unigram_freqs = defaultdict(default_func)
@@ -259,49 +277,59 @@ def fit_unigrams(token_freqs, token_weighted=False, smoothed=False):
     return unigram_probs
 
 
-def fit_bigrams(token_freqs, sound_idx,
-                token_weighted=False,
-                smoothed=False,
-                use_word_boundaries=True):
+#######################################
+# New helper for both bigram functions
+#######################################
+def _fit_bigram_matrix(
+    token_freqs,
+    sound_list,
+    token_weighted=False,
+    smoothed=False,
+    use_word_boundaries=True,
+    log_boundaries_weight=False,
+):
     """
-    Fits bigram probabilities in a manner consistent with the test suite:
-    bigram_probs[row, col] = log( p(row|col) ), meaning col-based normalization.
+    Builds a bigram probability matrix with column-based normalization.
 
-    If token_weighted:
-      - If use_word_boundaries=True, we add np.log(freq).
-      - If use_word_boundaries=False, we add raw freq.
-    Smoothing => +1 in linear space; then do col-sum-based normalization.
+    - If smoothed=True, initialize counts to 1; else 0.
+    - If token_weighted=True:
+       * If log_boundaries_weight=True, value = log(freq) if freq>0 else 0
+       * Else, value = freq.
+      If token_weighted=False: value = 1 for each bigram occurrence.
+    - use_word_boundaries: whether to include the boundary marker.
+    - After counting, each column is normalized to sum to 1, then we return log-probs.
     """
-    # Possibly remove '#' if use_word_boundaries=False
-    if not use_word_boundaries and WORD_BOUNDARY in sound_idx:
-        local_sounds = [s for s in sound_idx if s != WORD_BOUNDARY]
-    else:
-        local_sounds = sound_idx
+    # Possibly remove '#' if not using boundaries
+    local_sounds = list(sound_list)
+    if not use_word_boundaries and WORD_BOUNDARY in local_sounds:
+        local_sounds.remove(WORD_BOUNDARY)
 
     N = len(local_sounds)
 
+    # Initialize counts
     if smoothed:
         count_matrix = np.ones((N, N), dtype=float)
     else:
         count_matrix = np.zeros((N, N), dtype=float)
 
+    # Fill counts
     for token, freq in token_freqs:
         if token_weighted:
-            if use_word_boundaries:
+            if log_boundaries_weight:
                 val = np.log(freq) if freq > 0 else 0
             else:
                 val = freq
         else:
-            val = 1
+            val = 1.0
 
         bigrams = generate_bigrams(token, use_word_boundaries)
-        for (prev_sound, next_sound) in bigrams:
-            if prev_sound in local_sounds and next_sound in local_sounds:
-                col_index = local_sounds.index(prev_sound)  # "col" => prev
-                row_index = local_sounds.index(next_sound)  # "row" => next
-                count_matrix[row_index, col_index] += val
+        for (prev, nxt) in bigrams:
+            if prev in local_sounds and nxt in local_sounds:
+                col = local_sounds.index(prev)
+                row = local_sounds.index(nxt)
+                count_matrix[row, col] += val
 
-    # Normalize so each column sums to 1
+    # Column-based normalization: each column sums to 1
     col_sums = count_matrix.sum(axis=0, keepdims=True)
     with np.errstate(divide='ignore', invalid='ignore'):
         prob_matrix = np.divide(
@@ -316,11 +344,45 @@ def fit_bigrams(token_freqs, sound_idx,
     return bigram_probs
 
 
+def fit_bigrams(token_freqs, sound_idx,
+                token_weighted=False,
+                smoothed=False,
+                use_word_boundaries=True):
+    """
+    Fits non-positional bigram probabilities in a manner consistent with the test suite.
+    Here, bigram_probs[row, col] = log( p(row|col) ), where normalization is done on each column.
+
+    Parameters:
+      token_freqs: List of [token, frequency] pairs.
+      sound_idx: Sorted list of sounds.
+      token_weighted: If True, counts are weighted by frequency (using np.log(freq)
+                     when use_word_boundaries is True, else raw freq).
+      smoothed: If True, each cell is initialized with 1.
+      use_word_boundaries: Whether to include word boundary markers (default=True).
+
+    returns:
+      A 2D numpy array of log-probabilities.
+    """
+    # We pass log_boundaries_weight=True when use_word_boundaries is True.
+    log_boundaries = use_word_boundaries
+
+    bigram_probs = _fit_bigram_matrix(
+        token_freqs,
+        sound_idx,
+        token_weighted=token_weighted,
+        smoothed=smoothed,
+        use_word_boundaries=use_word_boundaries,
+        log_boundaries_weight=log_boundaries,
+    )
+    return bigram_probs
+
+
 def fit_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
     """
-    Fits positional unigram scores in linear space. 
-    e.g. pos_unigram_freqs[position][sound] = fraction among that position.
-    Weighted => add np.log(freq) if freq>0 (per older tests).
+    Fits positional unigram joint probabilities.
+    For each position, counts the occurrences of sounds (with optional weighting and smoothing)
+    and then normalizes to produce a probability distribution at that position.
+    (Used for uni_joint_pos columns.)
     """
     pos_unigram_freqs = defaultdict(lambda: defaultdict(float))
 
@@ -344,10 +406,10 @@ def fit_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
 
 def fit_non_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
     """
-    Fits non-positional unigram probabilities, returning {sound: log(prob)}.
-
-    Weighted => add raw freq, not logs, per the "non-positional" tests.
-    Smoothing => +1 in linear space for each sound.
+    Fits non-positional unigram joint probabilities, returning {sound: log(prob)}.
+    This function is used for the uni_joint_nonpos columns.
+    - When token_weighted is True, raw frequency is added.
+    - Smoothing: if smoothed=True, each sound’s count is initialized with 1.
     """
     unigram_freqs = defaultdict(float)
 
@@ -358,7 +420,7 @@ def fit_non_positional_unigrams(token_freqs, token_weighted=False, smoothed=Fals
 
     for token, freq in token_freqs:
         if token_weighted:
-            val = freq  # raw freq
+            val = freq  # raw frequency
         else:
             val = 1.0
         for sound in token:
@@ -388,6 +450,9 @@ def fit_positional_bigrams(token_freqs, token_weighted=False, smoothed=False, co
     Smoothing => +1 for each possible bigram in linear space.
     If conditional=True, we normalize by the first element in the bigram 
     at that position. If not, we normalize by total in that position.
+
+    Note: For positional models, tests expect word boundaries NOT to be added.
+    Thus the default for use_word_boundaries is set to False.
     """
     pos_bigram_freqs = defaultdict(lambda: defaultdict(float))
 
@@ -420,15 +485,17 @@ def fit_non_positional_bigrams(
     token_freqs,
     token_weighted=False,
     smoothed=False,
-    use_word_boundaries=False
+    use_word_boundaries=True
 ):
     """
-    Fits non-positional bigram probabilities, returning a 2D array of shape (N,N):
+    Fits non-positional bigram joint probabilities, returning a 2D array of shape (N,N):
         bigram_probs[row, col] = log( p(row | col) ).
-    The tests want column-based normalization (col sums to 1).
-    Weighted => add raw freq if token_weighted, else +1 per occurrence. 
-    Smoothing => +1 in linear space for each cell.
+    This function (used for the bi_joint_nonpos columns) performs column-based normalization.
+    - When token_weighted is True, raw frequency is added.
+    - Smoothing: if smoothed=True, each cell is initialized with 1.
+    - use_word_boundaries: Whether to include the boundary marker (default=True).
     """
+    # Gather the unique sounds, then call our unified bigram function
     unique_sounds = {sound for token, _ in token_freqs for sound in token}
     if use_word_boundaries:
         unique_sounds.add(WORD_BOUNDARY)
@@ -437,34 +504,16 @@ def fit_non_positional_bigrams(
             unique_sounds.remove(WORD_BOUNDARY)
 
     sound_list = sorted(unique_sounds)
-    N = len(sound_list)
 
-    if smoothed:
-        count_matrix = np.ones((N, N), dtype=float)
-    else:
-        count_matrix = np.zeros((N, N), dtype=float)
-
-    for token, freq in token_freqs:
-        val = freq if token_weighted else 1.0
-        bigrams = generate_bigrams(token, use_word_boundaries)
-        for (s1, s2) in bigrams:
-            if s1 in sound_list and s2 in sound_list:
-                col = sound_list.index(s1)  # "prev"
-                row = sound_list.index(s2)  # "next"
-                count_matrix[row, col] += val
-
-    # Column-based normalization => each column sums to 1
-    col_sums = count_matrix.sum(axis=0, keepdims=True)
-    with np.errstate(divide='ignore', invalid='ignore'):
-        prob_matrix = np.divide(
-            count_matrix,
-            col_sums,
-            out=np.zeros_like(count_matrix),
-            where=(col_sums != 0)
-        )
-    with np.errstate(divide='ignore', invalid='ignore'):
-        bigram_probs = np.log(prob_matrix)
-
+    # For the non-positional bigram joint model, we do not use log(freq) weighting even if use_word_boundaries is True.
+    bigram_probs = _fit_bigram_matrix(
+        token_freqs,
+        sound_list,
+        token_weighted=token_weighted,
+        smoothed=smoothed,
+        use_word_boundaries=use_word_boundaries,
+        log_boundaries_weight=False,
+    )
     return bigram_probs
 
 
@@ -508,7 +557,7 @@ def normalize_positional_counts(counts, conditional=False):
 def score_corpus(token_freqs, fitted_models, sound_idx):
     """
     Given a dataset and a list of fitted models, returns the score for each 
-    word under each model. If a log probability is -inf, we replace it with ''.
+    word under each model. If a log probability is -inf, it is replaced with ''.
     """
     (
         uni_models,
@@ -605,7 +654,8 @@ def get_unigram_prob(word, unigram_probs):
 def get_bigram_prob(word, bigram_probs, sound_idx, use_word_boundaries=True):
     """
     Calculates total log probability of a word using a 2D bigram matrix:
-    bigram_probs[row, col] = log( p(row|col) ), col=prev, row=next.
+    bigram_probs[row, col] = log( p(row|col) ), where the bigrams (possibly including boundaries)
+    are generated automatically.
     """
     bigrams = generate_bigrams(word, use_word_boundaries)
     prob = 0.0
@@ -625,6 +675,7 @@ def get_bigram_prob(word, bigram_probs, sound_idx, use_word_boundaries=True):
 def get_pos_unigram_score(word, pos_uni_freqs):
     """
     Positional unigram "score" = start at 1.0, then add the fraction for each position.
+    (Used for positional joint unigram models.)
     """
     score = 1.0
     for idx, sound in enumerate(word):
@@ -649,9 +700,13 @@ def get_non_pos_unigram_score(word, unigram_freqs):
 
 def get_pos_bigram_score(word, pos_bi_freqs, conditional=False, use_word_boundaries=False):
     """
-    Returns a linear sum of the positional bigram probabilities, 
-    starting from 1.0. Tests expect: 
-        score = 1 + sum of pos_bi_freqs[(idx, idx+1)][(s1,s2)]
+    Returns a linear sum of the positional bigram probabilities, starting from 1.0.
+    Tests expect: score = 1 + sum of pos_bi_freqs[(idx, idx+1)][(s1,s2)].
+    
+    Parameters:
+      conditional: If True, the bigram probabilities have been normalized conditionally 
+                   on the preceding symbol; if False, they are joint probabilities.
+      use_word_boundaries: Whether the word should be augmented with boundary markers.
     """
     if use_word_boundaries:
         word = [WORD_BOUNDARY] + word + [WORD_BOUNDARY]
@@ -668,7 +723,8 @@ def get_pos_bigram_score(word, pos_bi_freqs, conditional=False, use_word_boundar
 
 def get_non_pos_bigram_score(word, bigram_freqs, sound_idx, use_word_boundaries=False):
     """
-    Sums log-probs from a 2D matrix, bigram_freqs[row, col] = log( p(row|col) ).
+    Sums log-probs from a 2D matrix, where bigram_freqs[row, col] = log( p(row|col) ).
+    Used for non-positional joint bigram models.
     """
     if use_word_boundaries:
         word = [WORD_BOUNDARY] + word + [WORD_BOUNDARY]
