@@ -1,8 +1,8 @@
 """
-ngram_models.py
---------------------------------------------------------------------------------
-Module for fitting n-gram models and providing an object-oriented model interface.
-Version: 1.2.3
+ngram_models.py - Module for fitting n-gram models and providing an object-oriented model interface.
+This module provides functions for fitting unigram and bigram models, both positional and non-positional,
+and includes a unified model interface.
+Version: 1.2.4
 """
 
 import nltk
@@ -24,22 +24,22 @@ def _fit_bigram_matrix(token_freqs, sound_list, token_weighted=False, smoothed=F
                        use_word_boundaries=True, log_boundaries_weight=False):
     """
     Builds a bigram probability matrix with column-based (conditional) normalization:
-
+    
     Steps:
       1) If smoothed=True, initialize counts to ones; else zeros.
       2) For each token, add log(freq) if token_weighted=True and freq>0, else 1.
          Bigram indices are determined by [row=next sound, col=previous sound].
       3) Column-normalize in linear space to get conditional probabilities.
       4) Take the log of each probability, returning a matrix of log-probs.
-
+    
     Args:
       token_freqs: List of (token, freq) pairs.
-      sound_list: All sounds (potential columns/rows). 
+      sound_list: All sounds (potential columns/rows).   
       token_weighted: If True, increments = log(freq), else increments = 1.
       smoothed: If True, start each count cell at 1 instead of 0.
       use_word_boundaries: Whether to prepend/append # around the token.
       log_boundaries_weight: (Legacy) If True, also apply log to boundary freq.
-
+    
     Returns:
       A 2D numpy array of shape (N, N), where each column sums to 1 in linear space,
       and each cell is the log of that probability.
@@ -76,10 +76,10 @@ def normalize_positional_counts(counts, conditional=False):
     """
     Normalizes positional counts by total counts for each position if not conditional,
     or by the preceding sound if conditional=True, in linear space.
-
+    
     The final dictionary entries become linear probabilities:
       counts[idx][(sound)] or counts[(idx, idx+1)][(sound1, sound2)]
-
+    
     No additional log transform here. The scoring functions 1) read these linear
     probabilities and 2) do '1 + sum_of(probabilities)' if relevant.
     """
@@ -119,7 +119,7 @@ def generate_bigrams(token, use_word_boundaries=True):
 def fit_non_positional_unigram_probabilities(token_freqs, token_weighted=False, smoothed=False):
     """
     Fits non-positional unigram probabilities (returns a dict of {sound: log(prob)}).
-
+    
     Steps:
       1. Gather all unique sounds.
       2. If smoothed=True, initialize each sound's count to 1, else 0.
@@ -152,10 +152,9 @@ def fit_non_positional_unigram_probabilities(token_freqs, token_weighted=False, 
 def fit_non_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
     """
     (Optional older function that may be removed if you only want log-based counts.)
-
+    
     Fits non-positional unigram joint probabilities, returning {sound: log(prob)}.
     Used for a "joint" style. If you do not need raw-frequency weighting, you can remove this.
-    
     """
     unigram_freqs = defaultdict(float)
     if smoothed:
@@ -179,16 +178,15 @@ def fit_non_positional_unigrams(token_freqs, token_weighted=False, smoothed=Fals
 def fit_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
     """
     Fits positional unigram probabilities, storing them in linear space.
-
+    
     Steps:
       1) Possibly initialize every position-sound to 1 if smoothed=True.
       2) For each token, add log(freq) if token_weighted and freq>0, else 1.
       3) Call normalize_positional_counts(...) to convert each position's
          counts into linear probabilities that sum to 1.
       4) Return that nested dictionary (pos -> {sound: prob_in_linear_space}).
-
-    Scoring is typically 1 + sum_of(probabilities) in linear space.
     
+    Scoring is typically 1 + sum_of(probabilities) in linear space.
     """
     pos_unigram_freqs = defaultdict(lambda: defaultdict(float))
     if smoothed:
@@ -206,8 +204,7 @@ def fit_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
 def fit_bigrams(token_freqs, sound_idx, token_weighted=False, smoothed=False, use_word_boundaries=True):
     """
     Fits non-positional bigram conditional probabilities.
-    Returns a 2D numpy array of log probabilities, with column-wise normalization.
-    
+    Returns a 2D numpy array of log probabilities.
     """
     log_boundaries = use_word_boundaries
     return _fit_bigram_matrix(token_freqs, sound_idx, token_weighted, smoothed,
@@ -217,7 +214,7 @@ def fit_positional_bigrams(token_freqs, token_weighted=False, smoothed=False,
                            conditional=False, use_word_boundaries=False):
     """
     Fits positional bigram probabilities in linear space.
-
+    
     Steps:
       1) Possibly initialize every position pair and bigram to 1 if smoothed=True.
       2) For each token, add log(freq) if token_weighted and freq>0, else 1, to the
@@ -226,9 +223,8 @@ def fit_positional_bigrams(token_freqs, token_weighted=False, smoothed=False,
          converts raw counts to linear probabilities that sum to 1 either by row
          or for each preceding sound.
       4) Return that nested dict: pos_bigram_freqs[(i, i+1)][(s1, s2)] = linear_prob.
-
-    The final probabilities remain in linear space. Scoring is 1 + sum_of(probabilities).
     
+    The final probabilities remain in linear space. Scoring is 1 + sum_of(probabilities).
     """
     pos_bigram_freqs = defaultdict(lambda: defaultdict(float))
     unique_sounds = set(sound for token, _ in token_freqs for sound in token)
@@ -270,7 +266,6 @@ class NgramModel:
     """
     Base class for n-gram models.
     This class should not be instantiated directly.
-    
     """
     def __init__(self, position, prob_type, smoothed=False, token_weighted=False):
         self.position = position                # "non_positional" or "positional"
@@ -289,10 +284,10 @@ class UnigramModel(NgramModel):
     """
     Unigram model subclass.
     Implements .fit() and .score() for unigram models.
-    
     """
-    def __init__(self, position, prob_type, smoothed=False, token_weighted=False):
+    def __init__(self, position, prob_type, smoothed=False, token_weighted=False, aggregation="sum"):
         super().__init__(position, prob_type, smoothed, token_weighted)
+        self.aggregation = aggregation
 
     def fit(self, token_freqs, sound_idx):
         if self.position == "non_positional":
@@ -317,18 +312,18 @@ class UnigramModel(NgramModel):
             elif self.prob_type == "joint":
                 return generic_unigram_score(word, self.model_data, mode='joint')
         elif self.position == "positional":
-            return generic_pos_unigram_score(word, self.model_data)
+            return generic_pos_unigram_score(word, self.model_data, aggregation=self.aggregation)
         return None
 
 class BigramModel(NgramModel):
     """
     Bigram model subclass.
     Implements .fit() and .score() for bigram models.
-    
     """
-    def __init__(self, position, prob_type, use_boundaries=False, smoothed=False, token_weighted=False):
+    def __init__(self, position, prob_type, use_boundaries=False, smoothed=False, token_weighted=False, aggregation="sum"):
         super().__init__(position, prob_type, smoothed, token_weighted)
         self.use_boundaries = use_boundaries
+        self.aggregation = aggregation
 
     def fit(self, token_freqs, sound_idx):
         if self.position == "non_positional":
@@ -355,7 +350,6 @@ class BigramModel(NgramModel):
             return generic_bigram_score(word, self.model_data, sound_idx,
                                         use_word_boundaries=self.use_boundaries)
         elif self.position == "positional":
-            return generic_pos_bigram_score(word, self.model_data,
-                                            conditional=(self.prob_type=="conditional"),
-                                            use_word_boundaries=self.use_boundaries)
+            return generic_pos_bigram_score(word, self.model_data, conditional=(self.prob_type=="conditional"),
+                                            use_word_boundaries=self.use_boundaries, aggregation=self.aggregation)
         return None
