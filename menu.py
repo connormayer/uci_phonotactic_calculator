@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """
-menu_ui.py - A curses-based UI for running the ngram calculator or unit tests.
-Provides a clean, colorful interface with plugin-decorated layers, layer and scene managers,
-and a configuration for commands. Navigation uses 'w' (up), 's' (down), space/enter or 1/2/3 to select.
-After running a command, its output is displayed (fitting the screen) before returning to the menu.
-Version: 1.0.1
+menu_ui.py - A curses-based UI for running the ngram calculator or unit tests,
+with separate scenes for command output display and a loading screen.
+Version: 1.3.0
 """
 
 import curses
 import shutil
 import subprocess
+import time
 from abc import ABC, abstractmethod
 
 # --------------------------
@@ -64,7 +63,6 @@ class TitleLayer(Layer):
     def draw(self, win):
         title = "Ngram Calculator UI"
         height, width = win.getmaxyx()
-        # Place the title in the middle-top (e.g., row = height//4)
         y = max(height // 4, 0)
         x = max((width - len(title)) // 2, 0)
         win.attron(curses.color_pair(3) | curses.A_BOLD)
@@ -81,9 +79,7 @@ class MenuLayer(Layer):
     def draw(self, win):
         win.attron(curses.color_pair(4))
         height, width = win.getmaxyx()
-        # Vertically center the menu block
         start_y = height // 2 - len(self.menu_items) // 2
-        # Left-align the menu items at a fixed margin (e.g., x = 5)
         x = 5
         for idx, item in enumerate(self.menu_items):
             if idx == self.current_index:
@@ -93,6 +89,56 @@ class MenuLayer(Layer):
             else:
                 win.addstr(start_y + idx, x, item)
         win.attroff(curses.color_pair(4))
+
+# --------------------------
+# New Layers for Output Scene
+# --------------------------
+class CustomTitleLayer(Layer):
+    @Plugin.layer_decorator
+    def draw(self, win):
+        title = "Command Output"
+        height, width = win.getmaxyx()
+        y = 1  # Fixed row near the top
+        x = max((width - len(title)) // 2, 0)
+        win.attron(curses.color_pair(3) | curses.A_BOLD)
+        win.addstr(y, x, title)
+        win.attroff(curses.color_pair(3) | curses.A_BOLD)
+
+class OutputLayer(Layer):
+    def __init__(self, config, output, margin_x=2, margin_top=3):
+        super().__init__(config)
+        self.output = output
+        self.margin_x = margin_x
+        self.margin_top = margin_top
+
+    @Plugin.layer_decorator
+    def draw(self, win):
+        win.attron(curses.color_pair(4))
+        height, width = win.getmaxyx()
+        lines = self.output.splitlines()
+        max_lines = height - self.margin_top - 1  # Reserve last line for prompt
+        for idx, line in enumerate(lines[:max_lines]):
+            win.addnstr(self.margin_top + idx, self.margin_x, line, width - self.margin_x - 1)
+        win.attroff(curses.color_pair(4))
+
+# --------------------------
+# New Layer for Loading Scene
+# --------------------------
+class LoadingLayer(Layer):
+    def __init__(self, config, loading_scene):
+        super().__init__(config)
+        self.loading_scene = loading_scene
+
+    @Plugin.layer_decorator
+    def draw(self, win):
+        height, width = win.getmaxyx()
+        spinner = self.loading_scene.spinner[self.loading_scene.spinner_index]
+        message = "Loading... Please wait " + spinner
+        x = max((width - len(message)) // 2, 0)
+        y = height // 2
+        win.attron(curses.color_pair(3) | curses.A_BOLD)
+        win.addstr(y, x, message)
+        win.attroff(curses.color_pair(3) | curses.A_BOLD)
 
 # --------------------------
 # Layer Manager
@@ -115,6 +161,7 @@ class Scene(ABC):
     def __init__(self, config):
         self.config = config
         self.layer_manager = LayerManager()
+        self.selected = False
 
     @abstractmethod
     def handle_input(self, key):
@@ -134,7 +181,6 @@ class MenuScene(Scene):
         self.layer_manager.add_layer(TitleLayer(config))
         self.menu_layer = MenuLayer(config, self.menu_items, self.menu_index)
         self.layer_manager.add_layer(self.menu_layer)
-        self.selected = False
         self.selection = None
 
     def handle_input(self, key):
@@ -156,6 +202,48 @@ class MenuScene(Scene):
             self.selection = 2
         self.menu_layer.current_index = self.menu_index
 
+class OutputScene(Scene):
+    def __init__(self, config, output):
+        super().__init__(config)
+        self.output = output
+        self.layer_manager.add_layer(BackgroundLayer(config))
+        self.layer_manager.add_layer(BorderLayer(config))
+        self.layer_manager.add_layer(CustomTitleLayer(config))
+        self.layer_manager.add_layer(OutputLayer(config, output))
+    
+    def handle_input(self, key):
+        if key != -1:
+            self.selected = True
+
+    def render(self, win):
+        self.layer_manager.draw_all(win)
+        height, width = win.getmaxyx()
+        win.attron(curses.color_pair(4))
+        prompt = "Press any key to return to the menu."
+        win.addnstr(height - 1, 0, prompt, width - 1)
+        win.attroff(curses.color_pair(4))
+        win.refresh()
+
+class LoadingScene(Scene):
+    def __init__(self, config, process):
+        super().__init__(config)
+        self.process = process
+        self.spinner = ['|', '/', '-', '\\']
+        self.spinner_index = 0
+        self.last_update = time.time()
+        # Add background and border layers along with our custom LoadingLayer.
+        self.layer_manager.add_layer(BackgroundLayer(config))
+        self.layer_manager.add_layer(BorderLayer(config))
+        self.layer_manager.add_layer(LoadingLayer(config, self))
+    
+    def handle_input(self, key):
+        if self.process.poll() is not None:
+            self.selected = True
+        now = time.time()
+        if now - self.last_update > 0.2:
+            self.spinner_index = (self.spinner_index + 1) % len(self.spinner)
+            self.last_update = now
+
 # --------------------------
 # Scene Manager
 # --------------------------
@@ -167,19 +255,21 @@ class SceneManager:
         term_size = shutil.get_terminal_size()
         curses.resize_term(term_size.lines, term_size.columns)
         win.clear()
-        win.nodelay(False)
         while True:
+            if isinstance(self.current_scene, LoadingScene):
+                win.timeout(100)
+            else:
+                win.timeout(-1)
             self.current_scene.render(win)
             key = win.getch()
             self.current_scene.handle_input(key)
             if self.current_scene.selected:
-                return self.current_scene.selection
+                return getattr(self.current_scene, 'selection', None)
 
 # --------------------------
 # Main Function
 # --------------------------
 def main(stdscr):
-    # Initialize curses settings
     curses.noecho()           # Hide key echo
     curses.cbreak()           # Immediate key responses
     curses.curs_set(0)        # Hide cursor
@@ -187,44 +277,46 @@ def main(stdscr):
     curses.use_default_colors()
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)  # Background
     curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)  # Border
-    curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)    # Title
-    curses.init_pair(4, curses.COLOR_WHITE, curses.COLOR_BLACK)  # Menu
+    curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)    # Title/Loading
+    curses.init_pair(4, curses.COLOR_WHITE, curses.COLOR_BLACK)  # Menu/Output
 
     config = Config()
     while True:
         scene = MenuScene(config)
         scene_manager = SceneManager(scene)
         selection = scene_manager.run(stdscr)
-        output = ""
+        # Quit option
+        if selection == 2:
+            stdscr.clear()
+            stdscr.addstr(0, 0, "Exiting. Press any key.")
+            stdscr.refresh()
+            stdscr.getch()
+            break
+
+        # Determine command based on selection
+        command = config.ngram_command if selection == 0 else config.test_command
         try:
-            if selection == 0:
-                proc = subprocess.run(config.ngram_command, shell=True, capture_output=True, text=True)
-            elif selection == 1:
-                proc = subprocess.run(config.test_command, shell=True, capture_output=True, text=True)
-            elif selection == 2:
-                stdscr.clear()
-                stdscr.addstr(0, 0, "Exiting. Press any key.")
-                stdscr.refresh()
-                stdscr.getch()
-                break
-            output = proc.stdout + "\n" + proc.stderr
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            # Show loading scene until process completes
+            loading_scene = LoadingScene(config, process)
+            scene_manager = SceneManager(loading_scene)
+            scene_manager.run(stdscr)
+            stdout, stderr = process.communicate()
+            output = stdout + "\n" + stderr
+            # For ngram calculator, if no output is captured, try reading the CSV file.
+            if selection == 0 and not output.strip():
+                try:
+                    with open("src/output.csv", "r") as f:
+                        output = f.read()
+                except Exception as e:
+                    output = "No output available. Error reading output file: " + str(e)
         except Exception as e:
             output = "Error executing command:\n" + str(e)
-        # Display the command output in an output screen that fits the window.
-        stdscr.clear()
-        height, width = stdscr.getmaxyx()
-        stdscr.attron(curses.color_pair(4))
-        lines = output.splitlines()
-        # Reserve last 2 lines for prompt.
-        for idx, line in enumerate(lines[:height - 2]):
-            stdscr.addnstr(idx, 0, line, width - 1)
-        stdscr.attroff(curses.color_pair(4))
-        stdscr.addnstr(height - 1, 0, "Press any key to return to the menu.", width - 1)
-        stdscr.refresh()
-        stdscr.getch()
+        # Display the command output using the new OutputScene.
+        output_scene = OutputScene(config, output)
+        scene_manager = SceneManager(output_scene)
+        scene_manager.run(stdscr)
         # Loop back to the menu
 
 if __name__ == "__main__":
-    import shutil
-    import subprocess
     curses.wrapper(main)
