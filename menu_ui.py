@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-menu_ui.py - A curses-based UI for running the ngram calculator or unit tests, with multiple scenes.
+menu_ui.py - A curses-based UI for running the ngram calculator or unit tests.
+This module provides a multi-scene curses UI to select between running the ngram calculator
+or executing the unit tests.
 Version: 1.3.0
 """
 
@@ -23,8 +25,9 @@ class Config:
         self.border_color = curses.COLOR_GREEN
         self.menu_color = curses.COLOR_WHITE
         self.title_color = curses.COLOR_RED
-        self.ngram_command = "python src/ngram_calculator.py data/english.csv data/sample_test_data/english_test_data.csv src/output.csv"
-        self.test_command = "python manage.py test"
+        # Updated commands to run the new system
+        self.ngram_command = "python -m src.ngram_calculator data/english.csv data/sample_test_data/english_test_data.csv src/output.csv"
+        self.test_command = "python tests_updated.py"
         self.menu_items = ["1. Ngram Calculator", "2. Unit Tests", "3. Quit"]
         # Layout constants
         self.menu_x_offset = 5

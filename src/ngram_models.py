@@ -8,6 +8,8 @@ import nltk
 import numpy as np
 from collections import defaultdict
 
+from .score_utils import generic_unigram_score, generic_bigram_score, generic_pos_unigram_score, generic_pos_bigram_score
+
 # Global constants
 WORD_BOUNDARY = '#'
 MAX_WORD_LEN = 100
@@ -204,7 +206,6 @@ def fit_non_positional_bigrams(token_freqs, token_weighted=False, smoothed=False
 # --------------------------
 # Unified Model Interface: Base Class and Subclasses
 # --------------------------
-from score_utils import generic_unigram_score, generic_bigram_score, generic_pos_unigram_score, generic_pos_bigram_score
 
 class NgramModel:
     """

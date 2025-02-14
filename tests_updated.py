@@ -1,22 +1,20 @@
-# FileName: tests_updated.py
+"""
+tests_updated.py - Unit tests for verifying n-gram model fitting and scoring functions.
+Version: 1.2
+"""
 
-# version 1.2
-
-# Summary: runs tests to verify unigram and bigram probabilities for joint/conditional, positional/non-positional, and word boundaries/no word boundaries. 
-
-from django.test import TestCase
+import unittest
 from src import ngram_calculator
-
 import numpy as np
 
 TRAINING_FILE = 'data/unit_test_data/unit_test_training_data.txt'
 
 
-class FitNGramsTestCase(TestCase):
+class FitNGramsTestCase(unittest.TestCase):
     """
     Tests the suite of unigram/bigram fitting functions with smoothing and
-    type weighting. This includes unigram, bigram, positional unigram, 
-    positional bigram, bigrams without boundaries, and non-positional 
+    token weighting. This includes unigram, bigram, positional unigram,
+    positional bigram, bigrams without boundaries, and non-positional
     models (unigram/bigram).
     """
 
@@ -57,7 +55,7 @@ class FitNGramsTestCase(TestCase):
             't': np.log(t_total / total),
             'a': np.log(a_total / total)
         }
-        
+
         self.assertEqual(unigram_freqs, expected_dict)
 
     ###########################################################################
@@ -79,7 +77,7 @@ class FitNGramsTestCase(TestCase):
         expected_probs = np.log(
             np.array([
                 #     a_    t_    #_
-                [1/9,  6/7,  2/5],  # a 
+                [1/9,  6/7,  2/5],  # a
                 [3/9,  1/7,  3/5],  # t
                 [5/9,  0/7,  0/5]   # #
             ])
@@ -98,7 +96,7 @@ class FitNGramsTestCase(TestCase):
         expected_probs = np.log(
             np.array([
                 #     a_    t_    #_
-                [2/12, 7/10, 3/8],  # a 
+                [2/12, 7/10, 3/8],  # a
                 [4/12, 2/10, 4/8],  # t
                 [6/12, 1/10, 1/8]   # #
             ])
@@ -133,7 +131,7 @@ class FitNGramsTestCase(TestCase):
         expected_probs = np.log(
             np.array([
                 #     a_        t_       #_
-                [a_a/a_c,  t_a/t_c,  wb_a/wb_c],  # a 
+                [a_a/a_c,  t_a/t_c,  wb_a/wb_c],  # a
                 [a_t/a_c,  t_t/t_c,  wb_t/wb_c],  # t
                 [a_wb/a_c, t_wb/t_c, wb_wb/wb_c]   # #
             ])
@@ -146,7 +144,7 @@ class FitNGramsTestCase(TestCase):
         (Conditional, non-positional.)
         """
         bigram_probs = ngram_calculator.fit_bigrams(
-            self.token_freqs, self.unique_sounds, 
+            self.token_freqs, self.unique_sounds,
             token_weighted=True, smoothed=True
         )
 
@@ -169,7 +167,7 @@ class FitNGramsTestCase(TestCase):
         expected_probs = np.log(
             np.array([
                 #     a_        t_       #_
-                [a_a/a_c,  t_a/t_c,  wb_a/wb_c],  # a 
+                [a_a/a_c,  t_a/t_c,  wb_a/wb_c],  # a
                 [a_t/a_c,  t_t/t_c,  wb_t/wb_c],  # t
                 [a_wb/a_c, t_wb/t_c, wb_wb/wb_c]   # #
             ])
@@ -406,7 +404,7 @@ class FitNGramsTestCase(TestCase):
         self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('a', 'a')], aa_23 / total_23)
 
 
-class TestNgramModelCombinations(TestCase):
+class TestNgramModelCombinations(unittest.TestCase):
     """
     New tests to ensure every combination is present:
       - Positional bigrams: joint vs. conditional and with vs. without word boundaries.
@@ -426,7 +424,7 @@ class TestNgramModelCombinations(TestCase):
     # --- Positional Bigrams Tests ---
     def testPositionalBigrams_Conditional_NoWB(self):
         """
-        Positional bigrams with conditional normalization (grouped by preceding symbol) 
+        Positional bigrams with conditional normalization (grouped by preceding symbol)
         and NO word boundaries.
         For each position and each preceding symbol, the probabilities should sum to 1.
         """
@@ -538,3 +536,7 @@ class TestNgramModelCombinations(TestCase):
             col_probs = np.exp(bp[:, col])
             total = np.sum(col_probs)
             self.assertAlmostEqual(total, 1.0, places=6)
+
+
+if __name__ == '__main__':
+    unittest.main()
