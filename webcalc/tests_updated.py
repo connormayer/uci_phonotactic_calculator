@@ -3,8 +3,16 @@ tests_updated.py - Unit tests for verifying n-gram model fitting and scoring fun
 Version: 1.2
 """
 
+#run command: python -m webcalc.tests_updated
+
 import unittest
-from src import ngram_calculator
+from src.io_utils import read_tokens
+
+#unigram models
+from src.ngram_models import fit_positional_unigrams, fit_non_positional_unigrams, fit_non_positional_unigram_probabilities
+#bigram models
+from src.ngram_models import fit_bigrams, fit_positional_bigrams, fit_non_positional_bigrams
+
 import numpy as np
 
 TRAINING_FILE = 'data/unit_test_data/unit_test_training_data.txt'
@@ -23,7 +31,7 @@ class FitNGramsTestCase(unittest.TestCase):
         Reads the sample tokens from TRAINING_FILE. Also extracts the unique
         sounds, including '#' as a boundary symbol.
         """
-        self.token_freqs = ngram_calculator.read_tokens(TRAINING_FILE)
+        self.token_freqs = read_tokens(TRAINING_FILE)
         self.unique_sounds = sorted(list(set(
             [sound for token, _ in self.token_freqs for sound in token]
         ))) + ['#']
@@ -35,7 +43,7 @@ class FitNGramsTestCase(unittest.TestCase):
         """
         Test fit_unigrams() with no smoothing and no weighting.
         """
-        unigram_freqs = ngram_calculator.fit_non_positional_unigram_probabilities(self.token_freqs)
+        unigram_freqs = fit_non_positional_unigram_probabilities(self.token_freqs)
         self.assertEqual(unigram_freqs['t'], np.log(7/16))
         self.assertEqual(unigram_freqs['a'], np.log(9/16))
 
@@ -43,7 +51,7 @@ class FitNGramsTestCase(unittest.TestCase):
         """
         Test fit_unigrams() with no smoothing but token weighting.
         """
-        unigram_freqs = ngram_calculator.fit_non_positional_unigram_probabilities(
+        unigram_freqs = fit_non_positional_unigram_probabilities(
             self.token_freqs, token_weighted=True
         )
 
@@ -66,7 +74,7 @@ class FitNGramsTestCase(unittest.TestCase):
         Test fit_bigrams() with word boundaries, no smoothing, no weighting.
         (Conditional, non-positional bigram model.)
         """
-        bigram_probs = ngram_calculator.fit_bigrams(
+        bigram_probs = fit_bigrams(
             self.token_freqs, self.unique_sounds
         )
 
@@ -89,7 +97,7 @@ class FitNGramsTestCase(unittest.TestCase):
         Test fit_bigrams() with word boundaries, with smoothing, no weighting.
         (Conditional, non-positional.)
         """
-        bigram_probs = ngram_calculator.fit_bigrams(
+        bigram_probs = fit_bigrams(
             self.token_freqs, self.unique_sounds, smoothed=True
         )
 
@@ -108,7 +116,7 @@ class FitNGramsTestCase(unittest.TestCase):
         Test fit_bigrams() with word boundaries, token-weighted, no smoothing.
         (Conditional, non-positional.)
         """
-        bigram_probs = ngram_calculator.fit_bigrams(
+        bigram_probs = fit_bigrams(
             self.token_freqs, self.unique_sounds, token_weighted=True
         )
 
@@ -143,7 +151,7 @@ class FitNGramsTestCase(unittest.TestCase):
         Test fit_bigrams() with word boundaries, token-weighted, and smoothing.
         (Conditional, non-positional.)
         """
-        bigram_probs = ngram_calculator.fit_bigrams(
+        bigram_probs = fit_bigrams(
             self.token_freqs, self.unique_sounds,
             token_weighted=True, smoothed=True
         )
@@ -181,7 +189,7 @@ class FitNGramsTestCase(unittest.TestCase):
         """
         Test fit_positional_unigrams() with no smoothing, no weighting.
         """
-        pos_unigram_freqs = ngram_calculator.fit_positional_unigrams(
+        pos_unigram_freqs = fit_positional_unigrams(
             self.token_freqs
         )
         self.assertEqual(pos_unigram_freqs[0]['t'], 3/5)
@@ -197,7 +205,7 @@ class FitNGramsTestCase(unittest.TestCase):
         """
         Test fit_positional_unigrams() with no smoothing, token-weighted.
         """
-        pos_unigram_freqs = ngram_calculator.fit_positional_unigrams(
+        pos_unigram_freqs = fit_positional_unigrams(
             self.token_freqs, token_weighted=True
         )
         t_0 = np.log(10) * 2 + np.log(30)
@@ -227,7 +235,7 @@ class FitNGramsTestCase(unittest.TestCase):
         """
         Test fit_positional_unigrams() with smoothing, no weighting.
         """
-        pos_unigram_freqs = ngram_calculator.fit_positional_unigrams(
+        pos_unigram_freqs = fit_positional_unigrams(
             self.token_freqs, smoothed=True
         )
         self.assertEqual(pos_unigram_freqs[0]['t'], 4/7)
@@ -243,7 +251,7 @@ class FitNGramsTestCase(unittest.TestCase):
         """
         Test fit_positional_unigrams() with smoothing and token weighting.
         """
-        pos_unigram_freqs = ngram_calculator.fit_positional_unigrams(
+        pos_unigram_freqs = fit_positional_unigrams(
             self.token_freqs, token_weighted=True, smoothed=True
         )
         t_0 = np.log(10) * 2 + np.log(30) + 1
@@ -274,7 +282,7 @@ class FitNGramsTestCase(unittest.TestCase):
         Test fit_positional_bigrams() with no smoothing and no weighting.
         (Joint, positional bigram model without word boundaries.)
         """
-        pos_bigram_freqs = ngram_calculator.fit_positional_bigrams(
+        pos_bigram_freqs = fit_positional_bigrams(
             self.token_freqs
         )
 
@@ -298,7 +306,7 @@ class FitNGramsTestCase(unittest.TestCase):
         Test fit_positional_bigrams() with no smoothing, token-weighted.
         (Joint, positional without word boundaries.)
         """
-        pos_bigram_freqs = ngram_calculator.fit_positional_bigrams(
+        pos_bigram_freqs = fit_positional_bigrams(
             self.token_freqs, token_weighted=True
         )
 
@@ -341,7 +349,7 @@ class FitNGramsTestCase(unittest.TestCase):
         Test fit_positional_bigrams() with smoothing, no weighting.
         (Joint, positional without word boundaries.)
         """
-        pos_bigram_freqs = ngram_calculator.fit_positional_bigrams(
+        pos_bigram_freqs = fit_positional_bigrams(
             self.token_freqs, smoothed=True
         )
 
@@ -365,7 +373,7 @@ class FitNGramsTestCase(unittest.TestCase):
         Test fit_positional_bigrams() with smoothing and token weighting.
         (Joint, positional without word boundaries.)
         """
-        pos_bigram_freqs = ngram_calculator.fit_positional_bigrams(
+        pos_bigram_freqs = fit_positional_bigrams(
             self.token_freqs, token_weighted=True, smoothed=True
         )
 
@@ -413,7 +421,7 @@ class TestNgramModelCombinations(unittest.TestCase):
     """
 
     def setUp(self):
-        self.token_freqs = ngram_calculator.read_tokens(TRAINING_FILE)
+        self.token_freqs = read_tokens(TRAINING_FILE)
         # For non-positional bigrams conditional tests (fit_bigrams) we need the complete set including boundary.
         self.unique_sounds = sorted(list(set(
             [sound for token, _ in self.token_freqs for sound in token]
@@ -428,7 +436,7 @@ class TestNgramModelCombinations(unittest.TestCase):
         and NO word boundaries.
         For each position and each preceding symbol, the probabilities should sum to 1.
         """
-        pos_bigrams = ngram_calculator.fit_positional_bigrams(
+        pos_bigrams = fit_positional_bigrams(
             self.token_freqs, conditional=True, use_word_boundaries=False
         )
         for pos in pos_bigrams:
@@ -444,7 +452,7 @@ class TestNgramModelCombinations(unittest.TestCase):
         Positional bigrams with joint (non-conditional) normalization and NO word boundaries.
         For each positional pair, the sum over all bigrams should equal 1.
         """
-        pos_bigrams = ngram_calculator.fit_positional_bigrams(
+        pos_bigrams = fit_positional_bigrams(
             self.token_freqs, conditional=False, use_word_boundaries=False
         )
         for pos in pos_bigrams:
@@ -456,7 +464,7 @@ class TestNgramModelCombinations(unittest.TestCase):
         Positional bigrams with conditional normalization and WITH word boundaries.
         For each position (including boundaries) and each preceding symbol, probabilities should sum to 1.
         """
-        pos_bigrams = ngram_calculator.fit_positional_bigrams(
+        pos_bigrams = fit_positional_bigrams(
             self.token_freqs, conditional=True, use_word_boundaries=True
         )
         for pos in pos_bigrams:
@@ -472,7 +480,7 @@ class TestNgramModelCombinations(unittest.TestCase):
         Positional bigrams with joint (non-conditional) normalization and WITH word boundaries.
         For each positional pair, the sum over all bigrams should equal 1.
         """
-        pos_bigrams = ngram_calculator.fit_positional_bigrams(
+        pos_bigrams = fit_positional_bigrams(
             self.token_freqs, conditional=False, use_word_boundaries=True
         )
         for pos in pos_bigrams:
@@ -487,7 +495,7 @@ class TestNgramModelCombinations(unittest.TestCase):
         For each previous symbol (column), the probabilities (after exponentiating the log)
         should sum to 1.
         """
-        bp = ngram_calculator.fit_bigrams(
+        bp = fit_bigrams(
             self.token_freqs, self.sounds_with_boundary, use_word_boundaries=True
         )
         for col in range(bp.shape[1]):
@@ -501,7 +509,7 @@ class TestNgramModelCombinations(unittest.TestCase):
         with word boundaries.
         For each previous symbol (column), the probabilities should sum to 1.
         """
-        bp = ngram_calculator.fit_non_positional_bigrams(
+        bp = fit_non_positional_bigrams(
             self.token_freqs, use_word_boundaries=True
         )
         for col in range(bp.shape[1]):
@@ -515,7 +523,7 @@ class TestNgramModelCombinations(unittest.TestCase):
         without word boundaries.
         For each previous symbol, the probabilities should sum to 1.
         """
-        bp = ngram_calculator.fit_bigrams(
+        bp = fit_bigrams(
             self.token_freqs, self.unique_sounds, use_word_boundaries=False
         )
         for col in range(bp.shape[1]):
@@ -529,7 +537,7 @@ class TestNgramModelCombinations(unittest.TestCase):
         without word boundaries.
         For each previous symbol, the probabilities should sum to 1.
         """
-        bp = ngram_calculator.fit_non_positional_bigrams(
+        bp = fit_non_positional_bigrams(
             self.token_freqs, use_word_boundaries=False
         )
         for col in range(bp.shape[1]):

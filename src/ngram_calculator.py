@@ -4,6 +4,8 @@ This module loads training and test data, builds n-gram models using configurati
 scores tokens, and writes the results.
 Version: 1.0.2
 """
+#run command: python -m src.ngram_calculator data/english.csv data/sample_test_data/english_test_data.csv src/output.csv
+
 
 import nltk
 import numpy as np

@@ -27,7 +27,7 @@ class Config:
         self.title_color = curses.COLOR_RED
         # Updated commands to run the new system
         self.ngram_command = "python -m src.ngram_calculator data/english.csv data/sample_test_data/english_test_data.csv src/output.csv"
-        self.test_command = "python tests_updated.py"
+        self.test_command = "python webcalc/tests_updated.py"
         self.menu_items = ["1. Ngram Calculator", "2. Unit Tests", "3. Quit"]
         # Layout constants
         self.menu_x_offset = 5
