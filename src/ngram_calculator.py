@@ -1,14 +1,14 @@
 """
 ngram_calculator.py - Orchestration entry point for calculating n-gram scores.
-This file loads data via io_utils, creates models via ngram_models using configuration dictionaries,
+This file loads data via io_utils, creates models using configuration dictionaries and the model classes,
 scores tokens, and writes results.
-Version: 1.0.1
+Version: 1.0.2
 """
 
 import nltk
 import numpy as np
 from io_utils import read_tokens, write_results
-from ngram_models import NgramModel, WORD_BOUNDARY
+from ngram_models import UnigramModel, BigramModel, WORD_BOUNDARY
 
 # Pre-defined header; the order corresponds to the model configuration order below.
 HEADER = [
@@ -138,13 +138,12 @@ def run(train, test, out):
         {"name": "bi_joint_nonpos_noWB_freq_weighted_smoothed", "model": "bigram", "position": "non_positional", "conditional": False, "use_boundaries": False, "smoothed": True, "token_weighted": True},
     ]
     
-    # Create and fit models using the NgramModel factory based on the configuration dictionaries
+    # Create and fit models using the model classes based on the configuration dictionaries
     models = {}
     for config in model_configs:
         if config["model"] == "unigram":
             prob_type = "joint" if config.get("joint", False) else "log"
-            model = NgramModel(
-                model_type="unigram",
+            model = UnigramModel(
                 position=config["position"],
                 prob_type=prob_type,
                 smoothed=config["smoothed"],
@@ -152,8 +151,7 @@ def run(train, test, out):
             ).fit(train_token_freqs, sound_idx)
         elif config["model"] == "bigram":
             prob_type = "conditional" if config.get("conditional", False) else "joint"
-            model = NgramModel(
-                model_type="bigram",
+            model = BigramModel(
                 position=config["position"],
                 prob_type=prob_type,
                 use_boundaries=config["use_boundaries"],

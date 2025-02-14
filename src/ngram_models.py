@@ -1,8 +1,7 @@
 """
-ngram_models.py - Module for fitting n-gram models and providing a unified model interface.
-This module includes functions for both positional and non-positional models.
-Positional models consistently use the normalize_positional_counts() helper for normalization.
-Version: 1.0.1
+ngram_models.py - Module for fitting n-gram models and providing an object-oriented model interface.
+This module defines a base class NgramModel and its subclasses UnigramModel and BigramModel.
+Version: 1.1.0
 """
 
 import nltk
@@ -153,7 +152,6 @@ def fit_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
         val = np.log(freq) if token_weighted and freq > 0 else 1.0
         for idx, sound in enumerate(token):
             pos_unigram_freqs[idx][sound] += val
-    # Normalize all positional counts using the helper
     pos_unigram_freqs = normalize_positional_counts(pos_unigram_freqs)
     return pos_unigram_freqs
 
@@ -186,7 +184,6 @@ def fit_positional_bigrams(token_freqs, token_weighted=False, smoothed=False, co
         token_bigrams = generate_bigrams(token, use_word_boundaries)
         for idx, bigram in enumerate(token_bigrams):
             pos_bigram_freqs[(idx, idx+1)][bigram] += val
-    # Normalize using the helper for positional counts (conditional or joint)
     pos_bigram_freqs = normalize_positional_counts(pos_bigram_freqs, conditional=conditional)
     return pos_bigram_freqs
 
@@ -205,80 +202,85 @@ def fit_non_positional_bigrams(token_freqs, token_weighted=False, smoothed=False
                               use_word_boundaries, log_boundaries_weight=False)
 
 # --------------------------
-# Unified Model Interface & Scoring (imported from score_utils)
+# Unified Model Interface: Base Class and Subclasses
 # --------------------------
-
 from score_utils import generic_unigram_score, generic_bigram_score, generic_pos_unigram_score, generic_pos_bigram_score
 
 class NgramModel:
     """
-    A unified n-gram model that can be configured for unigram or bigram,
-    positional or non-positional, and for joint versus conditional/log-probability scoring.
+    Base class for n-gram models.
+    This class should not be instantiated directly.
+    Version: 1.1.0
     """
-    def __init__(self, model_type, position, prob_type,
-                 use_boundaries=False, smoothed=False, token_weighted=False):
-        self.model_type = model_type            # "unigram" or "bigram"
+    def __init__(self, position, prob_type, smoothed=False, token_weighted=False):
         self.position = position                # "non_positional" or "positional"
         self.prob_type = prob_type              # For unigrams: "log" or "joint"; for bigrams: "conditional" or "joint"
-        self.use_boundaries = use_boundaries
         self.smoothed = smoothed
         self.token_weighted = token_weighted
         self.model_data = None
 
     def fit(self, token_freqs, sound_idx):
-        if self.model_type == "unigram":
-            if self.position == "non_positional":
-                if self.prob_type == "log":
-                    self.model_data = fit_non_positional_unigram_probabilities(token_freqs,
-                                                                               self.token_weighted,
-                                                                               self.smoothed)
-                elif self.prob_type == "joint":
-                    self.model_data = fit_non_positional_unigrams(token_freqs,
-                                                                  self.token_weighted,
-                                                                  self.smoothed)
-            elif self.position == "positional":
-                self.model_data = fit_positional_unigrams(token_freqs,
-                                                          self.token_weighted,
-                                                          self.smoothed)
-        elif self.model_type == "bigram":
-            if self.position == "non_positional":
-                if self.prob_type == "conditional":
-                    self.model_data = fit_bigrams(token_freqs, sound_idx,
-                                                  self.token_weighted,
-                                                  self.smoothed,
-                                                  self.use_boundaries)
-                elif self.prob_type == "joint":
-                    self.model_data = fit_non_positional_bigrams(token_freqs,
-                                                                 self.token_weighted,
-                                                                 self.smoothed,
-                                                                 self.use_boundaries)
-            elif self.position == "positional":
-                self.model_data = fit_positional_bigrams(token_freqs,
-                                                         self.token_weighted,
-                                                         self.smoothed,
-                                                         conditional=(self.prob_type=="conditional"),
-                                                         use_word_boundaries=self.use_boundaries)
+        raise NotImplementedError("Subclasses must implement fit method.")
+
+    def score(self, word, sound_idx):
+        raise NotImplementedError("Subclasses must implement score method.")
+
+class UnigramModel(NgramModel):
+    """
+    Unigram model subclass.
+    Implements .fit() and .score() for unigram models.
+    Version: 1.1.0
+    """
+    def __init__(self, position, prob_type, smoothed=False, token_weighted=False):
+        super().__init__(position, prob_type, smoothed, token_weighted)
+
+    def fit(self, token_freqs, sound_idx):
+        if self.position == "non_positional":
+            if self.prob_type == "log":
+                self.model_data = fit_non_positional_unigram_probabilities(token_freqs, self.token_weighted, self.smoothed)
+            elif self.prob_type == "joint":
+                self.model_data = fit_non_positional_unigrams(token_freqs, self.token_weighted, self.smoothed)
+        elif self.position == "positional":
+            self.model_data = fit_positional_unigrams(token_freqs, self.token_weighted, self.smoothed)
         return self
 
     def score(self, word, sound_idx):
-        """
-        Scores a given word using the fitted model data.
-        Dispatches to generic scoring functions based on model configuration.
-        """
-        if self.model_type == "unigram":
-            if self.position == "non_positional":
-                if self.prob_type == "log":
-                    return generic_unigram_score(word, self.model_data, mode='log')
-                elif self.prob_type == "joint":
-                    return generic_unigram_score(word, self.model_data, mode='joint')
-            elif self.position == "positional":
-                return generic_pos_unigram_score(word, self.model_data)
-        elif self.model_type == "bigram":
-            if self.position == "non_positional":
-                return generic_bigram_score(word, self.model_data, sound_idx,
+        if self.position == "non_positional":
+            if self.prob_type == "log":
+                return generic_unigram_score(word, self.model_data, mode='log')
+            elif self.prob_type == "joint":
+                return generic_unigram_score(word, self.model_data, mode='joint')
+        elif self.position == "positional":
+            return generic_pos_unigram_score(word, self.model_data)
+        return None
+
+class BigramModel(NgramModel):
+    """
+    Bigram model subclass.
+    Implements .fit() and .score() for bigram models.
+    Version: 1.1.0
+    """
+    def __init__(self, position, prob_type, use_boundaries=False, smoothed=False, token_weighted=False):
+        super().__init__(position, prob_type, smoothed, token_weighted)
+        self.use_boundaries = use_boundaries
+
+    def fit(self, token_freqs, sound_idx):
+        if self.position == "non_positional":
+            if self.prob_type == "conditional":
+                self.model_data = fit_bigrams(token_freqs, sound_idx, self.token_weighted, self.smoothed, self.use_boundaries)
+            elif self.prob_type == "joint":
+                self.model_data = fit_non_positional_bigrams(token_freqs, self.token_weighted, self.smoothed, self.use_boundaries)
+        elif self.position == "positional":
+            self.model_data = fit_positional_bigrams(token_freqs, self.token_weighted, self.smoothed,
+                                                     conditional=(self.prob_type=="conditional"),
+                                                     use_word_boundaries=self.use_boundaries)
+        return self
+
+    def score(self, word, sound_idx):
+        if self.position == "non_positional":
+            return generic_bigram_score(word, self.model_data, sound_idx, use_word_boundaries=self.use_boundaries)
+        elif self.position == "positional":
+            return generic_pos_bigram_score(word, self.model_data,
+                                            conditional=(self.prob_type=="conditional"),
                                             use_word_boundaries=self.use_boundaries)
-            elif self.position == "positional":
-                return generic_pos_bigram_score(word, self.model_data,
-                                                conditional=(self.prob_type=="conditional"),
-                                                use_word_boundaries=self.use_boundaries)
         return None
