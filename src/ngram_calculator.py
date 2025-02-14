@@ -170,7 +170,7 @@ def run(train, test, out):
         results.append(row)
 
     # Write the results using the I/O module
-    write_results([HEADER] + results, out)
+    write_results(results, out)
 
 if __name__ == "__main__":
     import argparse
