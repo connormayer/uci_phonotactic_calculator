@@ -1,8 +1,8 @@
 """
 ngram_calculator.py - Orchestration entry point for calculating n-gram scores.
-This file loads data using io_utils, creates models via ngram_models,
+This file loads data via io_utils, creates models via ngram_models using configuration dictionaries,
 scores tokens, and writes results.
-Version: 1.0.0
+Version: 1.0.1
 """
 
 import nltk
@@ -65,93 +65,104 @@ def run(train, test, out):
     train_token_freqs = read_tokens(train)
     test_token_freqs = read_tokens(test)
     
-    # Extract unique sounds and build the sound index (include boundary marker)
+    # Build the sound index from training data (include boundary marker)
     unique_sounds = set(sound for token, _ in train_token_freqs for sound in token)
     sound_idx = sorted(list(unique_sounds)) + [WORD_BOUNDARY]
 
-    # Define model configurations (order must match the header columns, starting after word and word_len)
+    # Define model configurations using dictionaries
     model_configs = [
         # Unigram non-positional (log probability)
-        {"name": "uni_prob", "model_type": "unigram", "position": "non_positional", "prob_type": "log", "smoothed": False, "token_weighted": False},
-        {"name": "uni_prob_freq_weighted", "model_type": "unigram", "position": "non_positional", "prob_type": "log", "smoothed": False, "token_weighted": True},
-        {"name": "uni_prob_smoothed", "model_type": "unigram", "position": "non_positional", "prob_type": "log", "smoothed": True, "token_weighted": False},
-        {"name": "uni_prob_freq_weighted_smoothed", "model_type": "unigram", "position": "non_positional", "prob_type": "log", "smoothed": True, "token_weighted": True},
+        {"name": "uni_prob", "model": "unigram", "position": "non_positional", "joint": False, "smoothed": False, "token_weighted": False},
+        {"name": "uni_prob_freq_weighted", "model": "unigram", "position": "non_positional", "joint": False, "smoothed": False, "token_weighted": True},
+        {"name": "uni_prob_smoothed", "model": "unigram", "position": "non_positional", "joint": False, "smoothed": True, "token_weighted": False},
+        {"name": "uni_prob_freq_weighted_smoothed", "model": "unigram", "position": "non_positional", "joint": False, "smoothed": True, "token_weighted": True},
         
         # Unigram non-positional (joint)
-        {"name": "uni_joint_nonpos", "model_type": "unigram", "position": "non_positional", "prob_type": "joint", "smoothed": False, "token_weighted": False},
-        {"name": "uni_joint_nonpos_freq_weighted", "model_type": "unigram", "position": "non_positional", "prob_type": "joint", "smoothed": False, "token_weighted": True},
-        {"name": "uni_joint_nonpos_smoothed", "model_type": "unigram", "position": "non_positional", "prob_type": "joint", "smoothed": True, "token_weighted": False},
-        {"name": "uni_joint_nonpos_freq_weighted_smoothed", "model_type": "unigram", "position": "non_positional", "prob_type": "joint", "smoothed": True, "token_weighted": True},
+        {"name": "uni_joint_nonpos", "model": "unigram", "position": "non_positional", "joint": True, "smoothed": False, "token_weighted": False},
+        {"name": "uni_joint_nonpos_freq_weighted", "model": "unigram", "position": "non_positional", "joint": True, "smoothed": False, "token_weighted": True},
+        {"name": "uni_joint_nonpos_smoothed", "model": "unigram", "position": "non_positional", "joint": True, "smoothed": True, "token_weighted": False},
+        {"name": "uni_joint_nonpos_freq_weighted_smoothed", "model": "unigram", "position": "non_positional", "joint": True, "smoothed": True, "token_weighted": True},
         
         # Unigram positional (joint)
-        {"name": "uni_joint_pos", "model_type": "unigram", "position": "positional", "prob_type": "joint", "smoothed": False, "token_weighted": False},
-        {"name": "uni_joint_pos_freq_weighted", "model_type": "unigram", "position": "positional", "prob_type": "joint", "smoothed": False, "token_weighted": True},
-        {"name": "uni_joint_pos_smoothed", "model_type": "unigram", "position": "positional", "prob_type": "joint", "smoothed": True, "token_weighted": False},
-        {"name": "uni_joint_pos_freq_weighted_smoothed", "model_type": "unigram", "position": "positional", "prob_type": "joint", "smoothed": True, "token_weighted": True},
+        {"name": "uni_joint_pos", "model": "unigram", "position": "positional", "joint": True, "smoothed": False, "token_weighted": False},
+        {"name": "uni_joint_pos_freq_weighted", "model": "unigram", "position": "positional", "joint": True, "smoothed": False, "token_weighted": True},
+        {"name": "uni_joint_pos_smoothed", "model": "unigram", "position": "positional", "joint": True, "smoothed": True, "token_weighted": False},
+        {"name": "uni_joint_pos_freq_weighted_smoothed", "model": "unigram", "position": "positional", "joint": True, "smoothed": True, "token_weighted": True},
         
         # Bigram conditional, positional with word boundaries
-        {"name": "bi_cond_pos_wb", "model_type": "bigram", "position": "positional", "prob_type": "conditional", "use_boundaries": True, "smoothed": False, "token_weighted": False},
-        {"name": "bi_cond_pos_wb_freq_weighted", "model_type": "bigram", "position": "positional", "prob_type": "conditional", "use_boundaries": True, "smoothed": False, "token_weighted": True},
-        {"name": "bi_cond_pos_wb_smoothed", "model_type": "bigram", "position": "positional", "prob_type": "conditional", "use_boundaries": True, "smoothed": True, "token_weighted": False},
-        {"name": "bi_cond_pos_wb_freq_weighted_smoothed", "model_type": "bigram", "position": "positional", "prob_type": "conditional", "use_boundaries": True, "smoothed": True, "token_weighted": True},
+        {"name": "bi_cond_pos_wb", "model": "bigram", "position": "positional", "conditional": True, "use_boundaries": True, "smoothed": False, "token_weighted": False},
+        {"name": "bi_cond_pos_wb_freq_weighted", "model": "bigram", "position": "positional", "conditional": True, "use_boundaries": True, "smoothed": False, "token_weighted": True},
+        {"name": "bi_cond_pos_wb_smoothed", "model": "bigram", "position": "positional", "conditional": True, "use_boundaries": True, "smoothed": True, "token_weighted": False},
+        {"name": "bi_cond_pos_wb_freq_weighted_smoothed", "model": "bigram", "position": "positional", "conditional": True, "use_boundaries": True, "smoothed": True, "token_weighted": True},
         
         # Bigram conditional, positional without word boundaries
-        {"name": "bi_cond_pos_noWB", "model_type": "bigram", "position": "positional", "prob_type": "conditional", "use_boundaries": False, "smoothed": False, "token_weighted": False},
-        {"name": "bi_cond_pos_noWB_freq_weighted", "model_type": "bigram", "position": "positional", "prob_type": "conditional", "use_boundaries": False, "smoothed": False, "token_weighted": True},
-        {"name": "bi_cond_pos_noWB_smoothed", "model_type": "bigram", "position": "positional", "prob_type": "conditional", "use_boundaries": False, "smoothed": True, "token_weighted": False},
-        {"name": "bi_cond_pos_noWB_freq_weighted_smoothed", "model_type": "bigram", "position": "positional", "prob_type": "conditional", "use_boundaries": False, "smoothed": True, "token_weighted": True},
+        {"name": "bi_cond_pos_noWB", "model": "bigram", "position": "positional", "conditional": True, "use_boundaries": False, "smoothed": False, "token_weighted": False},
+        {"name": "bi_cond_pos_noWB_freq_weighted", "model": "bigram", "position": "positional", "conditional": True, "use_boundaries": False, "smoothed": False, "token_weighted": True},
+        {"name": "bi_cond_pos_noWB_smoothed", "model": "bigram", "position": "positional", "conditional": True, "use_boundaries": False, "smoothed": True, "token_weighted": False},
+        {"name": "bi_cond_pos_noWB_freq_weighted_smoothed", "model": "bigram", "position": "positional", "conditional": True, "use_boundaries": False, "smoothed": True, "token_weighted": True},
         
         # Bigram conditional, non-positional with word boundaries
-        {"name": "bi_cond_nonpos_wb", "model_type": "bigram", "position": "non_positional", "prob_type": "conditional", "use_boundaries": True, "smoothed": False, "token_weighted": False},
-        {"name": "bi_cond_nonpos_wb_freq_weighted", "model_type": "bigram", "position": "non_positional", "prob_type": "conditional", "use_boundaries": True, "smoothed": False, "token_weighted": True},
-        {"name": "bi_cond_nonpos_wb_smoothed", "model_type": "bigram", "position": "non_positional", "prob_type": "conditional", "use_boundaries": True, "smoothed": True, "token_weighted": False},
-        {"name": "bi_cond_nonpos_wb_freq_weighted_smoothed", "model_type": "bigram", "position": "non_positional", "prob_type": "conditional", "use_boundaries": True, "smoothed": True, "token_weighted": True},
+        {"name": "bi_cond_nonpos_wb", "model": "bigram", "position": "non_positional", "conditional": True, "use_boundaries": True, "smoothed": False, "token_weighted": False},
+        {"name": "bi_cond_nonpos_wb_freq_weighted", "model": "bigram", "position": "non_positional", "conditional": True, "use_boundaries": True, "smoothed": False, "token_weighted": True},
+        {"name": "bi_cond_nonpos_wb_smoothed", "model": "bigram", "position": "non_positional", "conditional": True, "use_boundaries": True, "smoothed": True, "token_weighted": False},
+        {"name": "bi_cond_nonpos_wb_freq_weighted_smoothed", "model": "bigram", "position": "non_positional", "conditional": True, "use_boundaries": True, "smoothed": True, "token_weighted": True},
         
         # Bigram conditional, non-positional without word boundaries
-        {"name": "bi_cond_nonpos_noWB", "model_type": "bigram", "position": "non_positional", "prob_type": "conditional", "use_boundaries": False, "smoothed": False, "token_weighted": False},
-        {"name": "bi_cond_nonpos_noWB_freq_weighted", "model_type": "bigram", "position": "non_positional", "prob_type": "conditional", "use_boundaries": False, "smoothed": False, "token_weighted": True},
-        {"name": "bi_cond_nonpos_noWB_smoothed", "model_type": "bigram", "position": "non_positional", "prob_type": "conditional", "use_boundaries": False, "smoothed": True, "token_weighted": False},
-        {"name": "bi_cond_nonpos_noWB_freq_weighted_smoothed", "model_type": "bigram", "position": "non_positional", "prob_type": "conditional", "use_boundaries": False, "smoothed": True, "token_weighted": True},
+        {"name": "bi_cond_nonpos_noWB", "model": "bigram", "position": "non_positional", "conditional": True, "use_boundaries": False, "smoothed": False, "token_weighted": False},
+        {"name": "bi_cond_nonpos_noWB_freq_weighted", "model": "bigram", "position": "non_positional", "conditional": True, "use_boundaries": False, "smoothed": False, "token_weighted": True},
+        {"name": "bi_cond_nonpos_noWB_smoothed", "model": "bigram", "position": "non_positional", "conditional": True, "use_boundaries": False, "smoothed": True, "token_weighted": False},
+        {"name": "bi_cond_nonpos_noWB_freq_weighted_smoothed", "model": "bigram", "position": "non_positional", "conditional": True, "use_boundaries": False, "smoothed": True, "token_weighted": True},
         
         # Bigram joint, positional with word boundaries
-        {"name": "bi_joint_pos_wb", "model_type": "bigram", "position": "positional", "prob_type": "joint", "use_boundaries": True, "smoothed": False, "token_weighted": False},
-        {"name": "bi_joint_pos_wb_freq_weighted", "model_type": "bigram", "position": "positional", "prob_type": "joint", "use_boundaries": True, "smoothed": False, "token_weighted": True},
-        {"name": "bi_joint_pos_wb_smoothed", "model_type": "bigram", "position": "positional", "prob_type": "joint", "use_boundaries": True, "smoothed": True, "token_weighted": False},
-        {"name": "bi_joint_pos_wb_freq_weighted_smoothed", "model_type": "bigram", "position": "positional", "prob_type": "joint", "use_boundaries": True, "smoothed": True, "token_weighted": True},
+        {"name": "bi_joint_pos_wb", "model": "bigram", "position": "positional", "conditional": False, "use_boundaries": True, "smoothed": False, "token_weighted": False},
+        {"name": "bi_joint_pos_wb_freq_weighted", "model": "bigram", "position": "positional", "conditional": False, "use_boundaries": True, "smoothed": False, "token_weighted": True},
+        {"name": "bi_joint_pos_wb_smoothed", "model": "bigram", "position": "positional", "conditional": False, "use_boundaries": True, "smoothed": True, "token_weighted": False},
+        {"name": "bi_joint_pos_wb_freq_weighted_smoothed", "model": "bigram", "position": "positional", "conditional": False, "use_boundaries": True, "smoothed": True, "token_weighted": True},
         
         # Bigram joint, positional without word boundaries
-        {"name": "bi_joint_pos_noWB", "model_type": "bigram", "position": "positional", "prob_type": "joint", "use_boundaries": False, "smoothed": False, "token_weighted": False},
-        {"name": "bi_joint_pos_noWB_freq_weighted", "model_type": "bigram", "position": "positional", "prob_type": "joint", "use_boundaries": False, "smoothed": False, "token_weighted": True},
-        {"name": "bi_joint_pos_noWB_smoothed", "model_type": "bigram", "position": "positional", "prob_type": "joint", "use_boundaries": False, "smoothed": True, "token_weighted": False},
-        {"name": "bi_joint_pos_noWB_freq_weighted_smoothed", "model_type": "bigram", "position": "positional", "prob_type": "joint", "use_boundaries": False, "smoothed": True, "token_weighted": True},
+        {"name": "bi_joint_pos_noWB", "model": "bigram", "position": "positional", "conditional": False, "use_boundaries": False, "smoothed": False, "token_weighted": False},
+        {"name": "bi_joint_pos_noWB_freq_weighted", "model": "bigram", "position": "positional", "conditional": False, "use_boundaries": False, "smoothed": False, "token_weighted": True},
+        {"name": "bi_joint_pos_noWB_smoothed", "model": "bigram", "position": "positional", "conditional": False, "use_boundaries": False, "smoothed": True, "token_weighted": False},
+        {"name": "bi_joint_pos_noWB_freq_weighted_smoothed", "model": "bigram", "position": "positional", "conditional": False, "use_boundaries": False, "smoothed": True, "token_weighted": True},
         
         # Bigram joint, non-positional with word boundaries
-        {"name": "bi_joint_nonpos_wb", "model_type": "bigram", "position": "non_positional", "prob_type": "joint", "use_boundaries": True, "smoothed": False, "token_weighted": False},
-        {"name": "bi_joint_nonpos_wb_freq_weighted", "model_type": "bigram", "position": "non_positional", "prob_type": "joint", "use_boundaries": True, "smoothed": False, "token_weighted": True},
-        {"name": "bi_joint_nonpos_wb_smoothed", "model_type": "bigram", "position": "non_positional", "prob_type": "joint", "use_boundaries": True, "smoothed": True, "token_weighted": False},
-        {"name": "bi_joint_nonpos_wb_freq_weighted_smoothed", "model_type": "bigram", "position": "non_positional", "prob_type": "joint", "use_boundaries": True, "smoothed": True, "token_weighted": True},
+        {"name": "bi_joint_nonpos_wb", "model": "bigram", "position": "non_positional", "conditional": False, "use_boundaries": True, "smoothed": False, "token_weighted": False},
+        {"name": "bi_joint_nonpos_wb_freq_weighted", "model": "bigram", "position": "non_positional", "conditional": False, "use_boundaries": True, "smoothed": False, "token_weighted": True},
+        {"name": "bi_joint_nonpos_wb_smoothed", "model": "bigram", "position": "non_positional", "conditional": False, "use_boundaries": True, "smoothed": True, "token_weighted": False},
+        {"name": "bi_joint_nonpos_wb_freq_weighted_smoothed", "model": "bigram", "position": "non_positional", "conditional": False, "use_boundaries": True, "smoothed": True, "token_weighted": True},
         
         # Bigram joint, non-positional without word boundaries
-        {"name": "bi_joint_nonpos_noWB", "model_type": "bigram", "position": "non_positional", "prob_type": "joint", "use_boundaries": False, "smoothed": False, "token_weighted": False},
-        {"name": "bi_joint_nonpos_noWB_freq_weighted", "model_type": "bigram", "position": "non_positional", "prob_type": "joint", "use_boundaries": False, "smoothed": False, "token_weighted": True},
-        {"name": "bi_joint_nonpos_noWB_smoothed", "model_type": "bigram", "position": "non_positional", "prob_type": "joint", "use_boundaries": False, "smoothed": True, "token_weighted": False},
-        {"name": "bi_joint_nonpos_noWB_freq_weighted_smoothed", "model_type": "bigram", "position": "non_positional", "prob_type": "joint", "use_boundaries": False, "smoothed": True, "token_weighted": True},
+        {"name": "bi_joint_nonpos_noWB", "model": "bigram", "position": "non_positional", "conditional": False, "use_boundaries": False, "smoothed": False, "token_weighted": False},
+        {"name": "bi_joint_nonpos_noWB_freq_weighted", "model": "bigram", "position": "non_positional", "conditional": False, "use_boundaries": False, "smoothed": False, "token_weighted": True},
+        {"name": "bi_joint_nonpos_noWB_smoothed", "model": "bigram", "position": "non_positional", "conditional": False, "use_boundaries": False, "smoothed": True, "token_weighted": False},
+        {"name": "bi_joint_nonpos_noWB_freq_weighted_smoothed", "model": "bigram", "position": "non_positional", "conditional": False, "use_boundaries": False, "smoothed": True, "token_weighted": True},
     ]
-
-    # Create and fit models using the NgramModel factory
+    
+    # Create and fit models using the NgramModel factory based on the configuration dictionaries
     models = {}
     for config in model_configs:
-        model = NgramModel(
-            model_type=config["model_type"],
-            position=config["position"],
-            prob_type=config["prob_type"],
-            use_boundaries=config.get("use_boundaries", False),
-            smoothed=config.get("smoothed", False),
-            token_weighted=config.get("token_weighted", False)
-        ).fit(train_token_freqs, sound_idx)
+        if config["model"] == "unigram":
+            prob_type = "joint" if config.get("joint", False) else "log"
+            model = NgramModel(
+                model_type="unigram",
+                position=config["position"],
+                prob_type=prob_type,
+                smoothed=config["smoothed"],
+                token_weighted=config["token_weighted"]
+            ).fit(train_token_freqs, sound_idx)
+        elif config["model"] == "bigram":
+            prob_type = "conditional" if config.get("conditional", False) else "joint"
+            model = NgramModel(
+                model_type="bigram",
+                position=config["position"],
+                prob_type=prob_type,
+                use_boundaries=config["use_boundaries"],
+                smoothed=config["smoothed"],
+                token_weighted=config["token_weighted"]
+            ).fit(train_token_freqs, sound_idx)
         models[config["name"]] = model
 
-    # Score each test token for all models and compile results
+    # Score each test token using the fitted models in the order defined by model_configs
     results = []
     for token, _ in test_token_freqs:
         row = [' '.join(token), len(token)]
