@@ -5,7 +5,7 @@
 # Summary: runs tests to verify unigram and bigram probabilities for joint/conditional, positional/non-positional, and word boundaries/no word boundaries. 
 
 from django.test import TestCase
-from src import ngram_calculator
+from src import ngram_models, io_utils, score_utils
 
 import numpy as np
 
@@ -18,18 +18,18 @@ class FitNGramsTestCase(TestCase):
     positional bigram scores.
     """
     def setUp(self):
-        self.token_freqs = ngram_calculator.read_tokens(TRAINING_FILE)
+        self.token_freqs = io_utils.read_tokens(TRAINING_FILE)
         self.unique_sounds = sorted(list(set(
             [sound for token, _ in self.token_freqs for sound in token]
         ))) + ['#']
 
     def testFitUnigrams(self):
-        unigram_freqs = ngram_calculator.fit_non_positional_unigram_probabilities(self.token_freqs)
+        unigram_freqs = ngram_models.fit_non_positional_unigram_probabilities(self.token_freqs)
         self.assertEqual(unigram_freqs['t'], np.log(7/16))
         self.assertEqual(unigram_freqs['a'], np.log(9/16))
 
     def testFitUnigramsWeighted(self):
-        unigram_freqs = ngram_calculator.fit_non_positional_unigram_probabilities(
+        unigram_freqs = ngram_models.fit_non_positional_unigram_probabilities(
             self.token_freqs, token_weighted=True
         )
 
@@ -45,7 +45,7 @@ class FitNGramsTestCase(TestCase):
         self.assertEqual(unigram_freqs, expected_dict)
 
     def testFitBigrams(self):
-        bigram_probs = ngram_calculator.fit_bigrams(
+        bigram_probs = ngram_models.fit_bigrams(
             self.token_freqs, self.unique_sounds
         )
 
@@ -64,7 +64,7 @@ class FitNGramsTestCase(TestCase):
         self.assertTrue(np.allclose(bigram_probs, expected_probs))
 
     def testFitBigramsSmoothed(self):
-        bigram_probs = ngram_calculator.fit_bigrams(
+        bigram_probs = ngram_models.fit_bigrams(
             self.token_freqs, self.unique_sounds, smoothed=True
         )
 
@@ -79,7 +79,7 @@ class FitNGramsTestCase(TestCase):
         self.assertTrue(np.allclose(bigram_probs, expected_probs))
 
     def testFitBigramsWeighted(self):
-        bigram_probs = ngram_calculator.fit_bigrams(
+        bigram_probs = ngram_models.fit_bigrams(
             self.token_freqs, self.unique_sounds, token_weighted=True
         )
 
@@ -110,7 +110,7 @@ class FitNGramsTestCase(TestCase):
         self.assertTrue(np.allclose(bigram_probs, expected_probs))
 
     def testFitBigramsSmoothedWeighted(self):
-        bigram_probs = ngram_calculator.fit_bigrams(
+        bigram_probs = ngram_models.fit_bigrams(
             self.token_freqs, self.unique_sounds, 
             token_weighted=True, smoothed=True
         )
@@ -142,7 +142,7 @@ class FitNGramsTestCase(TestCase):
         self.assertTrue(np.allclose(bigram_probs, expected_probs))
 
     def testFitPositionalUnigrams(self):
-        pos_unigram_freqs = ngram_calculator.fit_positional_unigrams(
+        pos_unigram_freqs = ngram_models.fit_positional_unigrams(
             self.token_freqs
         )
         self.assertEqual(pos_unigram_freqs[0]['t'], 3/5)
@@ -155,7 +155,7 @@ class FitNGramsTestCase(TestCase):
         self.assertEqual(pos_unigram_freqs[3]['a'], 2/2)
 
     def testFitPositionalUnigramsWeighted(self):
-        pos_unigram_freqs = ngram_calculator.fit_positional_unigrams(
+        pos_unigram_freqs = ngram_models.fit_positional_unigrams(
             self.token_freqs, token_weighted=True
         )
         t_0 = np.log(10) * 2 + np.log(30)
@@ -182,7 +182,7 @@ class FitNGramsTestCase(TestCase):
         self.assertEqual(pos_unigram_freqs[3]['a'], a_3 / total_3)
 
     def testFitPositionalUnigramsSmoothed(self):
-        pos_unigram_freqs = ngram_calculator.fit_positional_unigrams(
+        pos_unigram_freqs = ngram_models.fit_positional_unigrams(
             self.token_freqs, smoothed=True
         )
         self.assertEqual(pos_unigram_freqs[0]['t'], 4/7)
@@ -195,7 +195,7 @@ class FitNGramsTestCase(TestCase):
         self.assertEqual(pos_unigram_freqs[3]['a'], 3/4)
 
     def testFitPositionalUnigramsSmoothedWeighted(self):
-        pos_unigram_freqs = ngram_calculator.fit_positional_unigrams(
+        pos_unigram_freqs = ngram_models.fit_positional_unigrams(
             self.token_freqs, token_weighted=True, smoothed=True
         )
         t_0 = np.log(10) * 2 + np.log(30) + 1
@@ -222,7 +222,7 @@ class FitNGramsTestCase(TestCase):
         self.assertEqual(pos_unigram_freqs[3]['a'], a_3 / total_3)
 
     def testFitPositionalBigrams(self):
-        pos_bigram_freqs = ngram_calculator.fit_positional_bigrams(
+        pos_bigram_freqs = ngram_models.fit_positional_bigrams(
             self.token_freqs
         )
 
@@ -242,7 +242,7 @@ class FitNGramsTestCase(TestCase):
         self.assertEqual(pos_bigram_freqs[(2, 3)][('a', 'a')], 0/2)
 
     def testFitPositionalBigramsWeighted(self):
-        pos_bigram_freqs = ngram_calculator.fit_positional_bigrams(
+        pos_bigram_freqs = ngram_models.fit_positional_bigrams(
             self.token_freqs, token_weighted=True
         )
 
@@ -281,7 +281,7 @@ class FitNGramsTestCase(TestCase):
         self.assertEqual(pos_bigram_freqs[(2, 3)][('a', 'a')], aa_23 / total_23)
 
     def testFitPositionalBigramsSmoothed(self):
-        pos_bigram_freqs = ngram_calculator.fit_positional_bigrams(
+        pos_bigram_freqs = ngram_models.fit_positional_bigrams(
             self.token_freqs, smoothed=True
         )
 
@@ -301,7 +301,7 @@ class FitNGramsTestCase(TestCase):
         self.assertEqual(pos_bigram_freqs[(2, 3)][('a', 'a')], 1/6)
 
     def testFitPositionalBigramsSmoothedWeighted(self):
-        pos_bigram_freqs = ngram_calculator.fit_positional_bigrams(
+        pos_bigram_freqs = ngram_models.fit_positional_bigrams(
             self.token_freqs, token_weighted=True, smoothed=True
         )
 
@@ -349,35 +349,35 @@ class TestNGramsTestCase(TestCase):
         We re-use the same training data, but pre-fit the models
         that we'll query in the following tests.
         """
-        self.token_freqs = ngram_calculator.read_tokens(TRAINING_FILE)
+        self.token_freqs = io_utils.read_tokens(TRAINING_FILE)
         self.unique_sounds = sorted(list(set(
             [sound for token, _ in self.token_freqs for sound in token]
         ))) + ['#']
 
-        self.unigram_probs = ngram_calculator.fit_non_positional_unigram_probabilities(self.token_freqs)
-        self.bigram_probs = ngram_calculator.fit_bigrams(
+        self.unigram_probs = ngram_models.fit_non_positional_unigram_probabilities(self.token_freqs)
+        self.bigram_probs = ngram_models.fit_bigrams(
             self.token_freqs, self.unique_sounds
         )
-        self.pos_unigram_freqs = ngram_calculator.fit_positional_unigrams(
+        self.pos_unigram_freqs = ngram_models.fit_positional_unigrams(
             self.token_freqs
         )
-        self.pos_bigram_freqs = ngram_calculator.fit_positional_bigrams(
+        self.pos_bigram_freqs = ngram_models.fit_positional_bigrams(
             self.token_freqs
         )
 
     def testGetUnigramProbs(self):
         test_word = ['t', 'a', 't', 'a']
-        prob = ngram_calculator.get_unigram_prob(test_word, self.unigram_probs)
+        prob = score_utils.generic_unigram_score(test_word, self.unigram_probs)
         expected_prob = self.unigram_probs['t'] * 2 + self.unigram_probs['a'] * 2
         self.assertEqual(prob, expected_prob)
 
         test_word = ['b', 'l', 'a', 'h']
-        prob = ngram_calculator.get_unigram_prob(test_word, self.unigram_probs)
+        prob = score_utils.generic_unigram_score(test_word, self.unigram_probs)
         self.assertEqual(prob, float('-inf'))
 
     def testGetBigramProbs(self):
         test_word = ['t', 'a', 't', 'a']
-        prob = ngram_calculator.get_bigram_prob(
+        prob = score_utils.generic_bigram_score(
             test_word, self.bigram_probs, self.unique_sounds
         )
 
@@ -397,14 +397,14 @@ class TestNGramsTestCase(TestCase):
         self.assertEqual(prob, expected_prob)
 
         test_word = ['b', 'l', 'a', 'h']
-        prob = ngram_calculator.get_bigram_prob(
-            test_word, self.unigram_probs, self.unique_sounds
+        prob = score_utils.generic_bigram_score(
+            test_word, self.bigram_probs, self.unique_sounds
         )
         self.assertEqual(prob, float('-inf'))
 
     def testGetPositionalUnigramScore(self):
         test_word = ['t', 'a', 't', 'a']
-        score = ngram_calculator.get_pos_unigram_score(
+        score = score_utils.generic_pos_unigram_score(
             test_word, self.pos_unigram_freqs
         )
         expected_score = 1
@@ -417,7 +417,7 @@ class TestNGramsTestCase(TestCase):
 
     def testGetPositionalBigramScore(self):
         test_word = ['t', 'a', 't', 'a']
-        score = ngram_calculator.get_pos_bigram_score(
+        score = score_utils.generic_pos_bigram_score(
             test_word, self.pos_bigram_freqs
         )
         expected_score = 1
