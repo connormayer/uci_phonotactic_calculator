@@ -2,7 +2,7 @@
 ngram_models.py - Module for fitting n-gram models and providing an object-oriented model interface.
 This module provides functions for fitting unigram and bigram models, both positional and non-positional,
 and includes a unified model interface.
-Version: 1.2.4
+Version: 1.2.5
 """
 
 import nltk
@@ -116,7 +116,7 @@ def generate_bigrams(token, use_word_boundaries=True):
 # Fitting Functions
 # --------------------------
 
-def fit_non_positional_unigram_probabilities(token_freqs, token_weighted=False, smoothed=False):
+def fit_non_positional_unigram(token_freqs, token_weighted=False, smoothed=False):
     """
     Fits non-positional unigram probabilities (returns a dict of {sound: log(prob)}).
     
@@ -266,26 +266,16 @@ class UnigramModel(NgramModel):
 
     def fit(self, token_freqs, sound_idx):
         if self.position == "non_positional":
-            if self.prob_type == "log":
-                self.model_data = fit_non_positional_unigram_probabilities(
-                    token_freqs, self.token_weighted, self.smoothed
-                )
-            elif self.prob_type == "joint":
-                self.model_data = fit_non_positional_unigram_probabilities (
-                    token_freqs, self.token_weighted, self.smoothed
-                )
+            # Unified fitting: non-positional unigrams always use log probabilities.
+            self.model_data = fit_non_positional_unigram(token_freqs, self.token_weighted, self.smoothed)
         elif self.position == "positional":
-            self.model_data = fit_positional_unigrams(
-                token_freqs, self.token_weighted, self.smoothed
-            )
+            self.model_data = fit_positional_unigrams(token_freqs, self.token_weighted, self.smoothed)
         return self
 
     def score(self, word, sound_idx):
         if self.position == "non_positional":
-            if self.prob_type == "log":
-                return generic_unigram_score(word, self.model_data, mode='log')
-            elif self.prob_type == "joint":
-                return generic_unigram_score(word, self.model_data, mode='joint')
+            # Unified scoring: non-positional unigrams are scored in log mode.
+            return generic_unigram_score(word, self.model_data, mode='log')
         elif self.position == "positional":
             return generic_pos_unigram_score(word, self.model_data, aggregation=self.aggregation)
         return None

@@ -9,7 +9,7 @@ import unittest
 from src.io_utils import read_tokens
 
 #unigram models
-from src.ngram_models import fit_positional_unigrams, fit_non_positional_unigram_probabilities
+from src.ngram_models import fit_positional_unigrams, fit_non_positional_unigram
 #bigram models
 from src.ngram_models import fit_bigrams, fit_positional_bigrams, fit_non_positional_bigrams
 
@@ -43,7 +43,7 @@ class FitNGramsTestCase(unittest.TestCase):
         """
         Test fit_unigrams() with no smoothing and no weighting.
         """
-        unigram_freqs = fit_non_positional_unigram_probabilities(self.token_freqs)
+        unigram_freqs = fit_non_positional_unigram(self.token_freqs)
         self.assertEqual(unigram_freqs['t'], np.log(7/16))
         self.assertEqual(unigram_freqs['a'], np.log(9/16))
 
@@ -51,7 +51,7 @@ class FitNGramsTestCase(unittest.TestCase):
         """
         Test fit_unigrams() with no smoothing but token weighting.
         """
-        unigram_freqs = fit_non_positional_unigram_probabilities(
+        unigram_freqs = fit_non_positional_unigram(
             self.token_freqs, token_weighted=True
         )
 
