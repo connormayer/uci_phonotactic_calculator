@@ -149,31 +149,6 @@ def fit_non_positional_unigram_probabilities(token_freqs, token_weighted=False, 
         unigram_probs[sound] = np.log(prob) if prob > 0 else float('-inf')
     return unigram_probs
 
-def _fit_non_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
-    """
-    (Optional older function that may be removed if you only want log-based counts.)
-    
-    Fits non-positional unigram joint probabilities, returning {sound: log(prob)}.
-    Used for a "joint" style. If you do not need raw-frequency weighting, you can remove this.
-    """
-    unigram_freqs = defaultdict(float)
-    if smoothed:
-        unique_sounds = set(sound for token, _ in token_freqs for sound in token)
-        for s in unique_sounds:
-            unigram_freqs[s] = 1.0
-    for token, freq in token_freqs:
-        val = freq if token_weighted else 1.0
-        for sound in token:
-            unigram_freqs[sound] += val
-    total = sum(unigram_freqs.values())
-    if total > 0:
-        for sound in unigram_freqs:
-            p = unigram_freqs[sound] / total
-            unigram_freqs[sound] = np.log(p) if p > 0 else float('-inf')
-    else:
-        for sound in unigram_freqs:
-            unigram_freqs[sound] = float('-inf')
-    return unigram_freqs
 
 def fit_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
     """
