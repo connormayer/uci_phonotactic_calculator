@@ -9,7 +9,7 @@ import unittest
 from src.io_utils import read_tokens
 
 #unigram models
-from src.ngram_models import fit_positional_unigrams, fit_non_positional_unigrams, fit_non_positional_unigram_probabilities
+from src.ngram_models import fit_positional_unigrams, fit_non_positional_unigram_probabilities
 #bigram models
 from src.ngram_models import fit_bigrams, fit_positional_bigrams, fit_non_positional_bigrams
 

@@ -149,7 +149,7 @@ def fit_non_positional_unigram_probabilities(token_freqs, token_weighted=False, 
         unigram_probs[sound] = np.log(prob) if prob > 0 else float('-inf')
     return unigram_probs
 
-def fit_non_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
+def _fit_non_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
     """
     (Optional older function that may be removed if you only want log-based counts.)
     
@@ -296,7 +296,7 @@ class UnigramModel(NgramModel):
                     token_freqs, self.token_weighted, self.smoothed
                 )
             elif self.prob_type == "joint":
-                self.model_data = fit_non_positional_unigrams(
+                self.model_data = fit_non_positional_unigram_probabilities (
                     token_freqs, self.token_weighted, self.smoothed
                 )
         elif self.position == "positional":
