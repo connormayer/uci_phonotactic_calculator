@@ -1,19 +1,13 @@
 """
-ngram_models.py -- Module for fitting n-gram models
-====================================================
-
-This module provides functions for building unigram and bigram models, along with 
-positional variants, for both joint and conditional probabilities. The approach 
-includes consistent naming and docstrings for clarity, plus additional wrapper 
-functions to ensure correct ordering of the boundary symbol '#' in the matrix 
-to match the test suite.
-
+src/ngram_models.py - Module for fitting n-gram models.
+Provides functions for building unigram and bigram models, along with 
+positional variants, for both joint and conditional probabilities.
 Version: 1.2.8
 """
 
 import nltk
 import numpy as np
-from collections import defaultdict
+from collections import defaultdict 
 
 from .score_utils import (
     generic_unigram_score,
@@ -122,7 +116,7 @@ def _fit_bigram_matrix_joint(token_freqs, sound_list,
 
 def normalize_positional_counts(counts, conditional=False):
     """
-    Normalizes positional counts by total counts for each position if not conditional,
+    Normalize positional counts by total counts for each position if not conditional,
     or by the preceding sound if conditional=True, in linear space.
     """
     if not conditional:
@@ -135,7 +129,6 @@ def normalize_positional_counts(counts, conditional=False):
                 for gram in counts[idx].keys():
                     counts[idx][gram] = 0
     else:
-        from collections import defaultdict
         for idx in counts.keys():
             preceding_sound_dict = defaultdict(float)
             for gram, count_val in counts[idx].items():
@@ -439,3 +432,5 @@ class BigramModel(NgramModel):
                 use_word_boundaries=self.use_boundaries,
                 aggregation=self.aggregation
             )
+
+# End of src/ngram_models.py
