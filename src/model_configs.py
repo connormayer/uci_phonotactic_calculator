@@ -1,6 +1,9 @@
 """
-model_configs.py - Module to generate model configuration dictionaries for n-gram models.
-Version: 1.0.0
+src/model_configs.py - Module to generate model configuration dictionaries for n-gram models.
+Provides a unified configuration for unigram and bigram models with explicit conditions:
+Positional vs. Non-Positional, Word Boundaries (wb) vs. No Boundaries (nwb),
+and Conditional vs. Joint (with aggregation for positional models).
+
 """
 
 from itertools import product
@@ -75,7 +78,7 @@ def get_model_configs():
     # Bigram models:
     # Bigram conditional, positional
     for use_boundaries, smoothed, token_weighted, aggregation in product([True, False], [False, True], [False, True], ["sum", "prod"]):
-        base = "bi_cond_pos_" + ("wb" if use_boundaries else "noWB")
+        base = "bi_cond_pos_" + ("wb" if use_boundaries else "nwb")
         name = base
         if token_weighted:
             name += "_freq_weighted"
@@ -96,7 +99,7 @@ def get_model_configs():
         
     # Bigram conditional, non-positional
     for use_boundaries, smoothed, token_weighted in product([True, False], [False, True], [False, True]):
-        base = "bi_cond_nonpos_" + ("wb" if use_boundaries else "noWB")
+        base = "bi_cond_nonpos_" + ("wb" if use_boundaries else "nwb")
         name = base
         if token_weighted:
             name += "_freq_weighted"
@@ -114,7 +117,7 @@ def get_model_configs():
     
     # Bigram joint, positional
     for use_boundaries, smoothed, token_weighted, aggregation in product([True, False], [False, True], [False, True], ["sum", "prod"]):
-        base = "bi_joint_pos_" + ("wb" if use_boundaries else "noWB")
+        base = "bi_joint_pos_" + ("wb" if use_boundaries else "nwb")
         name = base
         if token_weighted:
             name += "_freq_weighted"
@@ -135,7 +138,7 @@ def get_model_configs():
     
     # Bigram joint, non-positional
     for use_boundaries, smoothed, token_weighted in product([True, False], [False, True], [False, True]):
-        base = "bi_joint_nonpos_" + ("wb" if use_boundaries else "noWB")
+        base = "bi_joint_nonpos_" + ("wb" if use_boundaries else "nwb")
         name = base
         if token_weighted:
             name += "_freq_weighted"
@@ -152,3 +155,5 @@ def get_model_configs():
         })
     
     return configs
+
+# End of src/model_configs.py

@@ -1,8 +1,9 @@
 """
 src/ngram_models.py - Module for fitting n-gram models.
-Provides functions for building unigram and bigram models, along with 
-positional variants, for both joint and conditional probabilities.
-Version: 1.2.8
+Provides functions for building unigram and bigram models with explicit conditions:
+Positional vs. Non-Positional, Word Boundaries vs. No Boundaries,
+Joint vs. Conditional, and Sum vs. Prod aggregation.
+
 """
 
 import nltk
@@ -204,12 +205,9 @@ def fit_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
 # Fitting Functions for Bigrams
 # --------------------------
 
-def fit_bigrams(token_freqs, sound_idx,
-                token_weighted=False,
-                smoothed=False,
-                use_word_boundaries=True):
+def fit_bigram_conditional_nonpos_wb(token_freqs, sound_idx, token_weighted=False, smoothed=False):
     """
-    Fits a *conditional* bigram model (non-positional).
+    Fits a conditional bigram model (non-positional) with word boundaries.
     Returns a 2D numpy array of log probabilities: p(next|prev).
     """
     return _fit_bigram_matrix_conditional(
@@ -217,21 +215,76 @@ def fit_bigrams(token_freqs, sound_idx,
         sound_idx,
         token_weighted=token_weighted,
         smoothed=smoothed,
-        use_word_boundaries=use_word_boundaries
+        use_word_boundaries=True
     )
 
 
-def fit_positional_bigrams(token_freqs,
-                           token_weighted=False,
-                           smoothed=False,
-                           conditional=False,
-                           use_word_boundaries=False):
+def fit_bigram_conditional_nonpos_nwb(token_freqs, sound_idx, token_weighted=False, smoothed=False):
     """
-    Fits positional bigram probabilities in linear space.
+    Fits a conditional bigram model (non-positional) without word boundaries.
+    Returns a 2D numpy array of log probabilities: p(next|prev).
+    """
+    return _fit_bigram_matrix_conditional(
+        token_freqs,
+        sound_idx,
+        token_weighted=token_weighted,
+        smoothed=smoothed,
+        use_word_boundaries=False
+    )
+
+
+def fit_bigram_joint_nonpos_wb(token_freqs, token_weighted=False, smoothed=False):
+    """
+    Fits a joint bigram model (non-positional) with word boundaries.
+    Returns a 2D numpy array of log probabilities: p(prev, next).
+    """
+    unique_sounds = {sound for token, _ in token_freqs for sound in token}
+    unique_sounds.add(WORD_BOUNDARY)
+    sound_list = list(unique_sounds)
+    return _fit_bigram_matrix_joint(
+        token_freqs,
+        sound_list,
+        token_weighted=token_weighted,
+        smoothed=smoothed,
+        use_word_boundaries=True
+    )
+
+
+def fit_bigram_joint_nonpos_nwb(token_freqs, token_weighted=False, smoothed=False):
+    """
+    Fits a joint bigram model (non-positional) without word boundaries.
+    Returns a 2D numpy array of log probabilities: p(prev, next).
+    """
+    unique_sounds = {sound for token, _ in token_freqs for sound in token}
+    unique_sounds.discard(WORD_BOUNDARY)
+    sound_list = list(unique_sounds)
+    return _fit_bigram_matrix_joint(
+        token_freqs,
+        sound_list,
+        token_weighted=token_weighted,
+        smoothed=smoothed,
+        use_word_boundaries=False
+    )
+
+
+def fit_bigram_positional(token_freqs, token_weighted=False, smoothed=False, conditional=False, use_word_boundaries=False):
+    """
+    Fits positional bigram probabilities.
+
+    Parameters:
+      token_freqs: List of token frequencies.
+      token_weighted: Boolean, whether to use token weighting.
+      smoothed: Boolean, whether to apply smoothing.
+      conditional: Boolean; if True, compute conditional probabilities; otherwise, joint probabilities.
+      use_word_boundaries: Boolean, whether to add word boundary markers.
+
+    Returns:
+      A dictionary mapping position tuples to dictionaries of bigram probabilities (in linear space)
+      normalized appropriately and then transformed to log probabilities.
     """
     pos_bigram_freqs = defaultdict(lambda: defaultdict(float))
 
-    unique_sounds = set(sound for token, _ in token_freqs for sound in token)
+    unique_sounds = {sound for token, _ in token_freqs for sound in token}
     if use_word_boundaries:
         unique_sounds.add(WORD_BOUNDARY)
 
@@ -250,76 +303,6 @@ def fit_positional_bigrams(token_freqs,
 
     pos_bigram_freqs = normalize_positional_counts(pos_bigram_freqs, conditional=conditional)
     return pos_bigram_freqs
-
-
-def fit_non_positional_bigrams(token_freqs,
-                               token_weighted=False,
-                               smoothed=False,
-                               use_word_boundaries=True):
-    """
-    Fits a *joint* bigram model (non-positional).
-    Returns a 2D numpy array of log probabilities: p(prev, next).
-    """
-    unique_sounds = {sound for token, _ in token_freqs for sound in token}
-    if use_word_boundaries:
-        unique_sounds.add(WORD_BOUNDARY)
-    else:
-        unique_sounds.discard(WORD_BOUNDARY)
-    sound_list = list(unique_sounds)  # We'll reorder with _sort_sounds_boundary_last
-
-    return _fit_bigram_matrix_joint(
-        token_freqs,
-        sound_list,
-        token_weighted=token_weighted,
-        smoothed=smoothed,
-        use_word_boundaries=use_word_boundaries
-    )
-
-
-def fit_non_positional_bigrams_conditional(token_freqs, unique_sounds,
-                                           token_weighted=False,
-                                           smoothed=False):
-    """
-    Conditional bigram model with word boundaries (used by test_bigrams.py).
-    """
-    all_sounds = list(unique_sounds) + [WORD_BOUNDARY]
-    return _fit_bigram_matrix_conditional(
-        token_freqs,
-        all_sounds,
-        token_weighted=token_weighted,
-        smoothed=smoothed,
-        use_word_boundaries=True
-    )
-
-
-def fit_non_positional_bigrams_conditional_NWB(token_freqs, unique_sounds,
-                                               token_weighted=False,
-                                               smoothed=False):
-    """
-    Conditional bigram model with NO word boundaries (used by test_bigrams.py).
-    """
-    return _fit_bigram_matrix_conditional(
-        token_freqs,
-        unique_sounds,
-        token_weighted=token_weighted,
-        smoothed=smoothed,
-        use_word_boundaries=False
-    )
-
-
-def fit_non_positional_bigrams_NWB(token_freqs, unique_sounds,
-                                   token_weighted=False,
-                                   smoothed=False):
-    """
-    Joint bigram model with NO word boundaries (used by test_bigrams.py).
-    """
-    return _fit_bigram_matrix_joint(
-        token_freqs,
-        unique_sounds,
-        token_weighted=token_weighted,
-        smoothed=smoothed,
-        use_word_boundaries=False
-    )
 
 
 # --------------------------
@@ -392,22 +375,25 @@ class BigramModel(NgramModel):
     def fit(self, token_freqs, sound_idx):
         if self.position == "non_positional":
             if self.prob_type == "conditional":
-                self.model_data = fit_bigrams(
-                    token_freqs,
-                    sound_idx,
-                    self.token_weighted,
-                    self.smoothed,
-                    self.use_boundaries
-                )
-            else:
-                self.model_data = fit_non_positional_bigrams(
-                    token_freqs,
-                    self.token_weighted,
-                    self.smoothed,
-                    self.use_boundaries
-                )
+                if self.use_boundaries:
+                    self.model_data = fit_bigram_conditional_nonpos_wb(
+                        token_freqs, sound_idx, self.token_weighted, self.smoothed
+                    )
+                else:
+                    self.model_data = fit_bigram_conditional_nonpos_nwb(
+                        token_freqs, sound_idx, self.token_weighted, self.smoothed
+                    )
+            else:  # Joint model
+                if self.use_boundaries:
+                    self.model_data = fit_bigram_joint_nonpos_wb(
+                        token_freqs, self.token_weighted, self.smoothed
+                    )
+                else:
+                    self.model_data = fit_bigram_joint_nonpos_nwb(
+                        token_freqs, self.token_weighted, self.smoothed
+                    )
         else:
-            self.model_data = fit_positional_bigrams(
+            self.model_data = fit_bigram_positional(
                 token_freqs,
                 self.token_weighted,
                 self.smoothed,
