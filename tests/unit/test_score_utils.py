@@ -1,8 +1,8 @@
-# tests/unit/test_score_utils.py
 """
-test_score_utils.py - Unit tests for scoring functions.
+tests/unit/test_score_utils.py - Unit tests for scoring functions using consistent sound_index naming.
 This module verifies that the generic scoring functions compute the correct values
 using mock probability dictionaries.
+
 """
 
 import numpy as np
@@ -25,10 +25,10 @@ def test_generic_unigram_score_joint():
     assert np.isclose(score, 2.5, atol=1e-3)
 
 def test_generic_bigram_score_with_boundaries():
-    sound_idx = ['#', 'a', 'b']
+    sound_index = ['#', 'a', 'b']
     matrix = np.zeros((3,3))
     token = ['a', 'b']
-    score = generic_bigram_score(token, matrix, sound_idx, use_word_boundaries=True)
+    score = generic_bigram_score(token, matrix, sound_index, use_word_boundaries=True)
     assert np.isclose(score, 0.0, atol=1e-3)
 
 def test_generic_pos_unigram_score_sum():
@@ -64,3 +64,5 @@ def test_generic_pos_bigram_score_prod():
     score = generic_pos_bigram_score(token, pos_bi_freqs, conditional=False, use_word_boundaries=True, aggregation="prod")
     expected = np.log(0.1 * 0.2 * 0.3)
     assert np.isclose(score, expected, atol=1e-3)
+
+# End of tests/unit/test_score_utils.py

@@ -1,8 +1,8 @@
-# tests/conftest.py
 """
-conftest.py - Common fixtures for tests.
+tests/conftest.py - Common fixtures for tests.
 Provides fixtures for unit and integration tests, including token frequencies,
-unique sounds, and dummy CSV files for training and testing.
+sound_index (unique sounds), and dummy CSV files for training and testing.
+
 """
 
 import pytest
@@ -17,13 +17,19 @@ def token_freqs():
     return read_tokens(TRAINING_FILE)
 
 @pytest.fixture
-def unique_sounds(token_freqs):
+def sound_index(token_freqs):
+    """
+    Returns a sorted list of unique sounds from the token frequencies.
+    """
     sounds = sorted({sound for token, _ in token_freqs for sound in token})
     return sounds
 
 @pytest.fixture
-def sounds_with_boundary(unique_sounds):
-    return unique_sounds + [WORD_BOUNDARY]
+def sounds_with_boundary(sound_index):
+    """
+    Returns the sound_index with the word boundary appended.
+    """
+    return sound_index + [WORD_BOUNDARY]
 
 # Fixtures for integration tests
 
@@ -48,3 +54,5 @@ def dummy_test_file(tmp_path, dummy_test_data):
     file = tmp_path / "dummy_test.csv"
     file.write_text(dummy_test_data, encoding="utf-8")
     return str(file)
+
+# End of conftest.py

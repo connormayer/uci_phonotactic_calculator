@@ -1,8 +1,8 @@
 """
-score_utils.py - Utility module for scoring tokens using n-gram models with configurable aggregation.
+src/score_utils.py - Utility module for scoring tokens using n-gram models with configurable aggregation.
 This module provides functions to compute scores for unigram and bigram models, including positional models,
 with two aggregation methods: "sum" (linear additive) and "prod" (multiplicative log-product).
-Version: 1.1.1
+
 """
 
 import nltk
@@ -41,14 +41,14 @@ def generic_unigram_score(token, model_data, mode='log'):
     else:
         raise ValueError("Invalid mode. Use 'log' or 'joint'.")
 
-def generic_bigram_score(token, model_data, sound_idx, use_word_boundaries=True):
+def generic_bigram_score(token, model_data, sound_index, use_word_boundaries=True):
     """
     Generic scoring for non-positional bigram models.
 
     Parameters:
       token: List of symbols (the word).
       model_data: 2D numpy array of log probabilities.
-      sound_idx: List of sounds used to index rows/columns in model_data.
+      sound_index: List of sounds used to index rows/columns in model_data.
       use_word_boundaries: Whether to add word boundary markers.
 
     Returns:
@@ -59,8 +59,8 @@ def generic_bigram_score(token, model_data, sound_idx, use_word_boundaries=True)
     total_log = 0.0
     for (prev, nxt) in nltk.ngrams(token, 2):
         try:
-            col = sound_idx.index(prev)
-            row = sound_idx.index(nxt)
+            col = sound_index.index(prev)
+            row = sound_index.index(nxt)
         except ValueError:
             return float('-inf')
         total_log += model_data[row, col]
@@ -143,3 +143,5 @@ def generic_pos_bigram_score(token, pos_bi_freqs, conditional=False, use_word_bo
         return np.log(prod) if prod > 0 else float('-inf')
     else:
         raise ValueError("Invalid aggregation mode. Use 'sum' for additive scoring or 'prod' for multiplicative log-product scoring.")
+
+# End of src/score_utils.py

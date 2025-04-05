@@ -140,11 +140,11 @@ def test_fit_bigram_positional_score_sum(token_freqs):
         smoothed=False,
         token_weighted=False,
         aggregation="sum"
-    ).fit(token_freqs, sound_idx=['t', 'a', WORD_BOUNDARY])  # pass a minimal sound_idx
+    ).fit(token_freqs, sound_index=['t', 'a', WORD_BOUNDARY])  # pass a minimal sound_index
 
     # Score a simple token
     token = ['t', 'a']
-    score_val = model.score(token, sound_idx=['t', 'a', WORD_BOUNDARY])
+    score_val = model.score(token, sound_index=['t', 'a', WORD_BOUNDARY])
 
     assert not np.isnan(score_val), "Positional bigram sum-based score returned NaN."
     # Expect a numeric value >= 1.0 in linear space for 'sum' aggregator
@@ -165,10 +165,10 @@ def test_fit_bigram_positional_score_prod(token_freqs):
         smoothed=False,
         token_weighted=False,
         aggregation="prod"
-    ).fit(token_freqs, sound_idx=['t', 'a', WORD_BOUNDARY])
+    ).fit(token_freqs, sound_index=['t', 'a', WORD_BOUNDARY])
 
     token = ['t', 'x']  # 'x' might not be in the training set
-    score_val = model.score(token, sound_idx=['t', 'a', WORD_BOUNDARY])
+    score_val = model.score(token, sound_index=['t', 'a', WORD_BOUNDARY])
 
     # Score should be a log-prob. If 'x' is unknown, we might get -inf:
     assert score_val <= 0 or np.isinf(score_val), \
