@@ -11,10 +11,9 @@ from src.ngram_models import (
     fit_bigram_conditional_nonpos_wb,
     fit_bigram_joint_nonpos_wb,
     fit_bigram_conditional_nonpos_nwb,
-    fit_bigram_joint_nonpos_nwb,
-    fit_bigram_positional
+    fit_bigram_joint_nonpos_nwb
 )
-from tests.unit.test_helpers import log_expected
+from tests.common_helpers import log_expected
 
 def assert_matrix_close(actual, expected, atol=1e-6):
     rows, cols = expected.shape
