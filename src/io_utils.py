@@ -1,10 +1,11 @@
 """
-io_utils.py - Utility module for I/O operations: reading tokens from a CSV file and writing results.
-Version: 1.0.2
+src/io_utils.py - Utility module for I/O operations: reading tokens from a CSV file and writing results.
+This module now uses a dynamically generated header via get_header() from constants.
+
 """
 
 import csv
-from .constants import HEADER  # Import the centralized header
+from .constants import get_header
 
 WORD_BOUNDARY = '#'
 
@@ -40,7 +41,10 @@ def write_results(results, outfile):
     Returns:
       None
     """
-    results = [HEADER] + results
+    # Dynamically generate header using get_header()
+    results = [get_header()] + results
     with open(outfile, 'w', encoding='utf-8', newline='') as f:
         writer = csv.writer(f)
         writer.writerows(results)
+
+# End of src/io_utils.py

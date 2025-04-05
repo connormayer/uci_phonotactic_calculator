@@ -1,12 +1,13 @@
 """
-ngram_calculator.py - Orchestration module for calculating n-gram scores.
-Version: 1.0.3
+src/ngram_calculator.py - Orchestration module for calculating n-gram scores.
+This module loads training and test data, builds n-gram models using various configurations,
+scores test tokens, and writes the results using a dynamically generated header.
+
 """
 
 import nltk
 import numpy as np
 import argparse
-from .constants import HEADER
 from .io_utils import read_tokens, write_results
 from .ngram_models import UnigramModel, BigramModel, WORD_BOUNDARY
 from .model_configs import get_model_configs
@@ -63,7 +64,7 @@ def run_calculator(train_file, test_file, output_file):
             row.append(score if not np.isinf(score) else '')
         results.append(row)
         
-    # Write the results using the I/O module    
+    # Write the results using the I/O module (dynamic header is generated internally)
     write_results(results, output_file)
     
 if __name__ == "__main__":
@@ -73,3 +74,5 @@ if __name__ == "__main__":
     parser.add_argument('output_file', type=str, help='Path to output file with word judgments.')
     args = parser.parse_args()
     run_calculator(args.train_file, args.test_file, args.output_file)
+
+# End of src/ngram_calculator.py

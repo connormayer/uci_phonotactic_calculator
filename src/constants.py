@@ -1,73 +1,27 @@
 """
-constants.py - Consolidated constants for n-gram models and I/O operations.
-Version: 1.0.1
+src/constants.py - Consolidated constants and dynamic header generation for n-gram models.
+This module provides essential constants and a function to dynamically generate the CSV header 
+based on current model configuration dictionaries.
+
 """
 
-HEADER = [
-    'word',
-    'word_len',
-    'uni_prob',
-    'uni_prob_token_weighted',
-    'uni_prob_smoothed',
-    'uni_prob_token_weighted_smoothed',
-    'uni_joint_nonpos',
-    'uni_joint_nonpos_token_weighted',
-    'uni_joint_nonpos_smoothed',
-    'uni_joint_nonpos_token_weighted_smoothed',
-    'uni_joint_pos',
-    'uni_joint_pos_token_weighted',
-    'uni_joint_pos_smoothed',
-    'uni_joint_pos_token_weighted_smoothed',
-    'uni_joint_pos_prod',
-    'uni_joint_pos_token_weighted_prod',
-    'uni_joint_pos_smoothed_prod',
-    'uni_joint_pos_token_weighted_smoothed_prod',
-    'bi_cond_pos_wb',
-    'bi_cond_pos_wb_token_weighted',
-    'bi_cond_pos_wb_smoothed',
-    'bi_cond_pos_wb_token_weighted_smoothed',
-    'bi_cond_pos_wb_prod',
-    'bi_cond_pos_wb_token_weighted_prod',
-    'bi_cond_pos_wb_smoothed_prod',
-    'bi_cond_pos_wb_token_weighted_smoothed_prod',
-    'bi_cond_pos_noWB',
-    'bi_cond_pos_noWB_token_weighted',
-    'bi_cond_pos_noWB_smoothed',
-    'bi_cond_pos_noWB_token_weighted_smoothed',
-    'bi_cond_pos_noWB_prod',
-    'bi_cond_pos_noWB_token_weighted_prod',
-    'bi_cond_pos_noWB_smoothed_prod',
-    'bi_cond_pos_noWB_token_weighted_smoothed_prod',
-    'bi_cond_nonpos_wb',
-    'bi_cond_nonpos_wb_token_weighted',
-    'bi_cond_nonpos_wb_smoothed',
-    'bi_cond_nonpos_wb_token_weighted_smoothed',
-    'bi_cond_nonpos_noWB',
-    'bi_cond_nonpos_noWB_token_weighted',
-    'bi_cond_nonpos_noWB_smoothed',
-    'bi_cond_nonpos_noWB_token_weighted_smoothed',
-    'bi_joint_pos_wb',
-    'bi_joint_pos_wb_token_weighted',
-    'bi_joint_pos_wb_smoothed',
-    'bi_joint_pos_wb_token_weighted_smoothed',
-    'bi_joint_pos_wb_prod',
-    'bi_joint_pos_wb_token_weighted_prod',
-    'bi_joint_pos_wb_smoothed_prod',
-    'bi_joint_pos_wb_token_weighted_smoothed_prod',
-    'bi_joint_pos_noWB',
-    'bi_joint_pos_noWB_token_weighted',
-    'bi_joint_pos_noWB_smoothed',
-    'bi_joint_pos_noWB_token_weighted_smoothed',
-    'bi_joint_pos_noWB_prod',
-    'bi_joint_pos_noWB_token_weighted_prod',
-    'bi_joint_pos_noWB_smoothed_prod',
-    'bi_joint_pos_noWB_token_weighted_smoothed_prod',
-    'bi_joint_nonpos_wb',
-    'bi_joint_nonpos_wb_token_weighted',
-    'bi_joint_nonpos_wb_smoothed',
-    'bi_joint_nonpos_wb_token_weighted_smoothed',
-    'bi_joint_nonpos_noWB',
-    'bi_joint_nonpos_noWB_token_weighted',
-    'bi_joint_nonpos_noWB_smoothed',
-    'bi_joint_nonpos_noWB_token_weighted_smoothed',
-]
+from .model_configs import get_model_configs
+
+def get_header():
+    """
+    Dynamically generates the header for output CSV based on model configuration dictionaries.
+    
+    The header consists of the fixed columns ['word', 'word_len'] followed by the names 
+    from each model configuration.
+    
+    Returns:
+        list: The dynamic header list.
+    """
+    base_header = ['word', 'word_len']
+    configs = get_model_configs()
+    model_names = [config['name'] for config in configs]
+    return base_header + model_names
+
+MAX_WORD_LEN = 100
+
+# End of src/constants.py
