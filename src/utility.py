@@ -1,7 +1,5 @@
 # src/utility.py
 
-# Removed the problematic distutils import:
-# from distutils.command.upload import upload
 from tempfile import TemporaryFile
 from webcalc_project import settings
 from os import listdir, unlink
