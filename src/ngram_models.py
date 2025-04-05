@@ -1,9 +1,8 @@
 """
 src/ngram_models.py - Module for fitting n-gram models.
-Provides functions for building unigram and bigram models with explicit conditions:
-Positional vs. Non-Positional, Word Boundaries vs. No Boundaries,
+This module provides functions for building unigram and bigram models with explicit conditions:
+Positional vs. Non_Positional, Word Boundaries vs. No Boundaries,
 Joint vs. Conditional, and Sum vs. Prod aggregation.
-
 """
 
 import nltk
@@ -205,7 +204,7 @@ def fit_positional_unigrams(token_freqs, token_weighted=False, smoothed=False):
 # Fitting Functions for Bigrams
 # --------------------------
 
-def fit_bigram_conditional_nonpos_wb(token_freqs, sound_idx, token_weighted=False, smoothed=False):
+def fit_bigram_conditional_non_positional_wb(token_freqs, sound_idx, token_weighted=False, smoothed=False):
     """
     Fits a conditional bigram model (non-positional) with word boundaries.
     Returns a 2D numpy array of log probabilities: p(next|prev).
@@ -219,7 +218,7 @@ def fit_bigram_conditional_nonpos_wb(token_freqs, sound_idx, token_weighted=Fals
     )
 
 
-def fit_bigram_conditional_nonpos_nwb(token_freqs, sound_idx, token_weighted=False, smoothed=False):
+def fit_bigram_conditional_non_positional_nwb(token_freqs, sound_idx, token_weighted=False, smoothed=False):
     """
     Fits a conditional bigram model (non-positional) without word boundaries.
     Returns a 2D numpy array of log probabilities: p(next|prev).
@@ -233,7 +232,7 @@ def fit_bigram_conditional_nonpos_nwb(token_freqs, sound_idx, token_weighted=Fal
     )
 
 
-def fit_bigram_joint_nonpos_wb(token_freqs, token_weighted=False, smoothed=False):
+def fit_bigram_joint_non_positional_wb(token_freqs, token_weighted=False, smoothed=False):
     """
     Fits a joint bigram model (non-positional) with word boundaries.
     Returns a 2D numpy array of log probabilities: p(prev, next).
@@ -250,7 +249,7 @@ def fit_bigram_joint_nonpos_wb(token_freqs, token_weighted=False, smoothed=False
     )
 
 
-def fit_bigram_joint_nonpos_nwb(token_freqs, token_weighted=False, smoothed=False):
+def fit_bigram_joint_non_positional_nwb(token_freqs, token_weighted=False, smoothed=False):
     """
     Fits a joint bigram model (non-positional) without word boundaries.
     Returns a 2D numpy array of log probabilities: p(prev, next).
@@ -376,20 +375,20 @@ class BigramModel(NgramModel):
         if self.position == "non_positional":
             if self.prob_type == "conditional":
                 if self.use_boundaries:
-                    self.model_data = fit_bigram_conditional_nonpos_wb(
+                    self.model_data = fit_bigram_conditional_non_positional_wb(
                         token_freqs, sound_idx, self.token_weighted, self.smoothed
                     )
                 else:
-                    self.model_data = fit_bigram_conditional_nonpos_nwb(
+                    self.model_data = fit_bigram_conditional_non_positional_nwb(
                         token_freqs, sound_idx, self.token_weighted, self.smoothed
                     )
             else:  # Joint model
                 if self.use_boundaries:
-                    self.model_data = fit_bigram_joint_nonpos_wb(
+                    self.model_data = fit_bigram_joint_non_positional_wb(
                         token_freqs, self.token_weighted, self.smoothed
                     )
                 else:
-                    self.model_data = fit_bigram_joint_nonpos_nwb(
+                    self.model_data = fit_bigram_joint_non_positional_nwb(
                         token_freqs, self.token_weighted, self.smoothed
                     )
         else:
