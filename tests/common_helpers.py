@@ -19,16 +19,9 @@ def log_expected(matrix):
                      either the log(probability) if prob > 0, or -inf if prob <= 0.
     """
     arr = np.array(matrix, dtype=float)
-    result = np.empty_like(arr)
-
-    for i in range(arr.shape[0]):
-        for j in range(arr.shape[1]):
-            val = arr[i, j]
-            if val <= 0:
-                result[i, j] = float('-inf')
-            else:
-                result[i, j] = np.log(val)
-
+    # Suppress divide-by-zero warnings when computing np.log(arr)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        result = np.where(arr > 0, np.log(arr), float('-inf'))
     return result
 
 # End of tests/common_helpers.py
