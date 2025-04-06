@@ -8,9 +8,9 @@ scores test tokens, and writes the results using a dynamically generated header.
 import nltk
 import numpy as np
 import argparse
-from .io_utils import read_tokens, write_results
-from .ngram_models import UnigramModel, BigramModel, WORD_BOUNDARY
-from .model_configs import get_model_configs
+from io_utils import read_tokens, write_results
+from ngram_models import UnigramModel, BigramModel, WORD_BOUNDARY
+from model_configs import get_model_configs
 
 def run_calculator(train_file, test_file, output_file):
     """
@@ -34,15 +34,14 @@ def run_calculator(train_file, test_file, output_file):
     # Create and fit models using the model classes based on the configuration dictionaries    
     models = {}
     for config in model_configs:
+        # breakpoint()
         if config["model"] == "unigram":
-            prob_type = "joint" if config.get("joint", False) else "log"
             model = UnigramModel(
                 position=config["position"],
-                prob_type=prob_type,
                 smoothed=config["smoothed"],
                 token_weighted=config["token_weighted"],
                 aggregation=config.get("aggregation", "sum")
-            ).fit(train_token_freqs, sound_index)
+            ).fit(train_token_freqs)
         elif config["model"] == "bigram":
             prob_type = "conditional" if config.get("conditional", False) else "joint"
             model = BigramModel(
@@ -61,7 +60,7 @@ def run_calculator(train_file, test_file, output_file):
         row = [' '.join(token), len(token)]
         for config in model_configs:
             score = models[config["name"]].score(token, sound_index)
-            row.append(score if not np.isinf(score) else '')
+            row.append(score)
         results.append(row)
         
     # Write the results using the I/O module (dynamic header is generated internally)
@@ -74,5 +73,3 @@ if __name__ == "__main__":
     parser.add_argument('output_file', type=str, help='Path to output file with word judgments.')
     args = parser.parse_args()
     run_calculator(args.train_file, args.test_file, args.output_file)
-
-# End of src/ngram_calculator.py

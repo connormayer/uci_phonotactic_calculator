@@ -15,7 +15,7 @@ def test_unified_model_interface_unigram_expected(token_freqs, sound_index):
     The expected score is computed by summing the log probabilities for each symbol.
     """
     model = UnigramModel(position="non_positional", prob_type="log", smoothed=False, token_weighted=False)
-    model.fit(token_freqs, sound_index)
+    model.fit(token_freqs)
     token = ['t', 'a']
     expected_score = 0.0
     for symbol in token:
@@ -57,5 +57,3 @@ def test_unified_model_interface_all(token_freqs, sound_index):
     for name, model in models.items():
         score = model.score(token, sound_index)
         assert not np.isnan(score), f"Model {name} returned NaN for token {token}"
-
-# End of tests/unit/test_ngram_model_combinations.py

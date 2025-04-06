@@ -11,7 +11,8 @@ from src.ngram_models import (
     fit_bigram_conditional_non_positional_wb,
     fit_bigram_joint_non_positional_wb,
     fit_bigram_conditional_non_positional_nwb,
-    fit_bigram_joint_non_positional_nwb
+    fit_bigram_joint_non_positional_nwb,
+    BigramModel
 )
 from tests.common_helpers import log_expected
 
@@ -22,30 +23,35 @@ def assert_matrix_close(actual, expected, atol=1e-6):
             assert np.isclose(actual[i, j], expected[i, j], atol=atol), \
                 f"Mismatch at cell ({i}, {j}): {actual[i,j]} != {expected[i,j]}"
 
-# Existing tests for conditional models with word boundaries
+##################
+# NONPOS COND WB #
+##################
 def test_fit_bigrams_conditional_WB(token_freqs, sound_index):
     sounds = sound_index + [WORD_BOUNDARY]
-    bigram_probs = fit_bigram_conditional_non_positional_wb(token_freqs, sounds, token_weighted=False, smoothed=False)
+    model = BigramModel("non_positional")
+    model.fit(token_freqs, sounds)
     expected_probs = log_expected([
         [1/9, 6/7, 2/5],
         [3/9, 1/7, 3/5],
         [5/9, 0/7, 0/5]
     ])
-    assert_matrix_close(bigram_probs, expected_probs)
+    assert_matrix_close(model.model_data, expected_probs)
 
 def test_fit_bigrams_conditional_WB_smoothed(token_freqs, sound_index):
     sounds = sound_index + [WORD_BOUNDARY]
-    bigram_probs = fit_bigram_conditional_non_positional_wb(token_freqs, sounds, token_weighted=False, smoothed=True)
+    model = BigramModel("non_positional", smoothed=True)
+    model.fit(token_freqs, sounds)
     expected_probs = log_expected([
         [2/12, 7/10, 3/8],
         [4/12, 2/10, 4/8],
         [6/12, 1/10, 1/8]
     ])
-    assert_matrix_close(bigram_probs, expected_probs)
+    assert_matrix_close(model.model_data, expected_probs)
 
 def test_fit_bigrams_conditional_WB_weighted(token_freqs, sound_index):
     sounds = sound_index + [WORD_BOUNDARY]
-    bigram_probs = fit_bigram_conditional_non_positional_wb(token_freqs, sounds, token_weighted=True, smoothed=False)
+    model = BigramModel("non_positional", token_weighted=True)
+    model.fit(token_freqs, sounds)
     wb_t = np.log(10)*2 + np.log(30)
     wb_a = np.log(20)*2
     wb_wb = 0
@@ -63,10 +69,11 @@ def test_fit_bigrams_conditional_WB_weighted(token_freqs, sound_index):
         [a_t/a_c, t_t/t_c, wb_t/wb_c],
         [a_wb/a_c, 0,       0]
     ])
-    assert_matrix_close(bigram_probs, expected_probs)
+    assert_matrix_close(model.model_data, expected_probs)
 
-# New tests for non-positional models with WB and NWB
-
+###################
+# NONPOS JOINT WB #
+###################
 def test_fit_bigrams_non_positional_joint_WB(token_freqs, sound_index):
     """
     Test fit_bigram_joint_non_positional_wb() with word boundaries, no smoothing, no weighting.
@@ -82,36 +89,18 @@ def test_fit_bigrams_non_positional_joint_WB(token_freqs, sound_index):
            [5/21, 0/21, 0/21]]
     """
     sounds = sound_index + [WORD_BOUNDARY]
-    bigram_probs = fit_bigram_joint_non_positional_wb(token_freqs, token_weighted=False, smoothed=False)
+    model = BigramModel("non_positional", prob_type="joint")
+    model.fit(token_freqs, sounds)
     expected_probs = log_expected([
         [1/21, 6/21, 2/21],
         [3/21, 1/21, 3/21],
         [5/21, 0/21, 0/21]
     ])
-    assert_matrix_close(bigram_probs, expected_probs)
+    assert_matrix_close(model.model_data, expected_probs)
 
-def test_fit_bigrams_non_positional_conditional_WB(token_freqs, sound_index):
-    """
-    Test fit_bigram_conditional_non_positional_wb() with word boundaries, no smoothing, no weighting.
-    (Conditional, non-positional bigram model with WB.)
-
-    Manual derivation:
-      - For first symbol 'a': counts: aa=1, at=3, a#=5 → total = 9.
-      - For first symbol 't': counts: ta=6, tt=1 → total = 7.
-      - For first symbol '#' (boundary): counts: #a=2, #t=3 → total = 5.
-      Expected matrix (rows: ['a','t','#'], columns: ['a','t','#']):
-         [[1/9,   6/7,   2/5],
-          [3/9,   1/7,   3/5],
-          [5/9,   0,     0]]
-    """
-    bigram_probs = fit_bigram_conditional_non_positional_wb(token_freqs, sound_index + [WORD_BOUNDARY])
-    expected_probs = log_expected([
-        [1/9,   6/7,   2/5],
-        [3/9,   1/7,   3/5],
-        [5/9,   0,     0]
-    ])
-    assert_matrix_close(bigram_probs, expected_probs)
-
+###################
+# NONPOS COND NWB #
+###################
 def test_fit_bigrams_non_positional_conditional_NWB(token_freqs, sound_index):
     """
     Test fit_bigram_conditional_non_positional_nwb() with no word boundaries, no smoothing, no weighting.
@@ -124,13 +113,17 @@ def test_fit_bigrams_non_positional_conditional_NWB(token_freqs, sound_index):
          [[1/4, 6/7],
           [3/4, 1/7]]
     """
-    bigram_probs = fit_bigram_conditional_non_positional_nwb(token_freqs, sound_index)
+    model = BigramModel("non_positional", use_boundaries=False)
+    model.fit(token_freqs, sound_index)
     expected_probs = log_expected([
         [1/4, 6/7],
         [3/4, 1/7]
     ])
-    assert_matrix_close(bigram_probs, expected_probs)
+    assert_matrix_close(model.model_data, expected_probs)
 
+####################
+# NONPOS JOINT NWB #
+####################
 def test_fit_bigrams_non_positional_joint_NWB(token_freqs, sound_index):
     """
     Test fit_bigram_joint_non_positional_nwb() with no word boundaries, no smoothing, no weighting.
@@ -142,11 +135,77 @@ def test_fit_bigrams_non_positional_joint_NWB(token_freqs, sound_index):
          [[1/11, 6/11],
           [3/11, 1/11]]
     """
-    bigram_probs = fit_bigram_joint_non_positional_nwb(token_freqs)
+    model = BigramModel("non_positional", prob_type="joint", use_boundaries=False)
+    model.fit(token_freqs, sound_index)
     expected_probs = log_expected([
         [1/11, 6/11],
         [3/11, 1/11]
     ])
-    assert_matrix_close(bigram_probs, expected_probs)
+    assert_matrix_close(model.model_data, expected_probs)
 
-# End of tests/unit/test_bigrams.py
+
+###############
+# AGGREGATION #
+###############
+def test_fit_bigram_nonpositional_score_sum(token_freqs, sound_index):
+    """
+    Quick test of the scoring for a non-positional bigram model with sum aggregation.
+    """
+    sounds = sound_index + [WORD_BOUNDARY]
+    model = BigramModel(
+        position="non_positional",
+        prob_type="conditional",  
+        use_boundaries=True,
+        smoothed=False,
+        token_weighted=False,
+        aggregation="sum"
+    )
+    model.fit(token_freqs, sounds) 
+
+    # Score a simple token
+    token = ['t', 'a', 't', 'a']
+    score_val = model.score(token, sounds)
+    hash = sounds.index('#')
+    t = sounds.index('t')
+    a = sounds.index('a')
+    breakpoint()
+    assert score_val == sum([
+        1,
+        np.exp(model.model_data[t, hash]),
+        np.exp(model.model_data[a, t]),
+        np.exp(model.model_data[t, a]),
+        np.exp(model.model_data[a, t]),
+        np.exp(model.model_data[hash, a])
+    ])
+
+def test_fit_bigram_nonpositional_score_prod(token_freqs, sound_index):
+    """
+    Quick test of the scoring for a non-positional bigram model with prod aggregation.
+    """
+    sounds = sound_index + [WORD_BOUNDARY]
+    model = BigramModel(
+        position="non_positional",
+        prob_type="conditional",  
+        use_boundaries=True,
+        smoothed=False,
+        token_weighted=False,
+        aggregation="prod"
+    )
+    model.fit(token_freqs, sounds) 
+
+    # Score a simple token
+    token = ['t', 'a', 't', 'a']
+    score_val = model.score(token, sounds)
+
+    hash = sounds.index('#')
+    t = sounds.index('t')
+    a = sounds.index('a')
+    breakpoint()
+    assert score_val == sum([
+        model.model_data[t, hash],
+        model.model_data[a, t],
+        model.model_data[t, a],
+        model.model_data[a, t],
+        model.model_data[hash, a]
+    ])
+

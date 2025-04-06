@@ -10,7 +10,7 @@ import nltk
 import numpy as np
 from collections import defaultdict
 
-from .score_utils import (
+from score_utils import (
     generic_unigram_score,
     generic_bigram_score,
     generic_pos_unigram_score,
@@ -319,12 +319,12 @@ class UnigramModel(NgramModel):
     Unigram model subclass.
     Implements .fit() and .score() for unigram models.
     """
-    def __init__(self, position, prob_type, smoothed=False,
-                 token_weighted=False, aggregation="sum"):
+    def __init__(self, position, prob_type=None, smoothed=False,
+                 token_weighted=False, aggregation="prod"):
         super().__init__(position, prob_type, smoothed, token_weighted)
         self.aggregation = aggregation
 
-    def fit(self, token_freqs, sound_index):
+    def fit(self, token_freqs, sound_index=None):
         if self.position == "non_positional":
             self.model_data = fit_non_positional_unigram(
                 token_freqs,
@@ -339,9 +339,9 @@ class UnigramModel(NgramModel):
             )
         return self
 
-    def score(self, word, sound_index):
+    def score(self, word, sound_index=None):
         if self.position == "non_positional":
-            return generic_unigram_score(word, self.model_data, mode='log')
+            return generic_unigram_score(word, self.model_data, aggregation=self.aggregation)
         elif self.position == "positional":
             return generic_pos_unigram_score(word, self.model_data, aggregation=self.aggregation)
         return None
@@ -351,8 +351,8 @@ class BigramModel(NgramModel):
     Bigram model subclass.
     Implements .fit() and .score() for bigram models.
     """
-    def __init__(self, position, prob_type, use_boundaries=False,
-                 smoothed=False, token_weighted=False, aggregation="sum"):
+    def __init__(self, position, prob_type="conditional", use_boundaries=True,
+                 smoothed=False, token_weighted=False, aggregation="prod"):
         super().__init__(position, prob_type, smoothed, token_weighted)
         self.use_boundaries = use_boundaries
         self.aggregation = aggregation
@@ -393,7 +393,8 @@ class BigramModel(NgramModel):
                 word,
                 self.model_data,
                 sound_index,
-                use_word_boundaries=self.use_boundaries
+                use_word_boundaries=self.use_boundaries,
+                aggregation=self.aggregation
             )
         else:
             return generic_pos_bigram_score(
@@ -403,4 +404,3 @@ class BigramModel(NgramModel):
                 use_word_boundaries=self.use_boundaries,
                 aggregation=self.aggregation
             )
-# End of src/ngram_models.py

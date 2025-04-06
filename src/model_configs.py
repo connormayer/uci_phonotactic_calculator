@@ -21,10 +21,9 @@ def get_model_configs():
     """
     configs = []
     
-    # Unigram non-positional: log mode
-    base_log = "uni_prob"
-    for smoothed, token_weighted in product([False, True], repeat=2):
-        name = base_log
+    # Unigram non-positional: sum aggregation
+    name = "uni_nonpos_sum"
+    for smoothed, token_weighted in product([False], repeat=2):
         if token_weighted:
             name += "_freq_weighted"
         if smoothed:
@@ -33,15 +32,14 @@ def get_model_configs():
             "name": name,
             "model": "unigram",
             "position": "non_positional",
-            "joint": False,
             "smoothed": smoothed,
-            "token_weighted": token_weighted
+            "token_weighted": token_weighted,
+            "aggregation": "sum"
         })
     
-    # Unigram non-positional: joint mode
-    base_joint_nonpos = "uni_joint_nonpos"
-    for smoothed, token_weighted in product([False, True], repeat=2):
-        name = base_joint_nonpos
+    # Unigram non-positional: mult aggregation
+    name = "uni_nonpos_prod"
+    for smoothed, token_weighted in product([False], repeat=2):
         if token_weighted:
             name += "_freq_weighted"
         if smoothed:
@@ -50,42 +48,51 @@ def get_model_configs():
             "name": name,
             "model": "unigram",
             "position": "non_positional",
-            "joint": True,
             "smoothed": smoothed,
-            "token_weighted": token_weighted
+            "token_weighted": token_weighted,
+            "aggregation": "prod"
         })
-    
-    # Unigram positional (always joint) with aggregation
-    base_joint_pos = "uni_joint_pos"
-    for smoothed, token_weighted, aggregation in product([False, True], [False, True], ["sum", "prod"]):
-        name = base_joint_pos
+
+    # Unigram positional: sum aggregation
+    name = "uni_pos_sum"
+    for smoothed, token_weighted in product([False], repeat=2):
         if token_weighted:
             name += "_freq_weighted"
         if smoothed:
             name += "_smoothed"
-        if aggregation == "prod":
-            name += "_prod"
         configs.append({
             "name": name,
             "model": "unigram",
             "position": "positional",
-            "joint": True,
             "smoothed": smoothed,
             "token_weighted": token_weighted,
-            "aggregation": aggregation
+            "aggregation": "sum"
         })
     
-    # Bigram models:
-    # Bigram conditional, positional
-    for use_boundaries, smoothed, token_weighted, aggregation in product([True, False], [False, True], [False, True], ["sum", "prod"]):
-        base = "bi_cond_pos_" + ("wb" if use_boundaries else "nwb")
-        name = base
+    # Unigram non-positional: mult aggregation
+    name = "uni_pos_prod"
+    for smoothed, token_weighted in product([False], repeat=2):
         if token_weighted:
             name += "_freq_weighted"
         if smoothed:
             name += "_smoothed"
-        if aggregation == "prod":
-            name += "_prod"
+        configs.append({
+            "name": name,
+            "model": "unigram",
+            "position": "positional",
+            "smoothed": smoothed,
+            "token_weighted": token_weighted,
+            "aggregation": "prod"
+        })
+    
+    # Bigram models:
+    # Bigram conditional, positional
+    for use_boundaries, smoothed, token_weighted, aggregation in product([True, False], [False], [False], ["sum", "prod"]):
+        name = "bi_pos_cond_" + ("wb" if use_boundaries else "nwb") + "_" + aggregation
+        if token_weighted:
+            name += "_freq_weighted"
+        if smoothed:
+            name += "_smoothed"
         configs.append({
             "name": name,
             "model": "bigram",
@@ -98,9 +105,8 @@ def get_model_configs():
         })
         
     # Bigram conditional, non-positional
-    for use_boundaries, smoothed, token_weighted in product([True, False], [False, True], [False, True]):
-        base = "bi_cond_nonpos_" + ("wb" if use_boundaries else "nwb")
-        name = base
+    for use_boundaries, smoothed, token_weighted, aggregation in product([True, False], [False], [False], ["sum", "prod"]):
+        name = "bi_nonpos_cond_" + ("wb" if use_boundaries else "nwb") + "_" + aggregation
         if token_weighted:
             name += "_freq_weighted"
         if smoothed:
@@ -112,19 +118,17 @@ def get_model_configs():
             "conditional": True,
             "use_boundaries": use_boundaries,
             "smoothed": smoothed,
-            "token_weighted": token_weighted
+            "token_weighted": token_weighted,
+            "aggregation": aggregation
         })
     
     # Bigram joint, positional
-    for use_boundaries, smoothed, token_weighted, aggregation in product([True, False], [False, True], [False, True], ["sum", "prod"]):
-        base = "bi_joint_pos_" + ("wb" if use_boundaries else "nwb")
-        name = base
+    for use_boundaries, smoothed, token_weighted, aggregation in product([True, False], [False], [False], ["sum", "prod"]):
+        name = "bi_pos_joint_" + ("wb" if use_boundaries else "nwb") + "_" + aggregation
         if token_weighted:
             name += "_freq_weighted"
         if smoothed:
             name += "_smoothed"
-        if aggregation == "prod":
-            name += "_prod"
         configs.append({
             "name": name,
             "model": "bigram",
@@ -137,9 +141,8 @@ def get_model_configs():
         })
     
     # Bigram joint, non-positional
-    for use_boundaries, smoothed, token_weighted in product([True, False], [False, True], [False, True]):
-        base = "bi_joint_nonpos_" + ("wb" if use_boundaries else "nwb")
-        name = base
+    for use_boundaries, smoothed, token_weighted, aggregation in product([True, False], [False], [False], ["sum", "prod"]):
+        name = "bi_nonpos_joint_" + ("wb" if use_boundaries else "nwb") + "_" + aggregation
         if token_weighted:
             name += "_freq_weighted"
         if smoothed:
@@ -151,9 +154,8 @@ def get_model_configs():
             "conditional": False,
             "use_boundaries": use_boundaries,
             "smoothed": smoothed,
-            "token_weighted": token_weighted
+            "token_weighted": token_weighted,
+            "aggregation": aggregation
         })
     
     return configs
-
-# End of src/model_configs.py

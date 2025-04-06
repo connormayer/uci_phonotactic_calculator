@@ -10,38 +10,34 @@ import numpy as np
 
 WORD_BOUNDARY = '#'  # Constant used to denote word boundaries
 
-def generic_unigram_score(token, model_data, mode='log'):
+def generic_unigram_score(token, model_data, aggregation='prod'):
     """
     Generic scoring for unigram models.
 
     Parameters:
       token: List of symbols (the word).
       model_data: Dictionary mapping symbols to log probabilities.
-      mode: 'log' for summing log probabilities, 'joint' for summing probabilities in a joint model.
+      aggregation: Multiply probabilites ('prod') or sum them ('sum')
 
     Returns:
       Total score (float).
     """
-    if mode == 'log':
-        total = 0.0
+    if aggregation == 'sum':
+        total = 1
         for sound in token:
-            prob = model_data.get(sound, float('-inf'))
+            prob = np.exp(model_data.get(sound, 0))
             total += prob
-            if np.isinf(total):
-                return float('-inf')
         return total
-    elif mode == 'joint':
-        total = 1.0
+    elif aggregation == 'prod':
+        total = 0
         for sound in token:
             log_p = model_data.get(sound, float('-inf'))
-            if np.isinf(log_p):
-                continue
-            total += np.exp(log_p)
+            total += log_p
         return total
     else:
-        raise ValueError("Invalid mode. Use 'log' or 'joint'.")
+        raise ValueError("Invalid aggregation. Use 'sum' or 'prod'.")
 
-def generic_bigram_score(token, model_data, sound_index, use_word_boundaries=True):
+def generic_bigram_score(token, model_data, sound_index, use_word_boundaries=True, aggregation='prod'):
     """
     Generic scoring for non-positional bigram models.
 
@@ -56,17 +52,27 @@ def generic_bigram_score(token, model_data, sound_index, use_word_boundaries=Tru
     """
     if use_word_boundaries:
         token = [WORD_BOUNDARY] + token + [WORD_BOUNDARY]
-    total_log = 0.0
-    for (prev, nxt) in nltk.ngrams(token, 2):
-        try:
-            col = sound_index.index(prev)
-            row = sound_index.index(nxt)
-        except ValueError:
-            return float('-inf')
-        total_log += model_data[row, col]
-        if np.isinf(total_log):
-            return float('-inf')
-    return total_log
+    
+    if aggregation == 'prod':
+        total_log = 0.0
+        for (prev, nxt) in nltk.ngrams(token, 2):
+            try:
+                col = sound_index.index(prev)
+                row = sound_index.index(nxt)
+            except ValueError:
+                return float('-inf')
+            total_log +=model_data[row, col]
+        return total_log
+    elif aggregation == 'sum':
+        total = 1
+        for (prev, nxt) in nltk.ngrams(token, 2):
+            try:
+                col = sound_index.index(prev)
+                row = sound_index.index(nxt)
+            except ValueError:
+                continue
+            total += np.exp(model_data[row, col])
+        return total
 
 def generic_pos_unigram_score(token, pos_uni_freqs, aggregation="sum"):
     """
@@ -89,16 +95,15 @@ def generic_pos_unigram_score(token, pos_uni_freqs, aggregation="sum"):
       Total score (float) computed based on the chosen aggregation method.
     """
     if aggregation == "sum":
-        total = 1.0  # Baseline score (linear)
+        total = 1.0  
         for idx, sound in enumerate(token):
             total += pos_uni_freqs.get(idx, {}).get(sound, 0.0)
         return total
     elif aggregation == "prod":
-        prod = 1.0
+        prod = 0
         for idx, sound in enumerate(token):
-            # Use default value of 1.0 if probability is not found to avoid zero product.
-            prod *= pos_uni_freqs.get(idx, {}).get(sound, 1.0)
-        return np.log(prod) if prod > 0 else float('-inf')
+            prod += np.log(pos_uni_freqs.get(idx, {}).get(sound, 0))
+        return prod
     else:
         raise ValueError("Invalid aggregation mode. Use 'sum' for additive scoring or 'prod' for multiplicative log-product scoring.")
 
@@ -137,11 +142,9 @@ def generic_pos_bigram_score(token, pos_bi_freqs, conditional=False, use_word_bo
             total += pos_bi_freqs.get((i, i+1), {}).get(bigram, 0.0)
         return total
     elif aggregation == "prod":
-        prod = 1.0
+        prod = 0
         for i, bigram in enumerate(token_bigrams):
-            prod *= pos_bi_freqs.get((i, i+1), {}).get(bigram, 1.0)
-        return np.log(prod) if prod > 0 else float('-inf')
+            prod += np.log(pos_bi_freqs.get((i, i+1), {}).get(bigram, 0))
+        return prod
     else:
         raise ValueError("Invalid aggregation mode. Use 'sum' for additive scoring or 'prod' for multiplicative log-product scoring.")
-
-# End of src/score_utils.py

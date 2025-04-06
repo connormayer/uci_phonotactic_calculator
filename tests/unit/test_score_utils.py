@@ -14,13 +14,13 @@ import nltk
 def test_generic_unigram_score_log():
     model_data = {'a': 0.0, 'b': -0.6931}
     token = ['a', 'b']
-    score = generic_unigram_score(token, model_data, mode='log')
+    score = generic_unigram_score(token, model_data, aggregation='prod')
     assert np.isclose(score, -0.6931, atol=1e-3)
 
 def test_generic_unigram_score_joint():
     model_data = {'a': 0.0, 'b': -0.6931}
     token = ['a', 'b']
-    score = generic_unigram_score(token, model_data, mode='joint')
+    score = generic_unigram_score(token, model_data, aggregation='sum')
     expected = 1 + 1 + 0.5
     assert np.isclose(score, 2.5, atol=1e-3)
 
