@@ -1,8 +1,7 @@
 """
 src/score_utils.py - Utility module for scoring tokens using n-gram models with configurable aggregation.
-This module provides functions to compute scores for unigram and bigram models, including positional models,
+Provides functions to compute scores for unigram and bigram models, including positional models,
 with two aggregation methods: "sum" (linear additive) and "prod" (multiplicative log-product).
-
 """
 
 import nltk
@@ -17,7 +16,7 @@ def generic_unigram_score(token, model_data, aggregation='prod'):
     Parameters:
       token: List of symbols (the word).
       model_data: Dictionary mapping symbols to log probabilities.
-      aggregation: Multiply probabilites ('prod') or sum them ('sum')
+      aggregation: Multiply probabilities ('prod') or sum them ('sum').
 
     Returns:
       Total score (float).
@@ -101,8 +100,10 @@ def generic_pos_unigram_score(token, pos_uni_freqs, aggregation="sum"):
         return total
     elif aggregation == "prod":
         prod = 0
-        for idx, sound in enumerate(token):
-            prod += np.log(pos_uni_freqs.get(idx, {}).get(sound, 0))
+        # Suppress divide-by-zero warnings when taking the logarithm of zero.
+        with np.errstate(divide='ignore'):
+            for idx, sound in enumerate(token):
+                prod += np.log(pos_uni_freqs.get(idx, {}).get(sound, 0))
         return prod
     else:
         raise ValueError("Invalid aggregation mode. Use 'sum' for additive scoring or 'prod' for multiplicative log-product scoring.")
@@ -143,8 +144,12 @@ def generic_pos_bigram_score(token, pos_bi_freqs, conditional=False, use_word_bo
         return total
     elif aggregation == "prod":
         prod = 0
-        for i, bigram in enumerate(token_bigrams):
-            prod += np.log(pos_bi_freqs.get((i, i+1), {}).get(bigram, 0))
+        # Suppress divide-by-zero warnings when taking the logarithm of zero.
+        with np.errstate(divide='ignore'):
+            for i, bigram in enumerate(token_bigrams):
+                prod += np.log(pos_bi_freqs.get((i, i+1), {}).get(bigram, 0))
         return prod
     else:
         raise ValueError("Invalid aggregation mode. Use 'sum' for additive scoring or 'prod' for multiplicative log-product scoring.")
+
+# End of src/score_utils.py

@@ -168,7 +168,6 @@ def test_fit_bigram_nonpositional_score_sum(token_freqs, sound_index):
     hash = sounds.index('#')
     t = sounds.index('t')
     a = sounds.index('a')
-    breakpoint()
     assert score_val == sum([
         1,
         np.exp(model.model_data[t, hash]),
@@ -200,7 +199,6 @@ def test_fit_bigram_nonpositional_score_prod(token_freqs, sound_index):
     hash = sounds.index('#')
     t = sounds.index('t')
     a = sounds.index('a')
-    breakpoint()
     assert score_val == sum([
         model.model_data[t, hash],
         model.model_data[a, t],
@@ -209,3 +207,4 @@ def test_fit_bigram_nonpositional_score_prod(token_freqs, sound_index):
         model.model_data[hash, a]
     ])
 
+# End of tests/unit/test_bigrams.py

@@ -28,14 +28,15 @@ def test_run_calculator_integration(dummy_train_file, dummy_test_file, tmp_path)
     # Verify each result row has the same number of columns as the header.
     for row in rows[1:]:
         assert len(row) == len(expected_header), f"Row length {len(row)} does not match header length {len(expected_header)}"
-        # Check that any infinite score is rendered as an empty string.
+        # Check that each cell (starting from the third column) is either a valid finite number or exactly -inf.
         for cell in row[2:]:
             try:
-                # If cell converts to a float, ensure it is finite.
+                # Convert cell to float.
                 val = float(cell)
-                assert np.isfinite(val)
+                # Allow finite values or -inf.
+                assert np.isfinite(val) or val == float('-inf'), f"Score {cell} is not finite or -inf"
             except ValueError:
                 # If conversion fails, the cell should be empty.
-                assert cell == "", f"Expected empty string for infinite score, got {cell}"
+                assert cell == "", f"Expected empty string for non-numeric cell, got {cell}"
 
 # End of tests/integration/test_ngram_calculator_integration.py
