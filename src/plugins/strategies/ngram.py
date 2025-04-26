@@ -1,75 +1,75 @@
 """
-src/plugins/strategies/ngram.py
---------------------------------
-Generic n‑gram counting strategy for unigrams and bigrams.
+src/plugins/strategies/ngram.py — Generic n‑gram counting strategy for any n-gram order.
 """
 
 from __future__ import annotations
 
 import numpy as np
 from collections import defaultdict
-from typing import Any, Sequence, Optional
+from typing import Sequence, Optional
 
+from ..core import register_strategy
 from .base import BaseCounter
 from ...corpus import Corpus
 from ...config import Config
+from ...types import Gram, IndexTuple, CountDict
 
 
+@register_strategy("ngram")
 class NGramCounter(BaseCounter):
     """
-    Count n‑grams of order 1 or 2 over a corpus, with optional token weighting
+    Count n‑grams of any order over a corpus, with optional token weighting
     and boundary symbols controlled by a Config.
     """
 
     def __init__(self, order: int, sound_index: list[str], cfg: Config):
         """
-        Initialize the counter.
-
-        :param order:      The n‑gram order to count (1 or 2 supported).
-        :param sound_index:List of all symbols (vocabulary) used for indexing.
-        :param cfg:        Configuration flags for boundary insertion,
-                           smoothing, and frequency weighting.
-        :raises ValueError: If order is not 1 or 2.
+        Initialize the counter for any n-gram order.
+        Dense (np.ndarray) for order <= 3, sparse (defaultdict) for order > 3.
         """
         self.order = order
         self.cfg = cfg
         self.sound_index = sound_index
-
-        if self.order == 1:
-            # Unigram counts: symbol → total weight
-            self.counts: defaultdict[str, float] = defaultdict(float)
-        elif self.order == 2:
-            # Bigram counts: next_symbol × prev_symbol matrix
-            N = len(sound_index)
-            self.counts: np.ndarray = np.zeros((N, N))
+        self._dense = order <= 3
+        N = len(sound_index)
+        self._sym2idx = {s: i for i, s in enumerate(sound_index)}
+        if self._dense:
+            self.counts: np.ndarray = np.zeros((N,) * order, dtype=float)
         else:
-            raise ValueError(f"NGramCounter supports only order 1 or 2, got {order!r}")
+            # mutable mapping from index-tuples to float counts
+            self.counts: CountDict = defaultdict(float)  # type: ignore[var-annotated]
+
+    def accumulate_idx(self, idx: IndexTuple, weight: float) -> None:
+        """
+        Fast-path: increment a pre-indexed n-gram (expects an index tuple of length order).
+        """
+        if self._dense:
+            self.counts[idx] += weight
+        else:
+            self.counts[idx] = self.counts.get(idx, 0.0) + weight
 
     def accumulate(self, token: Sequence[str], weight: Optional[float]) -> None:
         """
-        Add counts for a single token sequence.
-
-        :param token: List of symbols for one token.
-        :param weight: Numeric weight (log‑freq) or None to skip.
+        Add counts for a single token sequence using Corpus.generate_ngrams.
         """
         if weight is None:
             return
+        grams: list[IndexTuple] = Corpus.generate_ngrams(
+            token,
+            self.order,
+            self.cfg.use_boundaries,
+            index_map=self._sym2idx,
+        )
+        if not grams:
+            return
+        for idx in grams:
+            if self._dense and -1 in idx:
+                continue
+            self.accumulate_idx(idx, weight)
 
-        if self.order == 1:
-            for s in token:
-                self.counts[s] += weight
-
-        else:  # order == 2
-            for prev_sym, next_sym in Corpus.generate_bigrams(token, self.cfg):
-                i = self.sound_index.index(next_sym)
-                j = self.sound_index.index(prev_sym)
-                self.counts[i, j] += weight
-
-    def finalise(self) -> Any:
+    def finalise(self) -> np.ndarray | CountDict:
         """
-        Return the raw counts structure.
-
-        :return: A defaultdict (for unigrams) or ndarray (for bigrams).
+        Return the raw counts structure (np.ndarray or CountDict).
         """
         return self.counts
 

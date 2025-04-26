@@ -1,15 +1,23 @@
-"""src/aggregate.py — Strategies for aggregating per‑gram log‑probability components."""
+"""src/aggregate.py — Strategies for aggregating per‑gram log‑probability components.
+
+All aggregator helpers return log-space values.
+
+Note: Conditional probability always interprets the last axis as the predicted symbol.
+
+min_val and max_val return -inf for empty input, for parity with other helpers.
+"""
 
 import numpy as np
+from typing import Sequence, Callable
 from .config import AggregateMode
 
 
-def log_product(components: list[float]) -> float:
+def log_product(components: Sequence[float]) -> float:
     """
     Aggregate by summing log‑probabilities (i.e., computing the log of a product).
 
     Parameters:
-      components — a list of log‑probability floats.
+      components — a sequence of log‑probability floats.
 
     Returns:
       The sum of the input components as a float.
@@ -17,13 +25,13 @@ def log_product(components: list[float]) -> float:
     return float(np.sum(components))
 
 
-def logsumexp(components: list[float]) -> float:
+def logsumexp(components: Sequence[float]) -> float:
     """
     Aggregate by a numerically stable log‑sum‑exp over probabilities in log‑space:
     log(∑ exp(component_i)).
 
     Parameters:
-      components — a list of log‑probability floats.
+      components — a sequence of log‑probability floats.
 
     Returns:
       A float equal to log(∑ exp(components)), or -inf if all components are -inf
@@ -40,29 +48,46 @@ def logsumexp(components: list[float]) -> float:
     return float(m + np.log(np.sum(np.exp(v - m))))
 
 
-def linear_sum(components: list[float]) -> float:
+def linear_sum(components: Sequence[float]) -> float:
     """
-    Aggregate by summing raw probabilities:
-    convert each log‑probability to linear space via exp(),
-    then sum those probabilities.
-
-    Parameters:
-      components — a list of log‑probability floats.
-
-    Returns:
-      The sum of the corresponding probabilities as a float,
-      or -inf if components is empty.
+    Aggregate by summing *linear-space* probabilities and then return the log.
+    All aggregator helpers return log-space values.
     """
     if not components:
         return float("-inf")
-    # Convert from log space to probabilities and sum them
-    return float(np.sum(np.exp(components)))
+    total = np.sum(np.exp(components))
+    return float("-inf") if total == 0 else float(np.log(total))
 
 
-AGGREGATORS: dict[AggregateMode, callable] = {
+def linear_sum_plus1(components: Sequence[float]) -> float:
+    """
+    Legacy positional-bigram score: linear Σ P + 1 (still returned in *linear*
+    space, **not** logged).  When every component is -inf the sum is 0, so the
+    result is exactly 1 — identical to the old script.
+    """
+    if not components:
+        return 1.0          # mirror legacy "+1"
+    total = np.sum(np.exp(components))
+    return 1.0 + float(total)
+
+
+def min_val(components: Sequence[float]) -> float:
+    """Return the minimum log-value (–∞ for empty)."""
+    return float(min(components)) if components else float("-inf")
+
+
+def max_val(components: Sequence[float]) -> float:
+    """Return the maximum log-value (–∞ for empty)."""
+    return float(max(components)) if components else float("-inf")
+
+
+AGGREGATORS: dict[AggregateMode, Callable[[Sequence[float]], float]] = {
     AggregateMode.LOG_PRODUCT: log_product,
     AggregateMode.LOGSUMEXP:   logsumexp,
     AggregateMode.SUM:         linear_sum,
+    AggregateMode.SUM_PLUS1:   linear_sum_plus1,   # NEW
+    AggregateMode.MIN:         min_val,
+    AggregateMode.MAX:         max_val,
 }
 
 # End of src/aggregate.py

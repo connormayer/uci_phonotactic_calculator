@@ -3,7 +3,7 @@
 from __future__ import annotations
 import csv
 from pathlib import Path
-from typing import Sequence
+from typing import Sequence, List, Tuple
 from dataclasses import dataclass
 
 from .config import Config
@@ -60,20 +60,30 @@ class Corpus:
         self.sound_index = sorted(vocab)
 
     @staticmethod
-    def generate_bigrams(token: Sequence[str], cfg: Config) -> list[tuple[str, str]]:
+    def generate_ngrams(
+        token: Sequence[str],
+        n: int,
+        use_boundaries: bool,
+        *,
+        index_map: dict[str, int] | None = None,
+    ) -> List[Tuple]:
         """
-        Produce bigrams from a token, optionally wrapped in boundary symbols.
+        Generate n-grams from a token. Pads with n-1 boundaries on both sides if use_boundaries is True and n > 1.
+        If index_map is supplied, returns tuples of ints; otherwise, returns tuples of symbols.
+        Returns empty list if sequence too short.
 
-        Parameters:
-          token — sequence of phoneme strings
-          cfg   — configuration indicating whether to add boundaries
-
-        Returns:
-          A list of (previous, next) tuples over the (possibly wrapped) token.
+        Boundary tokens are inserted only when n > 1.
         """
-        seq = list(token)
-        if cfg.use_boundaries:
-            seq = [WORD_BOUNDARY] + seq + [WORD_BOUNDARY]
-        return list(zip(seq, seq[1:]))
+        pad = [WORD_BOUNDARY] * (n - 1) if n > 1 else []
+        if use_boundaries:
+            seq = pad + list(token) + pad
+        else:
+            seq = list(token)
+        if len(seq) < n:
+            return []
+        grams = [tuple(seq[i:i+n]) for i in range(len(seq) - n + 1)]
+        if index_map:
+            return [tuple(index_map.get(s, -1) for s in gram) for gram in grams]
+        return grams
 
 # End of src/corpus.py
