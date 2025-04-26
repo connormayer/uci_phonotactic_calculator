@@ -1,24 +1,17 @@
-"""src/main.py — CLI entry point for the extensible n-gram scorer.
-
-Supports:
-- All model/configuration variants in a grid
-- --model to force a single plugin
-- -n/--ngram-order (≥1, default 2) to select n-gram order
-- Zero required flags: python -m src.ngram_calculator train.csv test.csv out.csv
-"""
-
+# src/main.py — CLI entry point for the extensible n-gram scorer.
 import argparse
 import csv
 from collections import OrderedDict
 from functools import lru_cache
 import os
-import sys
 from typing import Union
 
 from .config import Config, NeighbourhoodMode, ProbMode, AggregateMode, WeightMode
 from .corpus import Corpus
 from .plugins.core import get_model, PluginRegistry, discover_models as _discover, ALIASES
 from .variants import all_variants
+from .cli import build_parser
+from .cli_utils import supports_color
 # Imported once here – never re-import inside main(), or it will mask the global.
 
 from .plugins.strategies.position import get_position_strategy
@@ -53,81 +46,13 @@ def main():
     Parse command-line arguments, train every specified n-gram variant,
     score the test corpus, and write a unified CSV.
     """
-    parser = argparse.ArgumentParser(description="Extensible n-gram scorer")
-    parser.add_argument("train_file",  help="Path to the training corpus CSV")
-    parser.add_argument("test_file",   help="Path to the test corpus CSV")
-    parser.add_argument("output_file", help="Path to write the scored output CSV")
-
-    parser.add_argument(
-        "-n", "--ngram-order",
-        type=int, default=2, metavar="N",
-        help="Order of the n-gram model (≥ 1, default 2)"
-    )
-
-    parser.add_argument(
-        "--weight-mode",
-        choices=[m.value for m in WeightMode],
-        default=WeightMode.NONE.value,
-        help="Token weighting: unw (1.0), raw frequency, or log frequency"
-    )
-
-    parser.add_argument(
-        "--neighbourhood-mode",
-        choices=[m.value for m in NeighbourhoodMode],
-        default=NeighbourhoodMode.FULL.value,
-        help="Which edit-distance operations define a neighbour (default: full)."
-    )
-
-    parser.add_argument(
-        "--model",
-        metavar="NAME",
-        default=None,
-        help="Name of any registered model plugin (run --list-models to view)."
-    )
-    parser.add_argument(
-        "--list-models",
-        action="store_true",
-        help="Print all registered model plugin names and exit."
-    )
-    parser.add_argument(
-        "--position-strategy",
-        choices=["absolute", "relative", "none"],  # 'none' is deprecated, handled in Config
-        default=None,
-        help="absolute│relative│none — omit the flag for classic n-gram."
-    )
-    # NOTE: argparse delivers None (not the string 'None') when this flag is omitted.
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument(
-        "--prob-mode",
-        type=ProbMode,
-        choices=list(ProbMode),
-        help="Built-in transforms: joint | conditional",
-    )
-    group.add_argument(
-        "--prob-transform",
-        metavar="NAME",
-        help="Name of a custom probability transform registered at runtime",
-    )
-    parser.add_argument(
-        "--aggregate",
-        type=AggregateMode,
-        choices=list(AggregateMode),
-        default=AggregateMode.LOG_PRODUCT,
-        help=("Aggregation strategy:\n"
-              "  " + "\n  ".join(f"{m.value} – {m.name.replace('_', ' ').lower()}" for m in AggregateMode))
-    )
-    parser.add_argument(
-        "--smoothing",
-        action="store_true",
-        help="Apply add-one smoothing",
-    )
-    parser.add_argument(
-        "--no-boundaries",
-        action="store_true",
-        help="Omit boundary symbols in n-gram generation",
-    )
-
+    parser = build_parser()
+    prelim, _ = parser.parse_known_args()
+    import src.cli_utils as cli_utils
+    if prelim.no_color or not cli_utils.supports_color(sys.stderr):
+        cli_utils.style = lambda t, *_, **__: t  # type: ignore[assignment]
     args = parser.parse_args()
+
     if args.list_models:
         # Only print primary model keys (exclude aliases)
         print(", ".join(sorted(set(PluginRegistry) - set(ALIASES))))
