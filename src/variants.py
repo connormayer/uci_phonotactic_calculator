@@ -1,4 +1,10 @@
-"""src/variants.py — Enumerate every scoring configuration variant."""
+"""src/variants.py — Enumerate every scoring configuration variant.
+
+Supports three execution modes:
+- Single model (via --model)
+- Full variant grid (default)
+- Filtered grid (via --filter KEY=VAL)
+"""
 
 from __future__ import annotations
 
@@ -45,16 +51,25 @@ def _make_variant(plugin, order, cfg, strategy=None):
     return Variant(header, plugin, cfg, strategy)
 
 
-def all_variants(train: Corpus) -> Iterator[Variant]:
+def all_variants(train: Corpus, filters: dict[str, str] | None = None) -> Iterator[Variant]:
     """
     Yield every model/configuration variant for scoring.
+    Supports full grid, single model, and filtered grid (via ``--filter KEY=VAL``).
 
-    Parameters:
-      train — the training corpus (only needed if variants depend on data)
+    Parameters
+    ----------
+    train : Corpus
+        The training corpus (only needed if variants depend on data).
 
-    Yields:
-      Variant instances in a deterministic order.
+    Yields
+    ------
+    Variant
+        Instances in a deterministic order.
     """
+    if filters:
+        from .main import _matches_filters
+    else:
+        _matches_filters = lambda *_: True
     ORDERS: dict[str, tuple[int, ...]] = {"ngram": (1, 2, 3, 4)}
 
     for plugin, valid_orders in ORDERS.items():
@@ -78,7 +93,8 @@ def all_variants(train: Corpus) -> Iterator[Variant]:
                                 )
                                 if not PluginRegistry[plugin].supports(cfg):
                                     continue
-                                yield _make_variant(plugin, order, cfg)
+                                if _matches_filters(cfg, filters or {}):
+                                    yield _make_variant(plugin, order, cfg)
             # ── 2) positional variants (absolute | relative) ──
             for strategy_name in ("absolute", "relative"):
                 for weight_mode in WeightMode:
@@ -96,6 +112,7 @@ def all_variants(train: Corpus) -> Iterator[Variant]:
                                 aggregate_mode=agg,
                             )
                             strategy = get_position_strategy(strategy_name, n=order)
-                            yield _make_variant(plugin, order, cfg, strategy)
+                            if _matches_filters(cfg, filters or {}):
+                                yield _make_variant(plugin, order, cfg, strategy)
 
 # End of src/variants.py

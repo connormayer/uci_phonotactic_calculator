@@ -11,6 +11,7 @@ def build_parser() -> argparse.ArgumentParser:
         "  All model/configuration variants in a grid",
         "  --model to force a single plugin",
         "  --ngram-order (≥1, default 2) to select n-gram order",
+        "  --filter KEY=VAL (repeatable) to restrict the variant grid.",
         "  Zero required flags: python -m src.ngram_calculator train.csv test.csv out.csv",
     ]
     banner = "\n".join(
@@ -86,6 +87,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-boundaries",
         action="store_true",
         help="Omit boundary symbols in n-gram generation",
+    )
+    scoring.add_argument(
+        "--filter",
+        action="append",
+        metavar="KEY=VAL",
+        help=style(
+            "Restrict the grid search to configs whose Config.<KEY> equals <VAL>. "
+            "Repeat the flag to combine filters (logical AND). "
+            "Examples:  --filter smoothing=true  --filter aggregate=logsumexp",
+            *BODY_STYLE
+        ),
     )
 
     # Positional n-gram options group

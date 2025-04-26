@@ -16,6 +16,24 @@ from .cli_utils import supports_color
 # Imported once here – never re-import inside main(), or it will mask the global.
 
 from .plugins.strategies.position import get_position_strategy
+from enum import Enum
+
+_FIELD_ALIASES = {"aggregate": "aggregate_mode"}
+def _matches_filters(cfg: Config, filters: dict[str, str]) -> bool:
+    for key, want in filters.items():
+        attr = _FIELD_ALIASES.get(key, key)
+        if not hasattr(cfg, attr):
+            return False
+        got = getattr(cfg, attr)
+        if isinstance(got, bool):
+            got = "true" if got else "false"
+        elif isinstance(got, Enum):
+            got = got.value
+        else:
+            got = str(got).lower()
+        if got != want:
+            return False
+    return True
 
 # Ensure all plugins are loaded so --model choices/default stay in sync
 _discover()
@@ -42,10 +60,43 @@ def parse_cfg(args) -> Config:
     )
 
 
+def parse_filters(args) -> dict[str, str]:
+    """
+    Parse and validate the --filter arguments from CLI args.
+    - Accepts None or an empty list and returns an empty dict.
+    - Validates each token contains '=', strips whitespace, lower-cases keys/values.
+    - Aliases (e.g. aggregate→aggregate_mode) are normalized automatically.
+    - Unknown keys (not present on Config) raise argparse.ArgumentTypeError.
+    - Boolean strings (true/1, false/0) are normalized to 'true'/'false'.
+    Returns a dict[str, str].
+    """
+    filters = {}
+    filter_args = getattr(args, 'filter', None)
+    CANONICAL = {"aggregate": "aggregate_mode"}
+    if not filter_args:
+        return filters
+    for token in filter_args:
+        if '=' not in token:
+            raise argparse.ArgumentTypeError(f"Invalid filter: '{token}'. Must be KEY=VAL.")
+        key, val = token.split('=', 1)
+        key = key.strip().lower()
+        key = CANONICAL.get(key, key)
+        val = val.strip().lower()
+        # Validate key against Config fields
+        if not hasattr(Config(), key):
+            raise argparse.ArgumentTypeError(f"Unknown filter key: '{key}'. Must be a valid Config attribute.")
+        if val in ("true", "1"):
+            val = "true"
+        elif val in ("false", "0"):
+            val = "false"
+        filters[key] = val
+    return filters
+
 def main():
     """
-    Parse command-line arguments, train every specified n-gram variant,
-    score the test corpus, and write a unified CSV.
+    Parse command-line arguments and execute one of three modes:
+    (1) single model, (2) full variant grid, or (3) filtered grid via --filter.
+    Trains every specified n-gram variant, scores the test corpus, and writes a unified CSV.
     """
     parser = build_parser()
     prelim, _ = parser.parse_known_args()
@@ -53,6 +104,7 @@ def main():
     if prelim.no_color or not cli_utils.supports_color(sys.stderr):
         cli_utils.style = lambda t, *_, **__: t  # type: ignore[assignment]
     args = parser.parse_args()
+    filters = parse_filters(args)
 
     if args.list_models:
         # Only print primary model keys (exclude aliases)
@@ -132,7 +184,9 @@ def main():
         single_variant = SingleVariant()
     else:
         # Multi-model: build all headers up front
-        variant_headers = [hdr for hdr, *_ in all_variants(test)]
+        variant_headers = [
+            v.header for v in all_variants(test, filters)
+        ]
         if len(set(variant_headers)) != len(variant_headers):
             dup = [h for h in variant_headers if variant_headers.count(h) > 1][0]
             parser.error(f"Internal error: duplicate CSV header ‘{dup}’.")
@@ -145,6 +199,8 @@ def main():
         if run_single:
             model_cls = get_model(single_variant.model_name)
             if not model_cls.supports(single_variant.cfg):
+                continue
+            if not _matches_filters(single_variant.cfg, filters):
                 continue
             m = get_model_instance(
                 single_variant.model_name,
@@ -159,7 +215,7 @@ def main():
             score = m.score(tok)
             entry[single_variant.header] = score if score != float("-inf") else float("nan")
         else:
-            for variant in all_variants(test):
+            for variant in all_variants(test, filters):
                 model_cls = get_model(variant.model_name)
                 if not model_cls.supports(variant.cfg):
                     continue  # belt-and-suspenders
@@ -175,9 +231,7 @@ def main():
                     strategy_name=strategy_name,
                 )
                 score = m.score(tok)
-                if score == float("-inf"):
-                    score = float("nan")
-                entry[variant.header] = score
+                entry[variant.header] = score if score != float("-inf") else float("nan")
         rows.append(entry)
 
     # Write out a single CSV: first two cols + one per variant header
