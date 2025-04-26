@@ -4,6 +4,7 @@ import csv
 from collections import OrderedDict
 from functools import lru_cache
 import os
+import sys
 from typing import Union
 
 from .config import Config, NeighbourhoodMode, ProbMode, AggregateMode, WeightMode

@@ -14,8 +14,10 @@ True
 >>> try: style('fail', 'notastyle')
 ... except ValueError as e: 'unknown style code' in str(e)
 True
+>>> slug("foo", None, "bar", "") == "foo_bar"
+True
 """
-__all__ = ["supports_color", "style", "HEADER_STYLE", "BODY_STYLE"]
+__all__ = ["supports_color", "style", "HEADER_STYLE", "BODY_STYLE", "slug"]
 
 import os
 import sys
@@ -36,6 +38,17 @@ _ANSI_STYLES = {
 HEADER_STYLE: tuple[str, str] = ('bold', 'white')  # All help headings: bold white
 BODY_STYLE:   tuple[str, str] = ('bold', 'blue')   # All help body text: bold blue
 
+
+# ──────────────────────────────────────────────────────────
+def slug(*parts: str) -> str:
+    """
+    Join non-empty, non-None string fragments with “_”.
+    Guarantees that:
+    • every element is cast to str()
+    • empty strings and None are skipped
+    • result never starts/ends with “_” nor contains “__”
+    """
+    return "_".join(str(p) for p in parts if p not in (None, ""))
 
 # Patch Windows console for colorama only once (if possible)
 _WINDOWS_PATCHED = False

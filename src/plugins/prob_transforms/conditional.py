@@ -19,9 +19,3 @@ class ConditionalTransform(BaseTransform):
         pred_sum[pred_sum == 0] = 1
         return np.log(counts / pred_sum)
 
-def conditional(counts: np.ndarray) -> np.ndarray:
-    warnings.warn(
-        "conditional() is deprecated; use ConditionalTransform().transform() instead.",
-        DeprecationWarning, stacklevel=2
-    )
-    return ConditionalTransform().transform(counts)

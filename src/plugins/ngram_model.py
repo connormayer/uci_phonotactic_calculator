@@ -1,6 +1,7 @@
 """src/plugins/ngram_model.py — Generic n-gram model plugin for arbitrary order (>=1)."""
 
 from .mixins import TokenWeightMixin
+from ..cli_utils import slug
 from .fallback import FallbackMixin
 from ..plugins.core import register, BaseModel
 from .strategies.ngram import NGramCounter
@@ -39,7 +40,8 @@ class NGramModel(TokenWeightMixin, FallbackMixin, BaseModel):
     @classmethod
     def _build_header(cls, cfg):
         parts = ["ngram", f"n{cfg.ngram_order}"]
-        if cfg.position_strategy and str(cfg.position_strategy).lower() != "none":  # positional
+
+        if cfg.position_strategy and str(cfg.position_strategy).lower() != "none":
             parts += [
                 "positional",
                 cls._weight_token(cfg.weight_mode),
@@ -47,7 +49,7 @@ class NGramModel(TokenWeightMixin, FallbackMixin, BaseModel):
                 cfg.aggregate_mode.value.lower(),
                 cfg.position_strategy.lower(),
             ]
-        else:  # classic
+        else:
             parts += [
                 "smoothed" if cfg.smoothing else "unsmoothed",
                 cls._weight_token(cfg.weight_mode),
@@ -55,7 +57,7 @@ class NGramModel(TokenWeightMixin, FallbackMixin, BaseModel):
                 str(cfg.prob_mode).lower(),
                 cfg.aggregate_mode.value.lower(),
             ]
-        return "_".join(parts)
+        return slug(*parts)
 
     @classmethod
     def header(cls, cfg):

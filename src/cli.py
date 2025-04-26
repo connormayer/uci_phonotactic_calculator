@@ -8,12 +8,12 @@ def build_parser() -> argparse.ArgumentParser:
     # Banner: header uses HEADER_STYLE, bullets must keep BODY_STYLE for visual consistency with help body text.
     header = style("Extensible n-gram scorer Supports:", *HEADER_STYLE)
     bullets = [
-        "  • All model/configuration variants in a grid",
-        "  • --model to force a single plugin",
-        "  • -n/--ngram-order (≥1, default 2) to select n-gram order",
-        "  • Zero required flags: python -m src.ngram_calculator train.csv test.csv out.csv",
+        "  All model/configuration variants in a grid",
+        "  --model to force a single plugin",
+        "  --ngram-order (≥1, default 2) to select n-gram order",
+        "  Zero required flags: python -m src.ngram_calculator train.csv test.csv out.csv",
     ]
-    banner = "\n\n".join(
+    banner = "\n".join(
         [header] +
         [style(line, *BODY_STYLE) for line in bullets]
     )

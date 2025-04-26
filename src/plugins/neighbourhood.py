@@ -9,8 +9,7 @@ Notes:
   For correct behavior, ensure each token is a list of phoneme strings.
 """
 
-from typing import List, Set
-from ..types import Symbol
+from ..cli_utils import slug
 from ..config import NeighbourhoodMode
 from ..plugins.core import register, BaseModel
 from .fallback import FallbackMixin
@@ -82,8 +81,7 @@ class NeighbourhoodModel(FallbackMixin, BaseModel):
 
     @classmethod
     def header(cls, cfg):
-        mode = cfg.neighbourhood_mode.value.lower()
-        return f"neighbourhood_{mode}"
+        return slug("neighbourhood", cfg.neighbourhood_mode.value.lower())
 
     @classmethod
     def supports(cls, cfg):
