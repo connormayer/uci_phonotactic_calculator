@@ -41,6 +41,12 @@ class WeightMode(StrEnum):
     LOG  = "log"
 
 
+class NeighbourhoodMode(StrEnum):
+    """Edit-distance operations counted as neighbours."""
+    FULL              = "full"
+    SUBSTITUTION_ONLY = "substitution_only"
+
+
 import warnings
 
 # TODO-v2.0: final removal of legacy 'positional' kwarg
@@ -57,6 +63,7 @@ class Config:
     use_boundaries : bool           = True
     smoothing      : bool           = False
     weight_mode    : WeightMode     = WeightMode.NONE
+    neighbourhood_mode: NeighbourhoodMode = NeighbourhoodMode.FULL
     position_strategy: str | None   = None     # 'absolute', 'relative', 'none', or None
 
     # Mode selections
@@ -85,6 +92,8 @@ class Config:
         """
         cfg = Config()
         for key, value in overrides.items():
+            if key == "neighbourhood_mode":
+                value = NeighbourhoodMode(value) if isinstance(value, str) else value
             if key == "positional":
                 warnings.warn(
                     "Config.positional is deprecated; use position_strategy instead.",

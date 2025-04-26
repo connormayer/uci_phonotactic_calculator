@@ -107,6 +107,10 @@ class BaseModel(ABC):
                 return False
         return True
 
+    @classmethod
+    def header(cls, cfg: "Config") -> str:
+        raise NotImplementedError("Model must implement header()")
+
     @abstractmethod
     def fit(self, corpus: "Corpus") -> None: ...
     @abstractmethod

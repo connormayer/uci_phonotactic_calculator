@@ -13,7 +13,7 @@ from .strategies.position import get_position_strategy, PositionStrategy
 
 @register("ngram")
 class NGramModel(TokenWeightMixin, FallbackMixin, BaseModel):
-    order_min: int | None = 1  # model supports any n ≥ 1.
+    order_min: int | None = 1
     """
     Generic n-gram model for arbitrary order n.
 
@@ -31,6 +31,35 @@ class NGramModel(TokenWeightMixin, FallbackMixin, BaseModel):
     def _use_positional(self) -> bool:
         ps = self.cfg.position_strategy
         return bool(ps and str(ps).lower() != "none")
+
+    @staticmethod
+    def _weight_token(mode) -> str:
+        return mode.value.lower() if mode.name != "NONE" else "unw"
+
+    @classmethod
+    def _build_header(cls, cfg):
+        parts = ["ngram", f"n{cfg.ngram_order}"]
+        if cfg.position_strategy and str(cfg.position_strategy).lower() != "none":  # positional
+            parts += [
+                "positional",
+                cls._weight_token(cfg.weight_mode),
+                str(cfg.prob_mode).lower(),
+                cfg.aggregate_mode.value.lower(),
+                cfg.position_strategy.lower(),
+            ]
+        else:  # classic
+            parts += [
+                "smoothed" if cfg.smoothing else "unsmoothed",
+                cls._weight_token(cfg.weight_mode),
+                "bound" if cfg.use_boundaries else "nobound",
+                str(cfg.prob_mode).lower(),
+                cfg.aggregate_mode.value.lower(),
+            ]
+        return "_".join(parts)
+
+    @classmethod
+    def header(cls, cfg):
+        return cls._build_header(cfg)
 
     @classmethod
     def supports(cls, cfg):

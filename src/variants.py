@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Iterator, NamedTuple
 
 from .plugins import PluginRegistry
-from .header import build_header
+from .plugins.core import get_model
 from .config import Config, AggregateMode, WeightMode
 from . import probability as probability
 from .corpus import Corpus
@@ -41,7 +41,7 @@ def _skip(plugin, weight_mode, agg=None) -> bool:
 
 
 def _make_variant(plugin, order, cfg, strategy=None):
-    header = build_header(plugin, cfg)
+    header = get_model(plugin).header(cfg)
     return Variant(header, plugin, cfg, strategy)
 
 

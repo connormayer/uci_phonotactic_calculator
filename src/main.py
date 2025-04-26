@@ -15,12 +15,12 @@ import os
 import sys
 from typing import Union
 
-from .config import Config, ProbMode, AggregateMode, WeightMode
+from .config import Config, NeighbourhoodMode, ProbMode, AggregateMode, WeightMode
 from .corpus import Corpus
 from .plugins.core import get_model, PluginRegistry, discover_models as _discover, ALIASES
 from .variants import all_variants
 # Imported once here – never re-import inside main(), or it will mask the global.
-from .header import build_header  # NEW – canonical header builder
+
 from .plugins.strategies.position import get_position_strategy
 
 # Ensure all plugins are loaded so --model choices/default stay in sync
@@ -35,6 +35,7 @@ def parse_cfg(args) -> Config:
     weight_mode = WeightMode(args.weight_mode)
     # Canonicalize position_strategy using Config helper (handles 'none' deprecation)
     position_strategy = Config._normalize_none_string(args.position_strategy)
+    neighbourhood_mode = NeighbourhoodMode(args.neighbourhood_mode)
     return Config.default(
         prob_mode      = chosen,
         aggregate_mode = args.aggregate,
@@ -43,6 +44,7 @@ def parse_cfg(args) -> Config:
         use_boundaries = not args.no_boundaries,
         ngram_order    = args.ngram_order,
         position_strategy = position_strategy,   # NEW
+        neighbourhood_mode = neighbourhood_mode,
     )
 
 
@@ -66,7 +68,14 @@ def main():
         "--weight-mode",
         choices=[m.value for m in WeightMode],
         default=WeightMode.NONE.value,
-        help="Token weighting: none (1.0), raw frequency, or log frequency"
+        help="Token weighting: unw (1.0), raw frequency, or log frequency"
+    )
+
+    parser.add_argument(
+        "--neighbourhood-mode",
+        choices=[m.value for m in NeighbourhoodMode],
+        default=NeighbourhoodMode.FULL.value,
+        help="Which edit-distance operations define a neighbour (default: full)."
     )
 
     parser.add_argument(
@@ -182,7 +191,7 @@ def main():
     if run_single:
         # Derive the single header and variant descriptor up front
         variant_cfg   = parse_cfg(args)
-        single_header = build_header(args.model, variant_cfg)
+        single_header = get_model(args.model).header(variant_cfg)
         variant_headers = [single_header]
         if len(set(variant_headers)) != len(variant_headers):
             dup = [h for h in variant_headers if variant_headers.count(h) > 1][0]
