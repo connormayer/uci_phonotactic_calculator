@@ -39,6 +39,27 @@ python -m src.main data/english.csv data/sample_test_data/english_test_data.csv 
 
 The CLI supports a wide range of options. Run `python -m src.main --help` for a full list.
 
+### 🔎 Filtering and Discovering Keys
+
+You can restrict the grid search to specific model/configuration variants using one or more `--filter` flags:
+
+```sh
+python -m src.main ... --filter KEY=VAL [--filter KEY2=VAL2 ...]
+```
+- Each filter restricts the grid to configs where `Config.<KEY> == <VAL>`.
+- Repeat the flag to combine filters (logical AND).
+- Examples:
+  ```sh
+  --filter smoothing=laplace --filter n=2
+  --filter aggregate=logsumexp
+  ```
+- Both long and short key aliases are accepted (e.g., `n` for `ngram_order`, `prob` for `prob_mode`).
+- For a full list of accepted keys and aliases, run:
+  ```sh
+  python -m src.main --list-filters
+  ```
+  This will print all canonical keys and their available aliases.
+
 ---
 
 ### 🐍 Scripting & CI: Disabling Progress Bars

@@ -14,16 +14,13 @@ from .variants import all_variants
 from .cli import build_parser
 from .cli_utils import supports_color
 from src.progress import progress  # Centralized progress bar logic
+from src.filter_aliases import canonical, ALIASES
 # Imported once here – never re-import inside main(), or it will mask the global.
 
 
-_FIELD_ALIASES = {"aggregate": "aggregate_mode"}
 def _matches_filters(cfg: Config, filters: dict[str, str]) -> bool:
     for key, want in filters.items():
-        attr = _FIELD_ALIASES.get(key, key)
-        if not hasattr(cfg, attr):
-            return False
-        got = getattr(cfg, attr)
+        got = getattr(cfg, key, None)
         if isinstance(got, bool):
             got = "true" if got else "false"
         else:
@@ -67,19 +64,21 @@ def parse_filters(args) -> dict[str, str]:
     """
     filters = {}
     filter_args = getattr(args, 'filter', None)
-    CANONICAL = {"aggregate": "aggregate_mode"}
     if not filter_args:
         return filters
     for token in filter_args:
         if '=' not in token:
             raise argparse.ArgumentTypeError(f"Invalid filter: '{token}'. Must be KEY=VAL.")
         key, val = token.split('=', 1)
-        key = key.strip().lower()
-        key = CANONICAL.get(key, key)
+        key_raw = key.strip()           # keep original case for error text
+        key = canonical(key_raw)
         val = val.strip().lower()
         # Validate key against Config fields
         if not hasattr(Config(), key):
-            raise argparse.ArgumentTypeError(f"Unknown filter key: '{key}'. Must be a valid Config attribute.")
+            valid = sorted(set(list(vars(Config()).keys()) + list(ALIASES.keys())))
+            raise argparse.ArgumentTypeError(
+                f"Unknown filter key: '{key_raw}'. Valid keys: {', '.join(valid)}"
+            )
         if val in ("true", "1"):
             val = "true"
         elif val in ("false", "0"):
@@ -95,6 +94,16 @@ def main():
     """
     parser = build_parser()
     prelim, _ = parser.parse_known_args()
+    if getattr(prelim, "list_filters", False):
+        from src.filter_aliases import ALIASES
+        core_keys = [k for k in Config.__dataclass_fields__ if not k.startswith("_")]
+        print("Core keys:")
+        for k in sorted(core_keys):
+            print(f"  {k}")
+        print("\nAliases:")
+        for alias, tgt in sorted(ALIASES.items()):
+            print(f"  {alias}  →  {tgt}")
+        sys.exit(0)
     import src.cli_utils as cli_utils
     if prelim.no_color or not cli_utils.supports_color(sys.stderr):
         cli_utils.style = lambda t, *_, **__: t  # type: ignore[assignment]

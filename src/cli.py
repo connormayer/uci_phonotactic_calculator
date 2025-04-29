@@ -58,6 +58,7 @@ def build_parser() -> argparse.ArgumentParser:
         "  --model to force a single plugin",
         "  --ngram-order (≥1, default 2) to select n-gram order",
         "  --filter KEY=VAL (repeatable) to restrict the variant grid.",
+        "  --list-filters to display usable filter keys",
         "  --no-progress to suppress live status",
         "  Zero required flags: python -m src.ngram_calculator train.csv test.csv out.csv",
     ]  # (Obsolete --smoothing boolean bullet removed)
@@ -100,6 +101,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--list-models",
         action="store_true",
         help="Print all registered model plugin names and exit."
+    )
+    model.add_argument(
+        "--list-filters",
+        action="store_true",
+        help="Print all accepted --filter keys (including aliases) and exit."
     )
     _registry_option(model, flag="position-strategy",
                      category="position_strategy",
@@ -153,7 +159,8 @@ def build_parser() -> argparse.ArgumentParser:
         help=style(
             "Restrict the grid search to configs whose Config.<KEY> equals <VAL>. "
             "Repeat the flag to combine filters (logical AND). "
-            "Examples:  --filter smoothing=true  --filter aggregate=logsumexp",
+            "Examples:  --filter smoothing=true  --filter aggregate=logsumexp "
+            "(run --list-filters for details)",
             *BODY_STYLE
         ),
     )

@@ -18,7 +18,6 @@ from .corpus import Corpus
 from .plugins.core import discover_models
 from .plugins.strategies.position import get_position_strategy
 from .registries import registry as _r
-from .registries import registry as _reg
 
 def _canonical_agg(name: str) -> str:
     return name
