@@ -13,6 +13,7 @@ from .plugins.core import get_model, PluginRegistry, discover_models as _discove
 from .variants import all_variants
 from .cli import build_parser
 from .cli_utils import supports_color
+from src.progress import progress  # Centralized progress bar logic
 # Imported once here – never re-import inside main(), or it will mask the global.
 
 
@@ -238,49 +239,84 @@ def main():
             parser.error(f"Internal error: duplicate CSV header ‘{dup}’.")
     fieldnames = [*base_fields, *variant_headers]
     rows: list[OrderedDict[str, float | str | int]] = []
-    for tok in test.tokens:
-        entry = OrderedDict((f, None) for f in fieldnames)
-        entry["word"] = " ".join(tok)
-        entry["word_len"] = len(tok)
-        if run_single:
-            model_cls = get_model(single_variant.model_name)
-            if not model_cls.supports(single_variant.cfg):
-                continue
-            if not _matches_filters(single_variant.cfg, filters):
-                continue
-            m = get_model_instance(
-                single_variant.model_name,
-                single_variant.cfg.smoothing_scheme,
-                single_variant.cfg.weight_mode,
-                single_variant.cfg.boundary_mode,
-                single_variant.cfg.prob_mode,
-                single_variant.cfg.aggregate_mode,
-                single_variant.cfg.ngram_order,
-                position_strategy=single_variant.cfg.position_strategy,
-                count_strategy=single_variant.cfg.count_strategy,
+    # Progress bar for training loop
+    variants_to_run = []
+    if run_single:
+        variants_to_run = [single_variant]
+    else:
+        variants_to_run = list(all_variants(test, filters))
+
+    with progress(args.progress) as bar:
+        train_task = None
+        if bar is not None:
+            train_task = bar.add_task("Training", total=len(variants_to_run))
+        for variant in variants_to_run:
+            # Build and fit model for each variant
+            get_model_instance(
+                variant.model_name,
+                variant.cfg.smoothing_scheme,
+                variant.cfg.weight_mode,
+                variant.cfg.boundary_mode,
+                variant.cfg.prob_mode,
+                variant.cfg.aggregate_mode,
+                variant.cfg.ngram_order,
+                position_strategy=variant.cfg.position_strategy,
+                count_strategy=variant.cfg.count_strategy,
             )
-            score = m.score(tok)
-            entry[single_variant.header] = score if score != float("-inf") else float("nan")
-        else:
-            for variant in all_variants(test, filters):
-                model_cls = get_model(variant.model_name)
-                if not model_cls.supports(variant.cfg):
-                    continue  # belt-and-suspenders
-                strategy_name = variant.cfg.position_strategy
+            if bar is not None:
+                bar.update(train_task, advance=1)
+
+    # Progress bar for scoring loop
+    with progress(args.progress) as bar:
+        score_task = None
+        if bar is not None:
+            score_task = bar.add_task("Scoring", total=len(test.tokens))
+        for tok in test.tokens:
+            entry = OrderedDict((f, None) for f in fieldnames)
+            entry["word"] = " ".join(tok)
+            entry["word_len"] = len(tok)
+            if run_single:
+                model_cls = get_model(single_variant.model_name)
+                if not model_cls.supports(single_variant.cfg):
+                    if bar is not None: bar.update(score_task, advance=1)
+                    continue
+                if not _matches_filters(single_variant.cfg, filters):
+                    if bar is not None: bar.update(score_task, advance=1)
+                    continue
                 m = get_model_instance(
-                    variant.model_name,
-                    variant.cfg.smoothing_scheme,
-                    variant.cfg.weight_mode,
-                    variant.cfg.boundary_mode,
-                    variant.cfg.prob_mode,
-                    variant.cfg.aggregate_mode,
-                    variant.cfg.ngram_order,
-                    position_strategy=variant.cfg.position_strategy,
-                    count_strategy=variant.cfg.count_strategy,
+                    single_variant.model_name,
+                    single_variant.cfg.smoothing_scheme,
+                    single_variant.cfg.weight_mode,
+                    single_variant.cfg.boundary_mode,
+                    single_variant.cfg.prob_mode,
+                    single_variant.cfg.aggregate_mode,
+                    single_variant.cfg.ngram_order,
+                    position_strategy=single_variant.cfg.position_strategy,
+                    count_strategy=single_variant.cfg.count_strategy,
                 )
                 score = m.score(tok)
-                entry[variant.header] = score if score != float("-inf") else float("nan")
-        rows.append(entry)
+                entry[single_variant.header] = score if score != float("-inf") else float("nan")
+            else:
+                for variant in all_variants(test, filters):
+                    model_cls = get_model(variant.model_name)
+                    if not model_cls.supports(variant.cfg):
+                        continue  # belt-and-suspenders
+                    strategy_name = variant.cfg.position_strategy
+                    m = get_model_instance(
+                        variant.model_name,
+                        variant.cfg.smoothing_scheme,
+                        variant.cfg.weight_mode,
+                        variant.cfg.boundary_mode,
+                        variant.cfg.prob_mode,
+                        variant.cfg.aggregate_mode,
+                        variant.cfg.ngram_order,
+                        position_strategy=variant.cfg.position_strategy,
+                        count_strategy=variant.cfg.count_strategy,
+                    )
+                    score = m.score(tok)
+                    entry[variant.header] = score if score != float("-inf") else float("nan")
+            rows.append(entry)
+            if bar is not None: bar.update(score_task, advance=1)
 
     # Write out a single CSV: first two cols + one per variant header
     try:

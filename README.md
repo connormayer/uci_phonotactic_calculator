@@ -39,6 +39,18 @@ python -m src.main data/english.csv data/sample_test_data/english_test_data.csv 
 
 The CLI supports a wide range of options. Run `python -m src.main --help` for a full list.
 
+---
+
+### 🐍 Scripting & CI: Disabling Progress Bars
+
+To make scripting and automation easier (e.g., in Docker or CI), you can suppress all progress bars globally by setting the environment variable:
+
+```sh
+NO_PROGRESS=1
+```
+
+This disables all Rich progress bars, regardless of CLI flags. You can also use the `--no-progress` CLI flag for one-off runs.
+
 **Key flags:**
 - `--boundary-mode`: `both` (default), `prefix`, `suffix`, `none`
 - `--aggregate`: `sum`, `mean`, `min`, `max`, `none`

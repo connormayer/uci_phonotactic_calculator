@@ -58,6 +58,7 @@ def build_parser() -> argparse.ArgumentParser:
         "  --model to force a single plugin",
         "  --ngram-order (≥1, default 2) to select n-gram order",
         "  --filter KEY=VAL (repeatable) to restrict the variant grid.",
+        "  --no-progress to suppress live status",
         "  Zero required flags: python -m src.ngram_calculator train.csv test.csv out.csv",
     ]  # (Obsolete --smoothing boolean bullet removed)
     banner = "\n".join(
@@ -73,9 +74,16 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Disable coloured output in help and errors."
     )
-
+    
     # Core files group
     core = parser.add_argument_group(style("Core files", *HEADER_STYLE))
+    core.add_argument(
+        "--no-progress",
+        dest="progress",
+        action="store_false",
+        default=True,
+        help="Suppress live progress bar/status. Default: show progress bar."
+    )
     core.add_argument("train_file", help="Path to the training corpus CSV")
     core.add_argument("test_file", help="Path to the test corpus CSV")
     core.add_argument("output_file", help="Path to write the scored output CSV")
