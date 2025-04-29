@@ -4,20 +4,16 @@ src/plugins/strategies/__init__.py
 Registry of available counting strategies.
 """
 
-from ..core import StrategyRegistry, register_strategy  # re-export
 from .base import BaseCounter
 from .ngram import NGramCounter
-from .position import (
-    absolute, relative, get_position_strategy,
-    _POSITION_REGISTRY as PositionRegistry,
-)
+from .position import absolute, relative
+from .position import get_position_strategy  # new
 
 __all__ = [
-    "StrategyRegistry", "register_strategy",
     "BaseCounter", "NGramCounter",
     "Absolute", "Relative", "NonePos",
     "absolute", "relative",
-    "get_position_strategy", "PositionRegistry",
 ]
+__all__.append('get_position_strategy')
 
 # End of src/plugins/strategies/__init__.py

@@ -4,10 +4,10 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 from typing import Sequence, List, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .config import Config
-from .constants import WORD_BOUNDARY
+from .registries import registry
 
 
 @dataclass(slots=True)
@@ -16,15 +16,17 @@ class Corpus:
     Encapsulates token sequences, their frequencies, and the sound index for n-gram modeling.
     Supports optional inclusion of boundary symbols in the vocabulary.
     """
+    cfg: Config = field(init=False, repr=False)        # ← new
     tokens: list[list[str]]
     freqs: list[float]
     sound_index: list[str]
+    _boundary: str = field(init=False, repr=False)
+    boundary_symbol: str = field(init=False)
 
     def __init__(
         self,
         file_path: str | Path,
         cfg: Config,
-        include_boundary: bool | None = None
     ):
         """
         Load tokens and optional frequencies from a CSV, build the vocabulary,
@@ -32,10 +34,9 @@ class Corpus:
 
         Parameters:
           file_path         — Path to the CSV file of tokens
-          cfg               — Configuration flags (including cfg.use_boundaries)
-          include_boundary  — If True, force boundary symbol into vocabulary;
-                              if False, omit it; if None, defer to cfg.use_boundaries.
+          cfg               — Configuration flags (including cfg.boundary_mode)
         """
+        self.cfg = cfg
         self.tokens = []
         self.freqs = []
 
@@ -51,34 +52,40 @@ class Corpus:
         # Build vocabulary from all token symbols
         vocab = {sound for token in self.tokens for sound in token}
 
-        # Determine whether to include the boundary symbol
-        boundary = cfg.use_boundaries if include_boundary is None else include_boundary
-        if boundary:
-            vocab.add(WORD_BOUNDARY)
+        # Use registry to get the boundary symbol
+        pad_sym = registry('boundary_scheme')[cfg.boundary_scheme]()
+        # Only add the boundary symbol if boundary_mode != 'none'
+        if cfg.boundary_mode != 'none':
+            vocab.add(pad_sym)
+        self._boundary = pad_sym
+        self.boundary_symbol = pad_sym  # boundary symbol from config
 
         # Sort into a reproducible index
         self.sound_index = sorted(vocab)
+
+    def ngrams(self, token: Sequence[str], n: int, *, index_map: dict[str, int] | None = None) -> list[tuple]:
+        """
+        Instance wrapper for generate_ngrams that always uses self._boundary and self.cfg.boundary_mode.
+        """
+        return Corpus.generate_ngrams(token, n, self.cfg.boundary_mode, index_map=index_map, boundary=self._boundary)
 
     @staticmethod
     def generate_ngrams(
         token: Sequence[str],
         n: int,
-        use_boundaries: bool,
+        boundary_mode: str,
         *,
         index_map: dict[str, int] | None = None,
+        boundary: str = '#',
     ) -> List[Tuple]:
         """
-        Generate n-grams from a token. Pads with n-1 boundaries on both sides if use_boundaries is True and n > 1.
+        Generate n-grams from a token using a registry-driven boundary mode.
         If index_map is supplied, returns tuples of ints; otherwise, returns tuples of symbols.
         Returns empty list if sequence too short.
-
-        Boundary tokens are inserted only when n > 1.
         """
-        pad = [WORD_BOUNDARY] * (n - 1) if n > 1 else []
-        if use_boundaries:
-            seq = pad + list(token) + pad
-        else:
-            seq = list(token)
+        from .registries import registry
+        pad_fn = registry('boundary_mode')[boundary_mode]
+        seq = pad_fn(list(token), boundary, n)
         if len(seq) < n:
             return []
         grams = [tuple(seq[i:i+n]) for i in range(len(seq) - n + 1)]

@@ -1,0 +1,28 @@
+# src/header_schema.py
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Callable, Any
+
+@dataclass(frozen=True)
+class HeaderField:
+    attr: str                              # Config attribute name
+    normalise: Callable[[Any], str]        # value → short token
+    default: Any                           # sentinel ⇒ token is omitted
+    prefix: str | None = None              # optional namespace, e.g. "cs"
+    always: bool = False                   # emit even if value==default
+
+from .cli_utils import slug
+from .header_utils import (
+    _weight_token, _aggregate_alias, _boundary_tag,  # already exist
+)
+
+SCHEMA: tuple[HeaderField, ...] = (
+    HeaderField("ngram_order",      lambda v: f"n{v}",                    default=None,    always=True),
+    HeaderField("count_strategy",   lambda v: f"ngram" if v == "ngram" else f"cs_{v}", default=None, always=True),
+    HeaderField("position_strategy",lambda v: f"pos_{v or 'none'}",       default=None,    always=True),
+    HeaderField("boundary_mode",    lambda v: f"bound_{v}",               default=None,    always=True),
+    HeaderField("smoothing_scheme", lambda v: f"smooth_{v}",              default=None,    always=True),
+    HeaderField("weight_mode",      lambda v: f"weight_{v}",              default=None,    always=True),
+    HeaderField("prob_mode",        lambda v: f"prob_{v}",                default=None,    always=True),
+    HeaderField("aggregate_mode",   lambda v: f"agg_{v or 'none'}", default=None, always=True),
+)

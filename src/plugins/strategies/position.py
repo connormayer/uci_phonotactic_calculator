@@ -67,37 +67,43 @@ def _singleton(cls: type[PositionStrategy]) -> PositionStrategy:
     return cls()
 
 # ---- public aliases for CLI use ----
+from ...registries import register, registry   # ← new
+
+# register concrete strategies
+register('position_strategy', 'absolute')(Absolute)
+register('position_strategy', 'relative')(Relative)
+
 absolute = Absolute
 relative = Relative
 
-_POSITION_REGISTRY: dict[str, type[PositionStrategy]] = {
-    "absolute": Absolute,
-    "relative": Relative,
-}
-
-def get_position_strategy(name: str, n: int = 1) -> PositionStrategy:
+# ──────────────────────────────────────────────────────────────
+# Registry wiring  +  public accessor
+# ──────────────────────────────────────────────────────────────
+def get_position_strategy(name: str | None, n: int = 1):
     """
-    Return a PositionStrategy instance.
+    Return an instance of the requested PositionStrategy or None.
 
-    • 'absolute' → cached singleton (identity-stable)
-    • 'relative'            → fresh Relative(n) on every call
-    Raises ValueError for unknown names.
+    Parameters
+    ----------
+    name : {"absolute", "relative", "none", None}
+    n    : n-gram order (required only for "relative")
+
+    Examples
+    --------
+    >>> get_position_strategy("absolute")
+    <src.plugins.strategies.position.Absolute object at 0x...>
+    >>> get_position_strategy("relative", n=2)
+    <src.plugins.strategies.position.Relative object at 0x...>
+    >>> get_position_strategy(None) is None
+    True
     """
-    if name is None:
+    if name in (None, '', 'none'):
         return None
-    if str(name).lower() == "none":
-        import warnings
-        warnings.warn("'none' is deprecated; omit --position-strategy instead.", DeprecationWarning, stacklevel=2)
-        return None
-    cls = _POSITION_REGISTRY.get(name.lower())
-    if cls is None:
-        valid = ", ".join(sorted(_POSITION_REGISTRY))
-        raise ValueError(f"Unknown position strategy '{name}'. "
-                         f"Expected one of: {valid}")
-    return Relative(n) if cls is Relative else _singleton(cls)
+    cls = registry('position_strategy')[name]
+    return cls() if name == 'absolute' else cls(n)
 
 __all__ = [
     "PositionStrategy", "Absolute", "Relative", "NonePos",
     "absolute", "relative",
-    "_POSITION_REGISTRY", "get_position_strategy"
+    "get_position_strategy",
 ]

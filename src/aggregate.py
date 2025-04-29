@@ -9,7 +9,7 @@ min_val and max_val return -inf for empty input, for parity with other helpers.
 
 import numpy as np
 from typing import Sequence, Callable
-from .config import AggregateMode
+from .registries import register
 
 
 def log_product(components: Sequence[float]) -> float:
@@ -80,14 +80,5 @@ def max_val(components: Sequence[float]) -> float:
     """Return the maximum log-value (–∞ for empty)."""
     return float(max(components)) if components else float("-inf")
 
-
-AGGREGATORS: dict[AggregateMode, Callable[[Sequence[float]], float]] = {
-    AggregateMode.LOG_PRODUCT: log_product,
-    AggregateMode.LOGSUMEXP:   logsumexp,
-    AggregateMode.SUM:         linear_sum,
-    AggregateMode.SUM_PLUS1:   linear_sum_plus1,   # NEW
-    AggregateMode.MIN:         min_val,
-    AggregateMode.MAX:         max_val,
-}
 
 # End of src/aggregate.py

@@ -5,7 +5,6 @@ import numpy as np
 from .plugins.core import get_prob_transform, ProbTransformRegistry, discover_models
 from functools import lru_cache
 
-from .config import ProbMode
 
 
 

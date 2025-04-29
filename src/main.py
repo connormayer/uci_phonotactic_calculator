@@ -7,16 +7,14 @@ import os
 import sys
 from typing import Union
 
-from .config import Config, NeighbourhoodMode, ProbMode, AggregateMode, WeightMode
+from .config import Config
 from .corpus import Corpus
-from .plugins.core import get_model, PluginRegistry, discover_models as _discover, ALIASES
+from .plugins.core import get_model, PluginRegistry, discover_models as _discover
 from .variants import all_variants
 from .cli import build_parser
 from .cli_utils import supports_color
 # Imported once here – never re-import inside main(), or it will mask the global.
 
-from .plugins.strategies.position import get_position_strategy
-from enum import Enum
 
 _FIELD_ALIASES = {"aggregate": "aggregate_mode"}
 def _matches_filters(cfg: Config, filters: dict[str, str]) -> bool:
@@ -27,8 +25,6 @@ def _matches_filters(cfg: Config, filters: dict[str, str]) -> bool:
         got = getattr(cfg, attr)
         if isinstance(got, bool):
             got = "true" if got else "false"
-        elif isinstance(got, Enum):
-            got = got.value
         else:
             got = str(got).lower()
         if got != want:
@@ -43,20 +39,18 @@ def parse_cfg(args) -> Config:
     """
     Build a Config from parsed arguments, applying overrides to defaults.
     """
-    chosen = args.prob_transform or args.prob_mode or ProbMode.CONDITIONAL
-    weight_mode = WeightMode(args.weight_mode)
-    # Canonicalize position_strategy using Config helper (handles 'none' deprecation)
-    position_strategy = Config._normalize_none_string(args.position_strategy)
-    neighbourhood_mode = NeighbourhoodMode(args.neighbourhood_mode)
+    chosen = args.prob_transform or args.prob_mode or "conditional"
+    count_strategy = args.count_strategy
     return Config.default(
         prob_mode      = chosen,
         aggregate_mode = args.aggregate,
-        smoothing      = args.smoothing,
-        weight_mode    = weight_mode,
-        use_boundaries = not args.no_boundaries,
+        smoothing_scheme = args.smoothing_scheme,
+        weight_mode    = args.weight_mode,
+        boundary_mode = args.boundary_mode,
         ngram_order    = args.ngram_order,
-        position_strategy = position_strategy,   # NEW
-        neighbourhood_mode = neighbourhood_mode,
+        position_strategy = args.position_strategy,
+        neighbourhood_mode = args.neighbourhood_mode,
+        count_strategy = count_strategy,
     )
 
 
@@ -104,11 +98,61 @@ def main():
     if prelim.no_color or not cli_utils.supports_color(sys.stderr):
         cli_utils.style = lambda t, *_, **__: t  # type: ignore[assignment]
     args = parser.parse_args()
+    # Patch: convert string 'none' to None for position_strategy to avoid DeprecationWarning
+    if hasattr(args, 'position_strategy') and isinstance(args.position_strategy, str) and args.position_strategy.lower() == 'none':
+        args.position_strategy = None
     filters = parse_filters(args)
 
+    # Legacy CSV output path
+    if getattr(args, "legacy", False):
+        if getattr(args, "model", None) or getattr(args, "list_models", False):
+            parser.error("--legacy is incompatible with --model or --list-models.")
+
+        from .variants import legacy_variants
+        variants = legacy_variants()
+        headers = [v.header for v in variants]
+        header_to_variant = {v.header: v for v in variants}
+
+        @lru_cache(maxsize=None)
+        def get_cached_model(header: str):
+            var = header_to_variant[header]
+            corpus = Corpus(args.train_file, var.cfg)
+            model = get_model(var.model_name)(var.cfg)
+            model.fit(corpus)
+            return model
+
+        test_corpus = Corpus(args.test_file, variants[0].cfg)
+        if not test_corpus.tokens:
+            parser.error(f"Test file ‘{args.test_file}’ contains no token rows.")
+
+        rows = []
+        for tok in test_corpus.tokens:
+            row = OrderedDict()
+            row["word"] = " ".join(tok)
+            row["word_len"] = len(tok)
+            for header in headers:
+                m = get_cached_model(header)
+                score = m.score(tok)
+                row[header] = score if score != float("-inf") else float("nan")
+            rows.append(row)
+
+        fieldnames = ["word", "word_len"] + headers
+        try:
+            with open(args.output_file, "w", newline="", encoding="utf-8") as fh:
+                writer = csv.DictWriter(fh, fieldnames=fieldnames, lineterminator="\n")
+                writer.writeheader()
+                writer.writerows(rows)
+        except PermissionError as e:
+            print(f"Permission denied: cannot write to '{args.output_file}': {e}", file=sys.stderr)
+            sys.exit(1)
+        except OSError as e:
+            print(f"Error opening output file '{args.output_file}': {e}", file=sys.stderr)
+            sys.exit(1)
+        sys.exit(0)
+
     if args.list_models:
-        # Only print primary model keys (exclude aliases)
-        print(", ".join(sorted(set(PluginRegistry) - set(ALIASES))))
+        # Only print primary model keys
+        print(", ".join(sorted(set(PluginRegistry))))
         sys.exit(0)
     if args.model:
         try:
@@ -120,27 +164,30 @@ def main():
     @lru_cache(maxsize=None)
     def get_model_instance(
         model_name: str,
-        smoothing: bool,
-        weight_mode: WeightMode,
-        use_boundaries: bool,
-        prob_mode: Union[ProbMode, str],
-        aggregate_mode: AggregateMode,
+        smoothing_scheme: str,
+        weight_mode: str,
+        boundary_mode: str,
+        prob_mode: str,
+        aggregate_mode: str,
         ngram_order: int,
-        strategy_name: str | None = None,
+        *,
+        position_strategy: str | None = None,
+        count_strategy: str = 'ngram',
     ):
         """
         Build, train, and cache one variant of the model (positional flag removed).
         """
         cfg_variant = Config.default(
-            smoothing      = smoothing,
-            weight_mode    = weight_mode,
-            use_boundaries = use_boundaries,
-            prob_mode      = prob_mode,
-            aggregate_mode = aggregate_mode,
-            ngram_order    = ngram_order,
-            position_strategy = strategy_name,
+            smoothing_scheme  = smoothing_scheme,
+            weight_mode       = weight_mode,
+            boundary_mode     = boundary_mode,
+            prob_mode         = prob_mode,
+            aggregate_mode    = aggregate_mode,
+            ngram_order       = ngram_order,
+            position_strategy = position_strategy,
+            count_strategy    = count_strategy,
         )
-        train_corpus = Corpus(args.train_file, cfg_variant, include_boundary=use_boundaries)
+        train_corpus = Corpus(args.train_file, cfg_variant)
         if not train_corpus.tokens:
             parser.error(f"Training file ‘{args.train_file}’ contains no token rows.")
         model = get_model(model_name)(cfg_variant)
@@ -151,7 +198,6 @@ def main():
     test = Corpus(
         args.test_file,
         cfg,
-        include_boundary=cfg.use_boundaries,
     )
     if not test.tokens:
         parser.error(f"Test file ‘{args.test_file}’ contains no token rows.")
@@ -204,13 +250,14 @@ def main():
                 continue
             m = get_model_instance(
                 single_variant.model_name,
-                single_variant.cfg.smoothing,
+                single_variant.cfg.smoothing_scheme,
                 single_variant.cfg.weight_mode,
-                single_variant.cfg.use_boundaries,
+                single_variant.cfg.boundary_mode,
                 single_variant.cfg.prob_mode,
                 single_variant.cfg.aggregate_mode,
                 single_variant.cfg.ngram_order,
-                strategy_name=single_variant.cfg.position_strategy,
+                position_strategy=single_variant.cfg.position_strategy,
+                count_strategy=single_variant.cfg.count_strategy,
             )
             score = m.score(tok)
             entry[single_variant.header] = score if score != float("-inf") else float("nan")
@@ -222,13 +269,14 @@ def main():
                 strategy_name = variant.cfg.position_strategy
                 m = get_model_instance(
                     variant.model_name,
-                    variant.cfg.smoothing,
+                    variant.cfg.smoothing_scheme,
                     variant.cfg.weight_mode,
-                    variant.cfg.use_boundaries,
+                    variant.cfg.boundary_mode,
                     variant.cfg.prob_mode,
                     variant.cfg.aggregate_mode,
                     variant.cfg.ngram_order,
-                    strategy_name=strategy_name,
+                    position_strategy=variant.cfg.position_strategy,
+                    count_strategy=variant.cfg.count_strategy,
                 )
                 score = m.score(tok)
                 entry[variant.header] = score if score != float("-inf") else float("nan")
@@ -249,7 +297,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        from .cli_utils import style
+        print(style("\n[Interrupted by user]", "yellow", "bold"), file=sys.stderr)
 
 __all__ = ["main"]
 

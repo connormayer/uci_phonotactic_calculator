@@ -57,17 +57,16 @@ def dense_laplace(arr: np.ndarray) -> np.ndarray:
     arr += 1.0
     return arr
 
-from ...config import Config
 
-def apply(cfg: 'Config', table: Any, vocab=None):
+def apply(table, *, vocab=None):
     """
-    Unified Laplace helper used by *all* plugins.
+    Unified Laplace smoothing entry-point used by all plugins.
 
     Parameters
     ----------
-    cfg   : Config      – honours cfg.smoothing
     table : ndarray | MutableMapping
-    vocab : full n-gram key-set for sparse tables (ignored for dense)
+        The counts to be smoothed. Modified in place.
+    vocab : For sparse tables, the full n-gram key-set; for dense arrays, ignored (default: None).
 
     Returns
     -------
@@ -77,15 +76,23 @@ def apply(cfg: 'Config', table: Any, vocab=None):
     ------
     TypeError if *table* is neither ndarray nor MutableMapping.
     """
-    if not cfg.smoothing:
-        return table
-    if hasattr(table, "shape"):                 # NumPy ndarray branch
+    # Guard: reject negative counts
+    if isinstance(table, np.ndarray):
+        # Legacy compatibility: replace all negative and -inf counts with zero before Laplace smoothing.
+        # This allows legacy_log and 2018-style weighting to work with Laplace smoothing.
+        table = np.where(np.isneginf(table) | (table < 0), 0.0, table)
         return dense_laplace(table)
-    if isinstance(table, MutableMapping):       # sparse dict / defaultdict branch
+    elif isinstance(table, MutableMapping):
+        # Legacy compatibility: replace all negative and -inf counts with zero before Laplace smoothing.
+        # This allows legacy_log and 2018-style weighting to work with Laplace smoothing.
+        for k, v in list(table.items()):
+            if v is None or v < 0 or (isinstance(v, float) and np.isneginf(v)):
+                table[k] = 0.0
         if vocab is None:
-            raise ValueError("apply() requires *vocab* for sparse tables")
+            raise ValueError("Vocab must be provided for sparse Laplace smoothing.")
         return sparse_laplace(table, vocab)
-    raise TypeError(f"smoothing.apply(): unsupported table type {type(table).__name__}")
+    else:
+        raise TypeError(f"Unknown table type for Laplace smoothing: {type(table)}")
 
 __all__ = [
     "IndexTuple", "SparseTable",

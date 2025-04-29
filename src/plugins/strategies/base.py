@@ -15,9 +15,10 @@ class BaseCounter(ABC):
     """
 
     @abstractmethod
-    def accumulate(self, token: Sequence[str], weight: Optional[float]) -> None:
+    def accumulate(self, token: Sequence[str], weight: Optional[float], **kwargs) -> None:
         """
         Incorporate a single token with its weight into the counts.
+        Accepts arbitrary keyword arguments for compatibility (e.g., boundary).
         """
         ...
 
@@ -28,9 +29,9 @@ class BaseCounter(ABC):
         """
         ...
 
-    def accumulate_idx(self, idx: Tuple[int, ...], weight: float) -> None:  # pragma: no cover
+    def accumulate_idx(self, idx: Tuple[int, ...], weight: float, boundary: str = "#") -> None:  # pragma: no cover
         """
-        Optional fast-path: increment a *pre-indexed* n-gram.
+        Optional fast-path: increment a *pre-indexed* n-gram, with optional boundary symbol for consistency.
         Implementers MAY override this for speed; the default
         raises NotImplementedError so callers can feature-test via
         hasattr(counter, "accumulate_idx").

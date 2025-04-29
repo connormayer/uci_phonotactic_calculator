@@ -5,7 +5,7 @@ Public decorators
 -----------------
 • register(name)          – add a *model* class to PluginRegistry
 • register_prob(name)     – add a *probability transform* class to ProbTransformRegistry
-• register_strategy(name) – (added in PR 2) register a *counting strategy*
+• register('count_strategy', name) – register a counting strategy
 
 All three return the original class unmodified, so you may stack them
 with `@dataclass` or `@functools.total_ordering` as usual.
@@ -13,10 +13,13 @@ with `@dataclass` or `@functools.total_ordering` as usual.
 from __future__ import annotations
 import importlib, pkgutil, warnings
 warnings.filterwarnings("once", category=DeprecationWarning)
-from enum import Enum
+
 import numpy as np
 from abc import ABC, abstractmethod
 from typing import Callable, Dict, Type, TYPE_CHECKING
+
+# Make boundary_mode choices available even if users call get_model() without importing the parent package.
+import src.boundary_modes_builtin       # noqa: E402 – intentional side-effect
 
 if TYPE_CHECKING:
     from ..config import Config
@@ -26,9 +29,7 @@ __all__ = [
     "BaseModel",
     "PluginRegistry", "register",
     "ProbTransformRegistry", "register_prob",
-    "StrategyRegistry", "register_strategy",
     "get_model", "discover_models",
-    "ALIASES",
 ]
 
 # ------------------------------------------------------------------ #
@@ -46,41 +47,6 @@ def register(name: str) -> Callable[[Type["BaseModel"]], Type["BaseModel"]]:
     return _decorator
 
 # ---- strategy registry (for extensible counting strategies) ---------
-StrategyRegistry: dict[str, "Type[BaseCounter]"] = {}
-def register_strategy(name: str) -> Callable[["Type[BaseCounter]"], "Type[BaseCounter]"]:
-    """Decorator: `@register_strategy("ngram")` → class auto-added to StrategyRegistry."""
-    def _decorator(cls: "Type[BaseCounter]") -> "Type[BaseCounter]":
-        if name in StrategyRegistry:
-            raise KeyError(f"Strategy ‘{name}’ already registered")
-        StrategyRegistry[name] = cls
-        return cls
-    return _decorator
-
-# ------------------------------------------------------------------ #
-# 2) Alias map for deprecated names
-# ------------------------------------------------------------------ #
-ALIASES = {
-    # Deprecated aliases for legacy model names
-    "positional_bigram": "ngram",
-    "positional_unigram": "ngram",
-    "positional_ngram": "ngram",
-    "unigram": "ngram",
-    "bigram": "ngram",
-}
-
-_WARNED_ALIASES: set[str] = set()
-
-def _warn_alias(alias: str):
-    if alias not in _WARNED_ALIASES:
-        if alias in ("unigram", "bigram"):
-            n_val = "1" if alias == "unigram" else "2"
-            msg = f"'{alias}' is deprecated; use 'ngram' with -n {n_val}."
-        elif alias == "positional_ngram":
-            msg = ("'positional_ngram' is deprecated; use 'ngram' plus --position-strategy=absolute/relative/none.")
-        else:
-            msg = f"'{alias}' is deprecated; use 'ngram'."
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-        _WARNED_ALIASES.add(alias)
 
 # ------------------------------------------------------------------ #
 # 3) Base class with generic capability check
@@ -106,6 +72,13 @@ class BaseModel(ABC):
             if want_dense != cls.requires_dense:
                 return False
         return True
+
+    # ------------------------------------------------------------------
+    # Optional: plug-ins may inject variant-specific tokens
+    # ------------------------------------------------------------------
+    @classmethod
+    def extra_header_tokens(cls, cfg: "Config") -> list[str]:   # noqa: D401
+        return []
 
     @classmethod
     def header(cls, cfg: "Config") -> str:
@@ -146,33 +119,34 @@ def _discover_submodules(pkg_name: str) -> None:
             continue
         importlib.import_module(f"{pkg_name}.{mod_name}")
 
-def discover_models() -> None:
-    """Import every n-gram model plugin **and** every probability-transform
-    module exactly once.  Subsequent calls are no-ops."""
+def discover_models():
+    """
+    Import every n-gram model plugin **and** every probability-transform
+    module exactly once.  Subsequent calls are no-ops.
+    """
+    import importlib
+    importlib.import_module("src.plugins.strategies")      # registers count_strategy entries
     global _DISCOVERED
     if _DISCOVERED:
         return
-    parent_pkg = __name__.rsplit('.', 1)[0]          # "src.plugins"
-    _discover_submodules(parent_pkg)                        # model plugins live here
-    _discover_submodules(f"{parent_pkg}.prob_transforms")  # probability plugins
+    # Import every sub-module (non-private) exactly once.
+    _discover_submodules(__package__)
     _DISCOVERED = True
+                   # model plugins live here
+    _discover_submodules(f"{__package__}.prob_transforms")  # probability plugins
 
 # ------------------------------------------------------------------ #
-# 5) Public accessor with alias-resolution
+# 5) Public accessor
 # ------------------------------------------------------------------ #
 def get_model(name: str):
     """
-    Retrieve a model class by name, resolving deprecated aliases and warning if needed.
+    Retrieve a model class by name.
     """
     discover_models()
-    if name in ALIASES:
-        _warn_alias(name)
-        name = ALIASES[name]
     try:
         return PluginRegistry[name]
-    except KeyError as e:
-        avail = ", ".join(sorted(PluginRegistry))
-        raise KeyError(f"No plugin called ‘{name}’. Available: {avail}") from e
+    except KeyError:
+        raise ValueError(f"Unknown model: {name}")
 
 # ---- probability helpers --------------------------------------------
 ProbTransformRegistry: dict[str, Type[BaseTransform]] = {}
@@ -187,9 +161,9 @@ def register_prob(name: str) -> Callable[[Type[BaseTransform]], Type[BaseTransfo
         return cls
     return _decorator
 
-def get_prob_transform(name: str | Enum) -> BaseTransform:
+def get_prob_transform(name: str) -> BaseTransform:
     discover_models()
-    key = str(name)  # converts ProbMode → "joint", "conditional"
+    key = str(name)  # name is now always a string
     try:
         cls = ProbTransformRegistry[key]
     except KeyError as e:

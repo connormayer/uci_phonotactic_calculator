@@ -10,8 +10,9 @@ Notes:
 """
 
 from ..cli_utils import slug
-from ..config import NeighbourhoodMode
+
 from ..plugins.core import register, BaseModel
+from ..registries import registry
 from .fallback import FallbackMixin
 from functools import lru_cache
 
@@ -22,7 +23,7 @@ class NeighbourhoodModel(FallbackMixin, BaseModel):
     training tokens whose Levenshtein distance is exactly 1.
     Uses neighbor-generation for O(n * |alphabet|) performance.
     
-    Modes (see NeighbourhoodMode):
+    Modes: 'full', 'substitution_only'.
       - FULL (default): allows substitution, insertion, and deletion of phonemes.
       - SUBSTITUTION_ONLY: allows only substitutions (no insertions or deletions).
     """
@@ -38,34 +39,12 @@ class NeighbourhoodModel(FallbackMixin, BaseModel):
         # Preserve sound index for unseen-symbol checks
         self.sound_index = corpus.sound_index
 
-    def _generate_neighbors(self, target: tuple[str, ...]) -> set[tuple[str, ...]]:
-        mode = self.cfg.neighbourhood_mode
-        neighbors: set[tuple[str, ...]] = set()
-
-        if mode is NeighbourhoodMode.FULL or mode is NeighbourhoodMode.SUBSTITUTION_ONLY:
-            # substitution (always allowed)
-            for i, ph in enumerate(target):
-                neighbors.update(
-                    target[:i] + (new_ph,) + target[i+1:]
-                    for new_ph in self.alphabet if new_ph != ph
-                )
-
-        if mode is NeighbourhoodMode.FULL:
-            # deletion
-            for i in range(len(target)):
-                neighbors.add(target[:i] + target[i+1:])
-            # insertion
-            for i in range(len(target) + 1):
-                neighbors.update(
-                    target[:i] + (new_ph,) + target[i:]
-                    for new_ph in self.alphabet
-                )
-        return neighbors
 
     @lru_cache(maxsize=32_000)
     def _count_neighbors(self, target: tuple[str, ...]) -> float:
-        """Compute count of edit-distance-1 neighbours for *target* (as tuple)."""
-        return float(sum(1 for n in self._generate_neighbors(target) if n in self.training_set))
+        mode_fn = registry('neighbourhood_mode')[self.cfg.neighbourhood_mode]
+        neigh = mode_fn(target, self.alphabet)
+        return float(sum(1 for n in neigh if n in self.training_set))
 
     def score(self, token: list[str]) -> float:
         """
@@ -81,7 +60,8 @@ class NeighbourhoodModel(FallbackMixin, BaseModel):
 
     @classmethod
     def header(cls, cfg):
-        return slug("neighbourhood", cfg.neighbourhood_mode.value.lower())
+        from ..header_utils import build_header
+        return build_header("neighbourhood", cfg)
 
     @classmethod
     def supports(cls, cfg):
