@@ -6,6 +6,9 @@ __pycache__/
 # Ignore temp.txt file from savecode pip
 temp.txt
 
+# Ignore src/output.csv
+src/output.csv
+
 # C extensions
 *.so
 
