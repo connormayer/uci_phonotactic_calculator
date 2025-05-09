@@ -58,10 +58,14 @@ class NeighbourhoodModel(FallbackMixin, BaseModel):
                 return self._fallback
         return self._count_neighbors(target)
 
+    # ------------------------------------------------------------------
+    # Concise, unambiguous header:  neighbourhood_<mode>
+    # e.g.  neighbourhood_full   or   neighbourhood_substitution_only
+    # ------------------------------------------------------------------
     @classmethod
     def header(cls, cfg):
-        from ..header_utils import build_header
-        return build_header("neighbourhood", cfg)
+        from ..cli_utils import slug
+        return slug("neighbourhood", cfg.neighbourhood_mode or "full")
 
     @classmethod
     def supports(cls, cfg):
