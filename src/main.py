@@ -86,6 +86,60 @@ def parse_filters(args) -> dict[str, str]:
         filters[key] = val
     return filters
 
+def _run_legacy(args, parser):
+    # Only the 16 canonical 2018 variants – no grid search!
+    from .variants import legacy_variants
+    variants = legacy_variants()
+
+    # ── NEW: Neighbourhood-density (full) column ─────────────────────
+    from .variants import Variant
+    nh_cfg = Config.default(
+        neighbourhood_mode="full",
+        boundary_mode="none",     # pads are irrelevant for Levenshtein
+    )
+    nh_header = get_model("neighbourhood").header(nh_cfg)
+    variants.append(Variant(nh_header, "neighbourhood", nh_cfg, None))
+
+    headers = [v.header for v in variants]
+    header_to_variant = {v.header: v for v in variants}
+
+    @lru_cache(maxsize=None)
+    def get_cached_model(header: str):
+        var = header_to_variant[header]
+        corpus = Corpus(args.train_file, var.cfg)
+        model = get_model(var.model_name)(var.cfg)
+        model.fit(corpus)
+        return model
+
+    test_corpus = Corpus(args.test_file, variants[0].cfg)
+    if not test_corpus.tokens:
+        parser.error(f"Test file ‘{args.test_file}’ contains no token rows.")
+
+    rows = []
+    for tok in test_corpus.tokens:
+        row = OrderedDict()
+        row["word"] = " ".join(tok)
+        row["word_len"] = len(tok)
+        for header in headers:
+            m = get_cached_model(header)
+            score = m.score(tok)
+            row[header] = score if score != float("-inf") else float("nan")
+        rows.append(row)
+
+    fieldnames = ["word", "word_len"] + headers
+    try:
+        with open(args.output_file, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.DictWriter(fh, fieldnames=fieldnames, lineterminator="\n")
+            writer.writeheader()
+            writer.writerows(rows)
+    except PermissionError as e:
+        print(f"Permission denied: cannot write to '{args.output_file}': {e}", file=sys.stderr)
+        sys.exit(1)
+    except OSError as e:
+        print(f"Error opening output file '{args.output_file}': {e}", file=sys.stderr)
+        sys.exit(1)
+    sys.exit(0)
+
 def main():
     """
     Parse command-line arguments and execute one of three modes:
@@ -113,52 +167,23 @@ def main():
         args.position_strategy = None
     filters = parse_filters(args)
 
-    # Legacy CSV output path
+    # Mode resolution
+    run_all = bool(getattr(args, 'all', False))
+    run_single = bool(getattr(args, 'model', None))
+    legacy_mode = not run_all and not run_single
+
+    # --legacy deprecation check
     if getattr(args, "legacy", False):
-        if getattr(args, "model", None) or getattr(args, "list_models", False):
-            parser.error("--legacy is incompatible with --model or --list-models.")
+        parser.error("--legacy is deprecated: the 16-column output is now the default; simply drop the flag.")
 
-        from .variants import legacy_variants
-        variants = legacy_variants()
-        headers = [v.header for v in variants]
-        header_to_variant = {v.header: v for v in variants}
+    if legacy_mode:
+        _run_legacy(args, parser)   # never returns
 
-        @lru_cache(maxsize=None)
-        def get_cached_model(header: str):
-            var = header_to_variant[header]
-            corpus = Corpus(args.train_file, var.cfg)
-            model = get_model(var.model_name)(var.cfg)
-            model.fit(corpus)
-            return model
-
-        test_corpus = Corpus(args.test_file, variants[0].cfg)
-        if not test_corpus.tokens:
-            parser.error(f"Test file ‘{args.test_file}’ contains no token rows.")
-
-        rows = []
-        for tok in test_corpus.tokens:
-            row = OrderedDict()
-            row["word"] = " ".join(tok)
-            row["word_len"] = len(tok)
-            for header in headers:
-                m = get_cached_model(header)
-                score = m.score(tok)
-                row[header] = score if score != float("-inf") else float("nan")
-            rows.append(row)
-
-        fieldnames = ["word", "word_len"] + headers
-        try:
-            with open(args.output_file, "w", newline="", encoding="utf-8") as fh:
-                writer = csv.DictWriter(fh, fieldnames=fieldnames, lineterminator="\n")
-                writer.writeheader()
-                writer.writerows(rows)
-        except PermissionError as e:
-            print(f"Permission denied: cannot write to '{args.output_file}': {e}", file=sys.stderr)
-            sys.exit(1)
-        except OSError as e:
-            print(f"Error opening output file '{args.output_file}': {e}", file=sys.stderr)
-            sys.exit(1)
-        sys.exit(0)
+    # Invalid combinations
+    if run_all and run_single:
+        parser.error("Cannot use --all together with --model.")
+    if legacy_mode and filters:
+        parser.error("--filter may not be used with the default 16-column legacy output mode.")
 
     if args.list_models:
         # Only print primary model keys
@@ -220,7 +245,6 @@ def main():
         print(f"Error: unable to create directory '{out_dir}': {e}", file=sys.stderr)
         sys.exit(1)
 
-    run_single = args.model is not None
     base_fields = ("word", "word_len")
     if run_single:
         # Derive the single header and variant descriptor up front
@@ -238,7 +262,11 @@ def main():
             }
         )
         single_variant = SingleVariant()
-    else:
+        fieldnames = [*base_fields, *variant_headers]
+        rows: list[OrderedDict[str, float | str | int]] = []
+        # Progress bar for training loop
+        variants_to_run = [single_variant]
+    elif run_all:
         # Multi-model: build all headers up front
         variant_headers = [
             v.header for v in all_variants(test, filters)
@@ -246,14 +274,13 @@ def main():
         if len(set(variant_headers)) != len(variant_headers):
             dup = [h for h in variant_headers if variant_headers.count(h) > 1][0]
             parser.error(f"Internal error: duplicate CSV header ‘{dup}’.")
-    fieldnames = [*base_fields, *variant_headers]
-    rows: list[OrderedDict[str, float | str | int]] = []
-    # Progress bar for training loop
-    variants_to_run = []
-    if run_single:
-        variants_to_run = [single_variant]
-    else:
+        fieldnames = [*base_fields, *variant_headers]
+        rows: list[OrderedDict[str, float | str | int]] = []
+        # Progress bar for training loop
         variants_to_run = list(all_variants(test, filters))
+    else:
+        # Neither single nor all: do nothing (legacy already handled above)
+        return
 
     with progress(args.progress) as bar:
         train_task = None
