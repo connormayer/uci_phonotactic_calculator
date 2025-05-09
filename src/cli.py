@@ -54,14 +54,15 @@ def build_parser() -> argparse.ArgumentParser:
     # Banner: header uses HEADER_STYLE, bullets must keep BODY_STYLE for visual consistency with help body text.
     header = style("Extensible n-gram scorer Supports:", *HEADER_STYLE)
     bullets = [
-        "  All model/configuration variants in a grid",
+        "  Original legacy output (16 + neighbourhood) is now the default",
+        "  --all to run the full model/variant grid (was previously default)",
         "  --model to force a single plugin",
         "  --ngram-order (≥1, default 2) to select n-gram order",
         "  --filter KEY=VAL (repeatable) to restrict the variant grid.",
         "  --list-filters to display usable filter keys",
         "  --no-progress to suppress live status",
         "  Zero required flags: python -m src.ngram_calculator train.csv test.csv out.csv",
-    ]  # (Obsolete --smoothing boolean bullet removed)
+    ]
     banner = "\n".join(
         [header] +
         [style(line, *BODY_STYLE) for line in bullets]
@@ -165,16 +166,21 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
 
-    # Compatibility group
-    compat = parser.add_argument_group(style("Compatibility", *HEADER_STYLE))
-    compat.add_argument(
+    # Run-mode group
+    runmode = parser.add_argument_group(style("Run-mode", *HEADER_STYLE))
+    def legacy_flag(value):
+        raise argparse.ArgumentTypeError(
+            "--legacy is deprecated: the 16-column output is now the default. Please remove this flag."
+        )
+    runmode.add_argument(
         "--legacy",
         action="store_true",
-        help=(
-            "Write one CSV whose columns follow the descriptive header scheme used everywhere else. "
-            "For example: ngram_n1_none_unw_joint_prod, ngram_n2_positional_legacy_smoothing_log_log_joint_sum_absolute, etc. "
-            "(No longer matches the original 2018 script column names.)"
-        )
+        help=argparse.SUPPRESS  # Hide from help, but keep for one release
+    )
+    runmode.add_argument(
+        "--all",
+        action="store_true",
+        help="Run the entire model/variant grid. If omitted, the calculator writes the original 2018 16-column CSV."
     )
 
     # Positional n-gram options group
