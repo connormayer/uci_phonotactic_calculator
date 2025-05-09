@@ -58,7 +58,8 @@ def build_header(plugin: str, cfg: "Config") -> str:
     for field in SCHEMA:
         value = getattr(cfg, field.attr, None)
         token = field.normalise(value)
-        parts.append(token)
+        if token:                       # skip empty / suppressed tokens
+            parts.append(token)
 
     # Allow plug-ins to inject extras (see step 3)
     Model = get_model(plugin)
