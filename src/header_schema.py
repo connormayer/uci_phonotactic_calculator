@@ -18,7 +18,14 @@ from .header_utils import (
 
 SCHEMA: tuple[HeaderField, ...] = (
     HeaderField("ngram_order",      lambda v: f"n{v}",                    default=None,    always=True),
-    HeaderField("count_strategy",   lambda v: f"ngram" if v == "ngram" else f"cs_{v}", default=None, always=True),
+    # Default strategy is identical to the plug-in name, so emit nothing unless
+    # the user selects an alternative (e.g. 'trie' → cs_trie).
+    HeaderField(
+        "count_strategy",
+        lambda v: "" if v == "ngram" else f"cs_{v}",
+        default="ngram",
+        always=False,
+    ),
     HeaderField("position_strategy",lambda v: f"pos_{v or 'none'}",       default=None,    always=True),
     HeaderField("boundary_mode",    lambda v: f"bound_{v}",               default=None,    always=True),
     HeaderField("smoothing_scheme", lambda v: f"smooth_{v}",              default=None,    always=True),
