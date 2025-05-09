@@ -9,6 +9,10 @@ def valid_file(file_path: str) -> Tuple[bool, str]:
 
     Returns a tuple (is_valid, error_message). If valid, error_message is empty.
     """
+    # First check if the file exists
+    if not path.exists(file_path):
+        return False, f"File not found: {file_path}"
+        
     with open(file_path, encoding="utf-8") as f:
         content = f.read()
 
