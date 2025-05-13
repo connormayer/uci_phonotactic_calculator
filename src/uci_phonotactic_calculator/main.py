@@ -149,9 +149,17 @@ def main():
     Trains every specified n-gram variant, scores the test corpus, and writes a unified CSV.
     """
     import sys
+    import argparse
+    # If --help or -h is present, show the full help from the main parser and exit
+    if '--help' in sys.argv or '-h' in sys.argv:
+        parser = build_parser()
+        parser.add_argument('--list-data', action='store_true', help='List all available packaged data files and exit')
+        parser.add_argument('--use-demo-data', action='store_true', help='Use demo data files (english.csv, english_test_data.csv) as train/test if not provided')
+        parser.parse_args()  # This will print help and exit
+        return
+
     # First check for --use-demo-data and --list-data flags
     # This is a completely different approach - create a custom parser just to detect these flags
-    import argparse
     preparser = argparse.ArgumentParser(add_help=False)
     preparser.add_argument('--list-data', action='store_true')
     preparser.add_argument('--use-demo-data', action='store_true')

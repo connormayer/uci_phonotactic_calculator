@@ -8,6 +8,7 @@ Supports three execution modes:
 
 from __future__ import annotations
 
+from uci_phonotactic_calculator import smoothing_builtin  # ensures 'none' is registered
 from typing import Iterator, NamedTuple
 
 
@@ -18,6 +19,7 @@ from .corpus import Corpus
 from .plugins.core import discover_models
 from .plugins.strategies.position import get_position_strategy
 from .registries import registry as _r
+
 
 def _canonical_agg(name: str) -> str:
     return name
@@ -178,6 +180,7 @@ def legacy_variants() -> list[Variant]:
     Return the sixteen Variant objects that exactly reproduce the 2018 output.
     Column order: 4 uni, 4 bi, 4 positional-uni, 4 positional-bi.
     """
+    from uci_phonotactic_calculator.registries import registry
     make = lambda **kw: _make_variant(
         "ngram",
         kw["ngram_order"],
@@ -191,6 +194,7 @@ def legacy_variants() -> list[Variant]:
                            ("legacy_log", False),
                            ("none",  True),
                            ("legacy_log", True)]:
+
         variants.append(make(
             ngram_order=1,
             boundary_mode='none',
