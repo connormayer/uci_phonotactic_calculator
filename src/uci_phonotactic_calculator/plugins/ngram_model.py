@@ -45,7 +45,9 @@ class NGramModel(TokenWeightMixin, FallbackMixin, BaseModel):
     @classmethod
     def header(cls, cfg):
         from ..header_utils import build_header
-        return build_header("ngram", cfg, include_order=False)
+        # build_header() already prefixes the n-gram order token (n1, n2 …),
+        # so the extra include_order flag is obsolete.
+        return build_header("ngram", cfg)
 
     @classmethod
     def supports(cls, cfg):

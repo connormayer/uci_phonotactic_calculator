@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "uci-phonotactic-calculator"
-version = "0.2.1"
+version = "0.2.2"
 description = "A toolkit for phonotactic probability calculation and analysis."
 authors = [
     { name = "Your Name", email = "your@email.com" }
