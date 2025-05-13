@@ -5,12 +5,12 @@ from ..header_utils import build_header
 from .fallback import FallbackMixin
 from ..plugins.core import register, BaseModel
 
-from src.registries import registry
+from uci_phonotactic_calculator.registries import registry
 import numpy as np
-from ..plugins.core import get_prob_transform
-from ..corpus import Corpus
+from uci_phonotactic_calculator.plugins.core import get_prob_transform
+from uci_phonotactic_calculator.corpus import Corpus
 
-from ..plugins.strategies.position import get_position_strategy
+from uci_phonotactic_calculator.plugins.strategies.position import get_position_strategy
 from .strategies.position import PositionStrategy
 
 @register("ngram")

@@ -1,6 +1,6 @@
 import argparse
 from .registries import registry
-from src.plugins.strategies.position import get_position_strategy
+from uci_phonotactic_calculator.plugins.strategies.position import get_position_strategy
 
 from . import aggregators_builtin, weighting, neighbourhood_builtin  # Import for side-effects (early registry population)
 

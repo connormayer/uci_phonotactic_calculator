@@ -19,7 +19,7 @@ from abc import ABC, abstractmethod
 from typing import Callable, Dict, Type, TYPE_CHECKING
 
 # Make boundary_mode choices available even if users call get_model() without importing the parent package.
-import src.boundary_modes_builtin       # noqa: E402 – intentional side-effect
+import uci_phonotactic_calculator.boundary_modes_builtin       # noqa: E402 – intentional side-effect
 
 if TYPE_CHECKING:
     from ..config import Config
@@ -125,7 +125,7 @@ def discover_models():
     module exactly once.  Subsequent calls are no-ops.
     """
     import importlib
-    importlib.import_module("src.plugins.strategies")      # registers count_strategy entries
+    importlib.import_module("uci_phonotactic_calculator.plugins.strategies")      # registers count_strategy entries
     global _DISCOVERED
     if _DISCOVERED:
         return

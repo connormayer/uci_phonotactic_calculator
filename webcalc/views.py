@@ -11,8 +11,8 @@ from django.contrib import messages
 from os import listdir, makedirs
 from os.path import isfile, join, basename, dirname, exists
 
-from src import ngram_calculator as calc
-from src import utility as util
+from uci_phonotactic_calculator.ngram_calculator import run
+from uci_phonotactic_calculator import utility as util
 
 # Create your views here.
 from .models import UploadTrain, DefaultFile, UploadWithDefault
@@ -86,7 +86,7 @@ class UploadTrainView(CreateView):
 
         out_file = join(media_path, 'uploads', outfile_name)
         
-        calc.run(train_file, test_file, out_file)
+        run(train_file, test_file, out_file)
 
         return response
 
@@ -163,6 +163,6 @@ class UploadDefaultView(CreateView):
 
         out_file = join(media_path, 'uploads', outfile_name)
         
-        calc.run(train_file, test_file, out_file)
+        run(train_file, test_file, out_file)
 
         return response

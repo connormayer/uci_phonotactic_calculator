@@ -8,13 +8,14 @@ import sys
 from typing import Union
 
 from .config import Config
-from .corpus import Corpus
-from .plugins.core import get_model, PluginRegistry, discover_models as _discover
-from .variants import all_variants
 from .cli import build_parser
-from .cli_utils import supports_color
-from src.progress import progress  # Centralized progress bar logic
-from src.filter_aliases import canonical, ALIASES
+from .variants import all_variants
+from uci_phonotactic_calculator.progress import progress  # Centralized progress bar logic
+from uci_phonotactic_calculator.filter_aliases import canonical, ALIASES
+from uci_phonotactic_calculator import smoothing_builtin  # Ensure 'none' smoothing is registered
+from uci_phonotactic_calculator import boundaries_builtin  # Ensure 'word' boundary_scheme is registered
+from uci_phonotactic_calculator.plugins.core import get_model  # Ensure get_model is available in all scopes
+from uci_phonotactic_calculator.corpus import Corpus  # Ensure Corpus is available in all scopes
 # Imported once here – never re-import inside main(), or it will mask the global.
 
 
@@ -29,6 +30,7 @@ def _matches_filters(cfg: Config, filters: dict[str, str]) -> bool:
             return False
     return True
 
+from .plugins.core import discover_models as _discover
 # Ensure all plugins are loaded so --model choices/default stay in sync
 _discover()
 
@@ -146,22 +148,62 @@ def main():
     (1) single model, (2) full variant grid, or (3) filtered grid via --filter.
     Trains every specified n-gram variant, scores the test corpus, and writes a unified CSV.
     """
+    import sys
+    # First check for --use-demo-data and --list-data flags
+    # This is a completely different approach - create a custom parser just to detect these flags
+    import argparse
+    preparser = argparse.ArgumentParser(add_help=False)
+    preparser.add_argument('--list-data', action='store_true')
+    preparser.add_argument('--use-demo-data', action='store_true')
+    # Allow any other args
+    preparser.add_argument('args', nargs=argparse.REMAINDER)
+    prelim = preparser.parse_args()
+    
+    # Handle special flags early
+    if prelim.list_data:
+        from . import cli_demo_data
+        cli_demo_data.list_data_files()
+        sys.exit(0)
+        
+    # Now create the real parser for all arguments
     parser = build_parser()
-    prelim, _ = parser.parse_known_args()
-    if getattr(prelim, "list_filters", False):
-        from src.filter_aliases import ALIASES
+    parser.add_argument('--list-data', action='store_true', help='List all available packaged data files and exit')
+    parser.add_argument('--use-demo-data', action='store_true', help='Use demo data files (english.csv, english_test_data.csv) as train/test if not provided')
+    
+    # Important: if --use-demo-data is specified, make train_file and test_file optional
+    if prelim.use_demo_data:
+        # Get the action objects for positional args and make them optional
+        actions = parser._actions
+        for action in actions:
+            if action.dest in ['train_file', 'test_file']:
+                action.nargs = '?'
+                action.required = False
+                
+    # Parse the real arguments
+    args = parser.parse_args()
+    
+    # If --use-demo-data is specified, fill in missing positionals
+    if args.use_demo_data:
+        from . import cli_demo_data
+        train, test = cli_demo_data.get_demo_paths()
+        if not args.train_file:
+            args.train_file = train
+        if not args.test_file:
+            args.test_file = test
+
+    if getattr(args, "list_filters", False):
+        from .filter_aliases import ALIASES
         core_keys = [k for k in Config.__dataclass_fields__ if not k.startswith("_")]
         print("Core keys:")
         for k in sorted(core_keys):
             print(f"  {k}")
         print("\nAliases:")
-        for alias, tgt in sorted(ALIASES.items()):
-            print(f"  {alias}  →  {tgt}")
+        for k, v in sorted(ALIASES.items()):
+            print(f"  {k} → {v}")
         sys.exit(0)
-    import src.cli_utils as cli_utils
-    if prelim.no_color or not cli_utils.supports_color(sys.stderr):
+    from . import cli_utils
+    if args.no_color or not cli_utils.supports_color(sys.stderr):
         cli_utils.style = lambda t, *_, **__: t  # type: ignore[assignment]
-    args = parser.parse_args()
     # Patch: convert string 'none' to None for position_strategy to avoid DeprecationWarning
     if hasattr(args, 'position_strategy') and isinstance(args.position_strategy, str) and args.position_strategy.lower() == 'none':
         args.position_strategy = None

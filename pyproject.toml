@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "uci-phonotactic-calculator"
-version = "0.1.1"
+version = "0.2.0"
 description = "A toolkit for phonotactic probability calculation and analysis."
 authors = [
     { name = "Your Name", email = "your@email.com" }
@@ -19,6 +19,10 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/connormayer/uci_phonotactic_calculator"
 
+[project.scripts]
+ngram-calculator = "uci_phonotactic_calculator.main:main"
+uci-phonotactic-calculator = "uci_phonotactic_calculator.main:main"
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 include-package-data = true
@@ -28,5 +32,4 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 # Include all CSV files in src and subpackages
-"src" = ["*.csv"]
-"src.plugins" = ["*.csv"]
+"uci_phonotactic_calculator.data" = ["**/*.csv", "**/*.txt"]

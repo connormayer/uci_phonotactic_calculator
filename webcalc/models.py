@@ -1,6 +1,6 @@
 from django.db import models
 
-from src import ngram_calculator as calc
+from uci_phonotactic_calculator import main as calc
 from os import listdir
 from os.path import join, basename, relpath, isfile, exists
 from webcalc_project import settings
