@@ -7,8 +7,9 @@ __pycache__/
 temp.txt
 
 # Ignore src/output.csv
-src/output.csv
+*/output.csv
 
+    
 # C extensions
 *.so
 
