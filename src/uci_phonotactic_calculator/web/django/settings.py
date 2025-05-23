@@ -110,7 +110,10 @@ CRONJOBS = [
     (
         "*/10 * * * *",
         "uci_phonotactic_calculator.web.django.webcalc.cron.clean_media_folder",
-        ">> " + os.path.join(Path(__file__).resolve().parent, "logs/clean_media_cron.log" + " 2>&1 "),
+        ">> "
+        + os.path.join(
+            Path(__file__).resolve().parent, "logs/clean_media_cron.log" + " 2>&1 "
+        ),
     )
 ]
 
