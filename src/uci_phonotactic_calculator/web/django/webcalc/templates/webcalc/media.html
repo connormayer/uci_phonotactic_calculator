@@ -1,0 +1,23 @@
+<!-- templates/media.html -->
+{% extends 'webcalc/base.html' %}
+
+{% load static %}
+
+{% block content %}
+    <head>
+        <link href="{% static 'css/media.css' %}" rel="stylesheet">
+    </head>
+
+    <div style="padding:40px;margin:40px;border:1px solid #ccc">
+        <h1>File List</h1>
+        <table>
+            {% for obj in objects %}
+                <tr class="table-row">
+                    <td><a href = "/media/default/{{ obj.file_name }}" download><h2>{{ obj.file_name }}</h2></a></td>
+                    <td><h3>{{ obj.description }}</h3></td>
+                </tr>
+            {% endfor %}
+        </table>
+        
+    </div>
+{% endblock content %}

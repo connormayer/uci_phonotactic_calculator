@@ -1,0 +1,44 @@
+body {
+    background-color: lightyellow;
+    max-width:1000px;
+    margin:0 auto;
+    position:relative;
+}
+
+.top-header {
+    display: block;
+    border-top: 2px solid #a7a59b;
+    border-bottom: 2px solid #a7a59b;
+    height: 22px;
+    line-height: 22px;
+    padding: 4px 10px;
+    font-size: 20px;
+    clear:both;
+}
+
+.about-button {
+    margin-left: 10px;
+}
+
+.media-button {
+    margin-left: 10px;
+}
+
+.page-title {
+    color: blue;
+    text-align: center;
+}
+
+li {
+    margin: 1em 0;
+}
+
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  padding: 10px;
+}
+
+th {
+  text-align: left;
+}
