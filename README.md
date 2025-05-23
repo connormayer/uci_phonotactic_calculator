@@ -20,17 +20,47 @@ This repository contains the source code for the [UCI Phonotactic Calculator web
   ```
 - Install dependencies:
   ```bash
+  # Install basic dependencies
   pip install -r requirements.txt
+  
+  # Or install the package with development dependencies
+  pip install -e ".[dev,ui]"
+  
+  # To include Django web interface
+  pip install -e ".[dev,ui,web]"
   ```
 
 ### Running a Model
 
 ```bash
-python -m src.main <train_file> <test_file> <output_file> [OPTIONS]
+python -m uci_phonotactic_calculator.main <train_file> <test_file> <output_file> [OPTIONS]
 ```
 Example:
 ```bash
-python -m src.main data/english.csv data/sample_test_data/english_test_data.csv output.csv --boundary-mode both --aggregate sum --weight-mode legacy_log
+python -m uci_phonotactic_calculator.main data/english.csv data/sample_test_data/english_test_data.csv output.csv --boundary-mode both --aggregate sum --weight-mode legacy_log
+```
+
+### Running the Web Interface
+
+#### Gradio UI
+```bash
+# Using the make command
+make web
+
+# Or directly
+python -m uci_phonotactic_calculator.web.web_demo
+```
+
+#### Django Web Interface
+```bash
+# Using the make command
+make django-web
+
+# Or using the entry point
+uci-phonotactic-web runserver
+
+# Or directly
+python -m uci_phonotactic_calculator.web.django.manage runserver
 ```
 
 ---
@@ -187,10 +217,74 @@ Your model will now be available as a `--model my_ngram_model` option.
 
 ---
 
-## 🧪 Testing & Debugging
+## 🧰 Testing & Debugging
 
 - Use `DEBUG_VARIANTS=1` to log all headers/configs for debugging duplicate header issues.
 - All errors and warnings are designed to be clear and actionable.
+
+---
+
+## 📝 Development Workflow
+
+This project uses a Makefile to streamline development tasks. Here are the available commands:
+
+```bash
+# Run linting and tests
+make
+
+# Clean build artifacts
+make clean
+
+# Run linting tools (ruff, black, mypy)
+make lint
+
+# Format code automatically
+make format
+
+# Run tests
+make test
+
+# Build distribution package
+make build
+
+# Run the web UI
+make web
+
+# Run the calculator with demo data
+make demo
+
+# Show all available commands
+make help
+```
+
+### Development Setup
+
+For development, install the package with all optional dependencies:
+
+```bash
+pip install -e ".[dev,ui]"
+```
+
+This will install all the necessary tools for development, including:
+
+- **black**: Code formatter
+- **ruff**: Fast Python linter
+- **mypy**: Static type checker
+- **pytest**: Testing framework
+- **build**: Package building tool
+- **gradio**: UI framework for the web interface
+
+### Web Interface
+
+To run the web interface:
+
+```bash
+# Using make
+make web
+
+# Or using Python module directly
+python -m uci_phonotactic_calculator.web
+```
 
 ---
 

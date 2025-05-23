@@ -1,7 +1,9 @@
 # ngram_calculator.py — Legacy CLI shim that delegates to main.py.
 import sys
-from typing import Sequence, Mapping
+from typing import Mapping, Sequence
+
 from .main import main
+
 
 def run(
     train_file: str,
@@ -45,12 +47,14 @@ def run(
     try:
         sys.argv = argv
         from .main import main as _main
+
         _main()
-    except SystemExit as exc:          # main() calls sys.exit() freely
+    except SystemExit as exc:  # main() calls sys.exit() freely
         if exc.code not in (0, None):  # re-raise only on failure exit codes
             raise
     finally:
         sys.argv = old_argv
+
 
 if __name__ == "__main__":
     main()
