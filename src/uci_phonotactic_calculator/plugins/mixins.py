@@ -12,18 +12,17 @@ class TokenWeightMixin:
         accumulate that value unchanged.
 
     The method _w(freq) checks self.cfg.weight_mode.
-    No explicit cfg argument is required; the mixin expects self.cfg to be present in the instance.
+    No explicit cfg argument is required; the mixin expects self.cfg to be present
+    in the instance.
 
       - none       : 1.0 (unweighted)
       - raw        : frequency (0 becomes 1.0)
       - log        : log(freq+1)
       - legacy_log : log(freq) | -inf when freq == 0
-    The method _w(freq) checks self.cfg.weight_mode.
-    No explicit cfg argument is required; the mixin expects self.cfg to be present in the instance.
     """
 
     def _w(self, freq: float) -> float:
-        func = registry('weight_mode')[self.cfg.weight_mode]
+        func = registry("weight_mode")[self.cfg.weight_mode]
         return func(freq)
 
 

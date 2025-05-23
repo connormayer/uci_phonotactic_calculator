@@ -4,18 +4,19 @@ src/plugins/strategies/ngram.py — Generic n‑gram counting strategy for any n
 
 from __future__ import annotations
 
-import numpy as np
 from collections import defaultdict
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
-from ...registries import register
-from .base import BaseCounter
-from ...corpus import Corpus
+import numpy as np
+
 from ...config import Config
-from ...types import Gram, IndexTuple, CountDict
+from ...corpus import Corpus
+from ...registries import register
+from ...types import CountDict, IndexTuple
+from .base import BaseCounter
 
 
-@register('count_strategy', 'ngram')
+@register("count_strategy", "ngram")
 class NGramCounter(BaseCounter):
     """
     Count n‑grams of any order over a corpus, with optional token weighting
@@ -39,12 +40,16 @@ class NGramCounter(BaseCounter):
             # mutable mapping from index-tuples to float counts
             self.counts: CountDict = defaultdict(float)  # type: ignore[var-annotated]
 
-    def accumulate_idx(self, idx: IndexTuple, weight: float, boundary: str = "#") -> None:
+    def accumulate_idx(
+        self, idx: IndexTuple, weight: float, boundary: str = "#"
+    ) -> None:
         """
-        Fast-path: increment a pre-indexed n-gram (expects an index tuple of length order).
+        Fast-path: increment a pre-indexed n-gram (expects an index tuple of
+        length order).
         The boundary kwarg is accepted for ABC compatibility but is unused here.
-        
-        We must not treat falsy numeric weights (0.0, -inf) as 'skip': legacy_log may emit -inf and callers may pass 0.0 or negatives.
+
+        We must not treat falsy numeric weights (0.0, -inf) as 'skip': legacy_log may
+        emit -inf and callers may pass 0.0 or negatives.
         Only None means 'skip'.
         """
         if weight is None:  # Only skip if weight is None (not 0.0, -inf, etc.)
@@ -54,11 +59,14 @@ class NGramCounter(BaseCounter):
         else:
             self.counts[idx] = self.counts.get(idx, 0.0) + weight
 
-    def accumulate(self, token: Sequence[str], weight: Optional[float], boundary: str = "#") -> None:
+    def accumulate(
+        self, token: Sequence[str], weight: Optional[float], boundary: str = "#"
+    ) -> None:
         """
         Add counts for a single token sequence using Corpus.generate_ngrams.
 
-        We must not treat falsy numeric weights (0.0, -inf) as 'skip': legacy_log may emit -inf and callers may pass 0.0 or negatives.
+        We must not treat falsy numeric weights (0.0, -inf) as 'skip': legacy_log may
+        emit -inf and callers may pass 0.0 or negatives.
         Only None means 'skip'.
         """
         if weight is None:  # Only skip if weight is None (not 0.0, -inf, etc.)
@@ -80,5 +88,6 @@ class NGramCounter(BaseCounter):
         Return the raw counts structure (np.ndarray or CountDict).
         """
         return self.counts
+
 
 # End of src/plugins/strategies/ngram.py

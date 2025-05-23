@@ -1,3 +1,4 @@
 from .registries import register
+
 # canonical word-boundary symbol
-register('boundary_scheme', 'word')(lambda: '#')
+register("boundary_scheme", "word")(lambda: "#")

@@ -1,5 +1,7 @@
-import argparse, shutil, textwrap
-from .cli_utils import style, HEADER_STYLE, BODY_STYLE
+import argparse
+
+from .cli_utils import BODY_STYLE, HEADER_STYLE, style
+
 
 class ColourHelp(argparse.RawDescriptionHelpFormatter):
     def start_section(self, heading):
@@ -43,9 +45,7 @@ class ColourHelp(argparse.RawDescriptionHelpFormatter):
 
     def _get_help_string(self, action):
         help_str = action.help
-        if '%(default)' in help_str:
+        if "%(default)" in help_str:
             default_str = str(action.default)
-            help_str = help_str.replace(
-                '%(default)s', style(default_str, *BODY_STYLE)
-            )
+            help_str = help_str.replace("%(default)s", style(default_str, *BODY_STYLE))
         return help_str

@@ -1,5 +1,6 @@
 from ..constants import MIN_LOG_PROB
 
+
 class FallbackMixin:
     @property
     def _fallback(self) -> float:

@@ -10,16 +10,21 @@ Public decorators
 All three return the original class unmodified, so you may stack them
 with `@dataclass` or `@functools.total_ordering` as usual.
 """
+
 from __future__ import annotations
-import importlib, pkgutil, warnings
-warnings.filterwarnings("once", category=DeprecationWarning)
+
+import importlib
+import pkgutil
+import warnings
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Callable, Dict, Type
 
 import numpy as np
-from abc import ABC, abstractmethod
-from typing import Callable, Dict, Type, TYPE_CHECKING
 
-# Make boundary_mode choices available even if users call get_model() without importing the parent package.
-import uci_phonotactic_calculator.boundary_modes_builtin       # noqa: E402 – intentional side-effect
+warnings.filterwarnings("once", category=DeprecationWarning)
+
+# Make boundary_mode choices available even if users call get_model() without importing
+# the parent package.
 
 if TYPE_CHECKING:
     from ..config import Config
@@ -27,9 +32,12 @@ if TYPE_CHECKING:
 
 __all__ = [
     "BaseModel",
-    "PluginRegistry", "register",
-    "ProbTransformRegistry", "register_prob",
-    "get_model", "discover_models",
+    "PluginRegistry",
+    "register",
+    "ProbTransformRegistry",
+    "register_prob",
+    "get_model",
+    "discover_models",
 ]
 
 # ------------------------------------------------------------------ #
@@ -37,16 +45,21 @@ __all__ = [
 # ------------------------------------------------------------------ #
 PluginRegistry: Dict[str, Type["BaseModel"]] = {}
 
+
 def register(name: str) -> Callable[[Type["BaseModel"]], Type["BaseModel"]]:
     """Decorator: `@register("bigram")` → class auto-added to PluginRegistry."""
+
     def _decorator(cls: Type["BaseModel"]) -> Type["BaseModel"]:
         if name in PluginRegistry:
             raise KeyError(f"Plugin ‘{name}’ already registered")
         PluginRegistry[name] = cls
         return cls
+
     return _decorator
 
+
 # ---- strategy registry (for extensible counting strategies) ---------
+
 
 # ------------------------------------------------------------------ #
 # 3) Base class with generic capability check
@@ -55,13 +68,13 @@ class BaseModel(ABC):
     # Declarative capability flags
     order_min: int | None = None
     order_max: int | None = None
-    requires_dense: bool | None = None     # True = dense-only, False = sparse-only
+    requires_dense: bool | None = None  # True = dense-only, False = sparse-only
 
-    def __init__(self, cfg: "Config"):     # quoted to avoid import cycle
+    def __init__(self, cfg: "Config"):  # quoted to avoid import cycle
         self.cfg = cfg
 
     @classmethod
-    def supports(cls, cfg: "Config") -> bool:      # noqa: D401
+    def supports(cls, cfg: "Config") -> bool:  # noqa: D401
         o = cfg.ngram_order
         if cls.order_min is not None and o < cls.order_min:
             return False
@@ -77,17 +90,35 @@ class BaseModel(ABC):
     # Optional: plug-ins may inject variant-specific tokens
     # ------------------------------------------------------------------
     @classmethod
-    def extra_header_tokens(cls, cfg: "Config") -> list[str]:   # noqa: D401
+    def extra_header_tokens(cls, cfg: "Config") -> list[str]:  # noqa: D401
         return []
 
     @classmethod
     def header(cls, cfg: "Config") -> str:
-        raise NotImplementedError("Model must implement header()")
+        # Provide a default implementation that uses the model's class name
+        # and configuration settings to build a header string
+        try:
+            from ..header_utils import build_header
+
+            # Get the model name from registry or use class name
+            model_name = next(
+                (
+                    name
+                    for name, model_cls in PluginRegistry.items()
+                    if model_cls == cls
+                ),
+                cls.__name__.lower(),
+            )
+            return build_header(model_name, cfg)
+        except Exception:
+            # Last resort fallback - simple name
+            return f"{cls.__name__}_{cfg.ngram_order}"
 
     @abstractmethod
     def fit(self, corpus: "Corpus") -> None: ...
     @abstractmethod
     def score(self, token: list[str]) -> float: ...
+
 
 # ------------------------------------------------------------------ #
 # 3b) Base class for probability transforms
@@ -98,26 +129,31 @@ class BaseTransform(ABC):
     Implement •transform(counts) → log-probs
              •supports(cfg)       → bool   (optional, mirror BaseModel)
     """
+
     @staticmethod
-    def supports(cfg: "Config") -> bool:     # noqa: D401
-        return True                          # override if a transform has limits
+    def supports(cfg: "Config") -> bool:  # noqa: D401
+        return True  # override if a transform has limits
 
     @abstractmethod
     def transform(self, counts: "np.ndarray") -> "np.ndarray": ...
+
 
 # ------------------------------------------------------------------ #
 # 4) Discovery helpers
 # ------------------------------------------------------------------ #
 _DISCOVERED = False
+
+
 def _discover_submodules(pkg_name: str) -> None:
     """Import every sub-module (non-private) exactly once."""
     mod = importlib.import_module(pkg_name)
     if not hasattr(mod, "__path__"):
-        return                                # nothing to iterate
+        return  # nothing to iterate
     for _, mod_name, is_pkg in pkgutil.iter_modules(mod.__path__):
         if mod_name.startswith("_") or is_pkg:
             continue
         importlib.import_module(f"{pkg_name}.{mod_name}")
+
 
 def discover_models():
     """
@@ -125,15 +161,19 @@ def discover_models():
     module exactly once.  Subsequent calls are no-ops.
     """
     import importlib
-    importlib.import_module("uci_phonotactic_calculator.plugins.strategies")      # registers count_strategy entries
+
+    importlib.import_module(
+        "uci_phonotactic_calculator.plugins.strategies"
+    )  # registers count_strategy entries
     global _DISCOVERED
     if _DISCOVERED:
         return
     # Import every sub-module (non-private) exactly once.
     _discover_submodules(__package__)
     _DISCOVERED = True
-                   # model plugins live here
+    # model plugins live here
     _discover_submodules(f"{__package__}.prob_transforms")  # probability plugins
+
 
 # ------------------------------------------------------------------ #
 # 5) Public accessor
@@ -145,21 +185,25 @@ def get_model(name: str):
     discover_models()
     try:
         return PluginRegistry[name]
-    except KeyError:
-        raise ValueError(f"Unknown model: {name}")
+    except KeyError as err:
+        raise ValueError(f"Unknown model: {name}") from err
+
 
 # ---- probability helpers --------------------------------------------
 ProbTransformRegistry: dict[str, Type[BaseTransform]] = {}
 
-from .strategies.base import BaseCounter
+
 def register_prob(name: str) -> Callable[[Type[BaseTransform]], Type[BaseTransform]]:
-    """Decorator: `@register_prob("joint")` → class auto-added to ProbTransformRegistry."""
+    """Decorator: `@register_prob("joint")` adds class to ProbTransformRegistry."""
+
     def _decorator(cls: Type[BaseTransform]) -> Type[BaseTransform]:
         if name in ProbTransformRegistry:
             raise KeyError(f"Prob-transform ‘{name}’ already registered")
         ProbTransformRegistry[name] = cls
         return cls
+
     return _decorator
+
 
 def get_prob_transform(name: str) -> BaseTransform:
     discover_models()

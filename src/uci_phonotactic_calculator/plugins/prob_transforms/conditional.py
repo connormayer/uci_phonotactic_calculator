@@ -1,6 +1,7 @@
 import numpy as np
-from ...plugins.core import register_prob, BaseTransform
-import warnings
+
+from ...plugins.core import BaseTransform, register_prob
+
 
 @register_prob("conditional")
 class ConditionalTransform(BaseTransform):
@@ -8,6 +9,7 @@ class ConditionalTransform(BaseTransform):
     Conditional probability: P(next | prev).
     Normalises over the last axis (the predicted symbol).
     """
+
     def transform(self, counts: np.ndarray) -> np.ndarray:
         """
         Conditional probability: P(next | prev) = count / sum_over_prediction_axis.
@@ -18,4 +20,3 @@ class ConditionalTransform(BaseTransform):
         pred_sum = counts.sum(axis=-1, keepdims=True)
         pred_sum[pred_sum == 0] = 1
         return np.log(counts / pred_sum)
-

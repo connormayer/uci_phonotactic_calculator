@@ -1,10 +1,12 @@
 """
-Helper script to print the absolute paths to packaged example data files for easy CLI use.
+Helper script to print the absolute paths to packaged example data files.
+
+Provides easy access to data files for CLI usage.
 """
+
 import argparse
 import importlib.resources as pkg_resources
 import sys
-from pathlib import Path
 
 
 def list_data_files(subdir=None):
@@ -15,8 +17,15 @@ def list_data_files(subdir=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Print absolute paths to packaged data files.")
-    parser.add_argument('--subdir', type=str, default=None, help='Subdirectory under data (e.g. sample_test_data)')
+    parser = argparse.ArgumentParser(
+        description="Print absolute paths to packaged data files."
+    )
+    parser.add_argument(
+        "--subdir",
+        type=str,
+        default=None,
+        help="Subdirectory under data (e.g. sample_test_data)",
+    )
     args = parser.parse_args()
     files = list_data_files(args.subdir)
     if not files:
@@ -24,6 +33,7 @@ def main():
         sys.exit(1)
     for f in files:
         print(f)
+
 
 if __name__ == "__main__":
     main()

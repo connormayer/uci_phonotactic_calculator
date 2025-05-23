@@ -3,6 +3,7 @@
 from os import path
 from typing import Tuple
 
+
 def valid_file(file_path: str) -> Tuple[bool, str]:
     """
     Check that the given file is comma‑delimited with space‑separated phonemes.
@@ -12,7 +13,7 @@ def valid_file(file_path: str) -> Tuple[bool, str]:
     # First check if the file exists
     if not path.exists(file_path):
         return False, f"File not found: {file_path}"
-        
+
     with open(file_path, encoding="utf-8") as f:
         content = f.read()
 
@@ -34,6 +35,7 @@ def valid_file(file_path: str) -> Tuple[bool, str]:
 
     return True, ""
 
+
 def get_filename(test_file: str, timestamp) -> str:
     """
     Given a test‑file path and a timestamp, construct an output filename
@@ -48,5 +50,6 @@ def get_filename(test_file: str, timestamp) -> str:
     ts = str(timestamp).replace(".", "_")
     folder = f"{outfile[:4]}_{ts}"
     return path.join(folder, outfile)
+
 
 # End of src/utility.py

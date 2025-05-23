@@ -7,9 +7,9 @@ Note: Conditional probability always interprets the last axis as the predicted s
 min_val and max_val return -inf for empty input, for parity with other helpers.
 """
 
+from typing import Sequence
+
 import numpy as np
-from typing import Sequence, Callable
-from .registries import register
 
 
 def log_product(components: Sequence[float]) -> float:
@@ -66,7 +66,7 @@ def linear_sum_plus1(components: Sequence[float]) -> float:
     result is exactly 1 — identical to the old script.
     """
     if not components:
-        return 1.0          # mirror legacy "+1"
+        return 1.0  # mirror legacy "+1"
     total = np.sum(np.exp(components))
     return 1.0 + float(total)
 

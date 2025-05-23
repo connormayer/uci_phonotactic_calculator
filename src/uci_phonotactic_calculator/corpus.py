@@ -1,10 +1,12 @@
-"""src/corpus.py — Corpus loader and bigram generator with optional boundary inclusion."""
+"""src/corpus.py — Corpus loader and bigram generator with optional boundary
+inclusion."""
 
 from __future__ import annotations
+
 import csv
-from pathlib import Path
-from typing import Sequence, List, Tuple
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import List, Sequence, Tuple
 
 from .config import Config
 from .registries import registry
@@ -13,10 +15,12 @@ from .registries import registry
 @dataclass(slots=True)
 class Corpus:
     """
-    Encapsulates token sequences, their frequencies, and the sound index for n-gram modeling.
+    Encapsulates token sequences, their frequencies, and the sound index for
+    n-gram modeling.
     Supports optional inclusion of boundary symbols in the vocabulary.
     """
-    cfg: Config = field(init=False, repr=False)        # ← new
+
+    cfg: Config = field(init=False, repr=False)  # ← new
     tokens: list[list[str]]
     freqs: list[float]
     sound_index: list[str]
@@ -53,9 +57,9 @@ class Corpus:
         vocab = {sound for token in self.tokens for sound in token}
 
         # Use registry to get the boundary symbol
-        pad_sym = registry('boundary_scheme')[cfg.boundary_scheme]()
+        pad_sym = registry("boundary_scheme")[cfg.boundary_scheme]()
         # Only add the boundary symbol if boundary_mode != 'none'
-        if cfg.boundary_mode != 'none':
+        if cfg.boundary_mode != "none":
             vocab.add(pad_sym)
         self._boundary = pad_sym
         self.boundary_symbol = pad_sym  # boundary symbol from config
@@ -63,11 +67,20 @@ class Corpus:
         # Sort into a reproducible index
         self.sound_index = sorted(vocab)
 
-    def ngrams(self, token: Sequence[str], n: int, *, index_map: dict[str, int] | None = None) -> list[tuple]:
+    def ngrams(
+        self, token: Sequence[str], n: int, *, index_map: dict[str, int] | None = None
+    ) -> list[tuple]:
         """
-        Instance wrapper for generate_ngrams that always uses self._boundary and self.cfg.boundary_mode.
+        Instance wrapper for generate_ngrams that always uses self._boundary
+        and self.cfg.boundary_mode.
         """
-        return Corpus.generate_ngrams(token, n, self.cfg.boundary_mode, index_map=index_map, boundary=self._boundary)
+        return Corpus.generate_ngrams(
+            token,
+            n,
+            self.cfg.boundary_mode,
+            index_map=index_map,
+            boundary=self._boundary,
+        )
 
     @staticmethod
     def generate_ngrams(
@@ -76,21 +89,24 @@ class Corpus:
         boundary_mode: str,
         *,
         index_map: dict[str, int] | None = None,
-        boundary: str = '#',
+        boundary: str = "#",
     ) -> List[Tuple]:
         """
         Generate n-grams from a token using a registry-driven boundary mode.
-        If index_map is supplied, returns tuples of ints; otherwise, returns tuples of symbols.
+        If index_map is supplied, returns tuples of ints; otherwise, returns tuples
+        of symbols.
         Returns empty list if sequence too short.
         """
         from .registries import registry
-        pad_fn = registry('boundary_mode')[boundary_mode]
+
+        pad_fn = registry("boundary_mode")[boundary_mode]
         seq = pad_fn(list(token), boundary, n)
         if len(seq) < n:
             return []
-        grams = [tuple(seq[i:i+n]) for i in range(len(seq) - n + 1)]
+        grams = [tuple(seq[i : i + n]) for i in range(len(seq) - n + 1)]
         if index_map:
             return [tuple(index_map.get(s, -1) for s in gram) for gram in grams]
         return grams
+
 
 # End of src/corpus.py

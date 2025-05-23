@@ -8,15 +8,12 @@ Supports three execution modes:
 
 from __future__ import annotations
 
-from uci_phonotactic_calculator import smoothing_builtin  # ensures 'none' is registered
 from typing import Iterator, NamedTuple
 
-
-from .plugins.core import get_model, PluginRegistry
-from .config import Config
 from . import probability as probability
+from .config import Config
 from .corpus import Corpus
-from .plugins.core import discover_models
+from .plugins.core import PluginRegistry, discover_models
 from .plugins.strategies.position import get_position_strategy
 from .registries import registry as _r
 
@@ -24,7 +21,8 @@ from .registries import registry as _r
 def _canonical_agg(name: str) -> str:
     return name
 
-discover_models()          # one-time plugin + transform discovery
+
+discover_models()  # one-time plugin + transform discovery
 
 
 class Variant(NamedTuple):
@@ -35,8 +33,10 @@ class Variant(NamedTuple):
       header      — CSV column header for this variant
       model_name  — plugin registry key (e.g. 'ngram')
       cfg         — fully-populated Config instance
-      strategy    — get_position_strategy(strategy_name, n=cfg_variant.ngram_order) if positional, else None
+      strategy    — Position strategy function if positional mode is used,
+                   otherwise None
     """
+
     header: str
     model_name: str
     cfg: Config
@@ -45,10 +45,13 @@ class Variant(NamedTuple):
 
 def _make_variant(plugin, order, cfg, strategy=None, _seen_headers=None):
     from .header_utils import build_header
+
     header = build_header(plugin, cfg)
-    import os, sys
+    import os
+    import sys
+
     if _seen_headers is not None:
-        if header in _seen_headers or os.environ.get('DEBUG_VARIANTS'):
+        if header in _seen_headers or os.environ.get("DEBUG_VARIANTS"):
             print(f"[DEBUG] Header: {header}", file=sys.stderr)
             print(f"[DEBUG] Plugin: {plugin}", file=sys.stderr)
             print(f"[DEBUG] Order: {order}", file=sys.stderr)
@@ -62,60 +65,12 @@ def _make_variant(plugin, order, cfg, strategy=None, _seen_headers=None):
     return Variant(header, plugin, cfg, strategy)
 
 
-def all_variants(train, filters=None):
-    """
-    Yield every model/configuration variant for scoring.
-    Supports full grid, single model, and filtered grid (via ``--filter KEY=VAL``).
-    """
-    _SEEN_HEADERS = set()
-    if filters:
-        from .main import _matches_filters
-    else:
-        _matches_filters = lambda *_: True
-    for count_strategy in (_r('count_strategy') or {'ngram': None}):
-        for order in (1, 2, 3, 4):
-            # ── 1) classic (non-positional) variants ──────────────────
-            for boundary_mode in _r('boundary_mode'):
-                for smoothing_scheme in _r('smoothing_scheme'):
-                    for weight_mode in _r('weight_mode'):
-                        for mode in probability.available_transforms():
-                            for agg in {_canonical_agg(a) for a in _r('aggregate_mode')}:
-                                cfg = Config(
-                                    ngram_order      = order,
-                                    boundary_mode    = boundary_mode,
-                                    smoothing_scheme = smoothing_scheme,
-                                    weight_mode      = weight_mode,
-                                    prob_mode        = mode,
-                                    aggregate_mode   = agg,
-                                    position_strategy=None,
-                                    count_strategy   = count_strategy,
-                                )
-                                if not PluginRegistry["ngram"].supports(cfg):
-                                    continue
-                                if _matches_filters(cfg, filters or {}):
-                                    yield _make_variant("ngram", order, cfg, _seen_headers=_SEEN_HEADERS)
-            # ── 2) positional variants (absolute | relative) ──
-            for strategy_name in _r('position_strategy'):
-                for boundary_mode in ('none', 'both'):
-                    for weight_mode in _r('weight_mode'):
-                        for mode in probability.available_transforms():
-                            for agg in _r('aggregate_mode'):
-                                cfg = Config.default(
-                                    ngram_order=order,
-                                    position_strategy=strategy_name,
-                                    boundary_mode=boundary_mode,
-                                    weight_mode=weight_mode,
-                                    prob_mode=mode,
-                                    aggregate_mode=agg,
-                                    count_strategy=count_strategy,
-                                )
-                                if not PluginRegistry["ngram"].supports(cfg):
-                                    continue
-                                if _matches_filters(cfg, filters or {}):
-                                    yield _make_variant("ngram", order, cfg, strategy_name, _seen_headers=_SEEN_HEADERS)
+# First all_variants function removed to fix redefinition issue
 
 
-def all_variants(train: Corpus, filters: dict[str, str] | None = None) -> Iterator[Variant]:
+def all_variants(
+    train: Corpus, filters: dict[str, str] | None = None
+) -> Iterator[Variant]:
     """
     Yield every model/configuration variant for scoring.
     Supports full grid, single model, and filtered grid (via ``--filter KEY=VAL``).
@@ -133,35 +88,40 @@ def all_variants(train: Corpus, filters: dict[str, str] | None = None) -> Iterat
     if filters:
         from .main import _matches_filters
     else:
-        _matches_filters = lambda *_: True
-    for count_strategy in (_r('count_strategy') or {'ngram': None}):
+
+        def _matches_filters(*_):
+            return True
+
+    for count_strategy in _r("count_strategy") or {"ngram": None}:
         for order in (1, 2, 3, 4):
             # ── 1) classic (non-positional) variants ──────────────────
-            for boundary_mode in _r('boundary_mode'):
-                for smoothing_scheme in _r('smoothing_scheme'):
-                    for weight_mode in _r('weight_mode'):
+            for boundary_mode in _r("boundary_mode"):
+                for smoothing_scheme in _r("smoothing_scheme"):
+                    for weight_mode in _r("weight_mode"):
                         for mode in probability.available_transforms():
-                            for agg in {_canonical_agg(a) for a in _r('aggregate_mode')}:
+                            for agg in {
+                                _canonical_agg(a) for a in _r("aggregate_mode")
+                            }:
                                 cfg = Config(
-                                    ngram_order      = order,
-                                    boundary_mode    = boundary_mode,
-                                    smoothing_scheme = smoothing_scheme,
-                                    weight_mode      = weight_mode,
-                                    prob_mode        = mode,
-                                    aggregate_mode   = agg,
+                                    ngram_order=order,
+                                    boundary_mode=boundary_mode,
+                                    smoothing_scheme=smoothing_scheme,
+                                    weight_mode=weight_mode,
+                                    prob_mode=mode,
+                                    aggregate_mode=agg,
                                     position_strategy=None,
-                                    count_strategy   = count_strategy,
+                                    count_strategy=count_strategy,
                                 )
                                 if not PluginRegistry["ngram"].supports(cfg):
                                     continue
                                 if _matches_filters(cfg, filters or {}):
                                     yield _make_variant("ngram", order, cfg)
             # ── 2) positional variants (absolute | relative) ──
-            for strategy_name in _r('position_strategy'):
-                for boundary_mode in ('none', 'both'):
-                    for weight_mode in _r('weight_mode'):
+            for strategy_name in _r("position_strategy"):
+                for boundary_mode in ("none", "both"):
+                    for weight_mode in _r("weight_mode"):
                         for mode in probability.available_transforms():
-                            for agg in _r('aggregate_mode'):
+                            for agg in _r("aggregate_mode"):
                                 cfg = Config.default(
                                     ngram_order=order,
                                     position_strategy=strategy_name,
@@ -175,83 +135,90 @@ def all_variants(train: Corpus, filters: dict[str, str] | None = None) -> Iterat
                                 if _matches_filters(cfg, filters or {}):
                                     yield _make_variant("ngram", order, cfg, strategy)
 
+
 def legacy_variants() -> list[Variant]:
     """
     Return the sixteen Variant objects that exactly reproduce the 2018 output.
     Column order: 4 uni, 4 bi, 4 positional-uni, 4 positional-bi.
     """
-    from uci_phonotactic_calculator.registries import registry
-    make = lambda **kw: _make_variant(
-        "ngram",
-        kw["ngram_order"],
-        Config.default(**kw),
-        None
-    )
+
+    def make(**kw):
+        return _make_variant("ngram", kw["ngram_order"], Config.default(**kw), None)
+
     variants = []
 
     # 1–4  UNIGRAMS  (no boundaries, joint P)
-    for weight, smooth in [("none", False),
-                           ("legacy_log", False),
-                           ("none",  True),
-                           ("legacy_log", True)]:
+    for weight, smooth in [
+        ("none", False),
+        ("legacy_log", False),
+        ("none", True),
+        ("legacy_log", True),
+    ]:
 
-        variants.append(make(
-            ngram_order=1,
-            boundary_mode='none',
-            weight_mode=weight,
-            smoothing_scheme='laplace' if smooth else 'none',
-            prob_mode="joint",
-            aggregate_mode="prod"
-        ))
+        variants.append(
+            make(
+                ngram_order=1,
+                boundary_mode="none",
+                weight_mode=weight,
+                smoothing_scheme="laplace" if smooth else "none",
+                prob_mode="joint",
+                aggregate_mode="prod",
+            )
+        )
 
     # 5–8  BIGRAMS  (with boundaries, conditional P)
-    for weight, smooth in [("none", False),
-                           ("legacy_log", False),
-                           ("none",  True),
-                           ("legacy_log", True)]:
-        variants.append(make(
-            ngram_order=2,
-            boundary_mode='both',
-            weight_mode=weight,
-            smoothing_scheme='laplace' if smooth else 'none',
-            prob_mode="conditional",
-            aggregate_mode="prod"
-        ))
+    for weight, smooth in [
+        ("none", False),
+        ("legacy_log", False),
+        ("none", True),
+        ("legacy_log", True),
+    ]:
+        variants.append(
+            make(
+                ngram_order=2,
+                boundary_mode="both",
+                weight_mode=weight,
+                smoothing_scheme="laplace" if smooth else "none",
+                prob_mode="conditional",
+                aggregate_mode="prod",
+            )
+        )
 
     # helper for positional strategies
     def pos(n, weight, smooth, prob):
         cfg = Config.default(
             ngram_order=n,
-            boundary_mode='none',  # positional sets inherit 'none' (no pads)
+            boundary_mode="none",  # positional sets inherit 'none' (no pads)
             weight_mode=weight,
-            smoothing_scheme='laplace' if smooth else 'none',
+            smoothing_scheme="laplace" if smooth else "none",
             position_strategy="absolute",
             prob_mode=prob,
-            aggregate_mode="sum_plus1"
+            aggregate_mode="sum_plus1",
         )
         return _make_variant("ngram", n, cfg, get_position_strategy("absolute", n=n))
 
     # 9–12  POSITIONAL UNIGRAMS  (absolute, joint P)
-    for weight, smooth in [("none", False),
-                           ("legacy_log", False),
-                           ("none",  True),
-                           ("legacy_log", True)]:
+    for weight, smooth in [
+        ("none", False),
+        ("legacy_log", False),
+        ("none", True),
+        ("legacy_log", True),
+    ]:
         variants.append(pos(1, weight, smooth, "joint"))
 
     # 13–16  POSITIONAL BIGRAMS  (absolute, joint P)
-    for weight, smooth in [("none", False),
-                           ("legacy_log", False),
-                           ("none",  True),
-                           ("legacy_log", True)]:
+    for weight, smooth in [
+        ("none", False),
+        ("legacy_log", False),
+        ("none", True),
+        ("legacy_log", True),
+    ]:
         variants.append(pos(2, weight, smooth, "joint"))
-
 
     return variants
 
 
-__all__ = [
-    "Variant", "all_variants", "legacy_variants"
-]
+__all__ = ["Variant", "all_variants", "legacy_variants"]
 # Only use _r for registry lookups in this file.
 
 # End of src/variants.py

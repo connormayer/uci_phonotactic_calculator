@@ -1,9 +1,9 @@
 """
 CLI helpers for demo data: --list-data and --use-demo-data
 """
+
 import importlib.resources as pkg_resources
-import sys
-from pathlib import Path
+
 
 def list_data_files():
     base = "uci_phonotactic_calculator.data"
@@ -18,17 +18,31 @@ def list_data_files():
                 if f.is_file():
                     print(f"{f}")
 
+
 def get_demo_paths():
     base = "uci_phonotactic_calculator.data"
     train = pkg_resources.files(base).joinpath("english.csv")
-    test = pkg_resources.files(f"{base}.sample_test_data").joinpath("english_test_data.csv")
+    test = pkg_resources.files(f"{base}.sample_test_data").joinpath(
+        "english_test_data.csv"
+    )
     return str(train), str(test)
+
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="Demo data utilities")
-    parser.add_argument("--list-data", action="store_true", help="List all available packaged data files")
-    parser.add_argument("--use-demo-data", action="store_true", help="Print paths to demo train/test files (english.csv, english_test_data.csv)")
+    parser.add_argument(
+        "--list-data",
+        action="store_true",
+        help="List all available packaged data files",
+    )
+    parser.add_argument(
+        "--use-demo-data",
+        action="store_true",
+        help="Print paths to demo train/test files "
+        "(english.csv, english_test_data.csv)",
+    )
     args = parser.parse_args()
     if args.list_data:
         list_data_files()
