@@ -1,51 +1,28 @@
 """
-src/progress.py — Rich Progress helper
+src/progress.py — Progress helper (Rich default implementation)
+
+DEPRECATED: For custom progress frontends, import from progress_base directly.
 
 Call::     with progress(enabled=True) as p:
                task = p.add_task("Scoring", total=len(items))
                for _ in items: ...
 
-Other modules must only import progress() from here—never rich directly—
+Other modules should only import progress() from here—never rich directly—
 so swapping libraries later is trivial.
 
 Note for maintainers:
     Each heavy section should be wrapped in its own `with progress(...)` block.
-    Rich's Progress context auto-closes and cleans up on exceptions,
+    Progress contexts auto-close and clean up on exceptions,
     so no extra exception handling is required for progress bars.
 """
 
-from contextlib import nullcontext
-from os import environ
 from typing import ContextManager
 
-from rich.progress import (
-    BarColumn,
-    MofNCompleteColumn,
-    Progress,
-    SpinnerColumn,
-    TimeElapsedColumn,
-    TimeRemainingColumn,
-)
+from .progress_base import RichProgress
+from .progress_base import progress as base_progress
 
 
-def _make() -> Progress:
-    return Progress(
-        SpinnerColumn(),
-        "[progress.description]{task.description}",
-        BarColumn(),
-        MofNCompleteColumn(),
-        TimeElapsedColumn(),
-        TimeRemainingColumn(),
-        transient=True,  # erase on completion
-    )
-
-
-def _env_no_progress() -> bool:
-    val = environ.get("NO_PROGRESS", "").lower()
-    return val not in ("", "0", "false")
-
-
-def progress(enabled: bool = True) -> ContextManager[Progress]:
+def progress(enabled: bool = True) -> ContextManager:
     """
     Context manager for a Rich progress bar, or a no-op if disabled.
     Progress is suppressed if either:
@@ -54,7 +31,7 @@ def progress(enabled: bool = True) -> ContextManager[Progress]:
         or any non-empty non-false value (case-insensitive).
     This allows CI, Docker, or scripts to suppress bars without editing command lines.
     """
-    if _env_no_progress() or not enabled:
-        # Rich still initialises quickly, but a nullcontext avoids any stderr writes.
-        return nullcontext()  # type: ignore[return-value]
-    return _make()
+    return base_progress(enabled)
+
+
+__all__ = ["progress", "RichProgress"]

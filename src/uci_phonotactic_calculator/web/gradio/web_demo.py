@@ -22,52 +22,8 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-# --- Gradio progress adapter for Rich-style progress ---
-class _GradioProgressAdapter:
-    """
-    Drop-in replacement for uci_phonotactic_calculator.progress.progress()
-    that streams status into the Gradio UI.
-
-    It only implements the bits the library actually calls:
-        with progress(...) as bar:
-            tid = bar.add_task("Training", total=N)
-            ...
-            bar.update(tid, advance=1)
-    """
-
-    def __init__(self, enabled: bool = True):
-        self.enabled = enabled
-        self._g_prog = None  # gr.Progress instance
-        self._tasks = {}  # local id ➜ (current, total)
-
-    def __enter__(self):
-        if self.enabled:
-            # keep both the CM *and* the callable tracker
-            self._cm = gr.Progress()  # context-manager
-            self._g_prog = self._cm.__enter__()  # callable returned by __enter__
-        return self
-
-    def __exit__(self, exc_type, exc, tb):
-        if getattr(self, "_cm", None):
-            self._cm.__exit__(exc_type, exc, tb)
-
-    # ─── Rich-look-alike API ─────────────────────────────────────────
-    def add_task(self, description: str, total: int | None = None):
-        task_id = len(self._tasks) + 1
-        self._tasks[task_id] = [0, total or 0]
-        if self._g_prog:
-            # The callable has set_description() only on Gradio ≥4.3
-            if hasattr(self._g_prog, "set_description"):
-                self._g_prog.set_description(description)
-            self._g_prog(0, total or 0)
-        return task_id
-
-    def update(self, task_id: int, advance: int = 1):
-        cur, tot = self._tasks[task_id]
-        cur += advance
-        self._tasks[task_id][0] = cur
-        if self._g_prog:
-            self._g_prog(cur, tot)
+# --- Progress tracking for the Gradio UI ---
+from uci_phonotactic_calculator.utils.progress_base import GradioProgress
 
 
 # ---> public, documented API wrapper around the CLI
@@ -144,12 +100,17 @@ def score(
             filters[k] = v
 
     # -------------------- invoke library with Gradio progress patch ---------------------------
-    import uci_phonotactic_calculator.progress as _p
+    from uci_phonotactic_calculator.utils.progress import progress
 
-    _orig_progress = _p.progress  # keep to restore later
-    _p.progress = lambda enabled=True: _GradioProgressAdapter(
-        enabled=enabled and not hide_progress
-    )
+    _orig_progress = progress  # keep original
+
+    def _gradio_progress(enabled=True):
+        return GradioProgress(enabled=enabled and not hide_progress)
+
+    # Patch the progress function
+    import uci_phonotactic_calculator.utils.progress as _p
+
+    _p.progress = _gradio_progress
     try:
         ngram_run(
             train_file=train_path,

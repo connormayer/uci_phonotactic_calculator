@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "uci-phonotactic-calculator"
-version = "0.2.2"
+version = "0.2.3"
 description = "A toolkit for phonotactic probability calculation and analysis."
 authors = [
-    { name = "Your Name", email = "your@email.com" }
+    { name = "Connor Mayer", email = "connor.mayer@uci.edu" }
 ]
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -45,7 +45,7 @@ Issues = "https://github.com/connormayer/uci_phonotactic_calculator/issues"
 ngram-calculator = "uci_phonotactic_calculator:main"
 uci-phonotactic-calculator = "uci_phonotactic_calculator:main"
 uci-phonotactic-web = "uci_phonotactic_calculator.web.django.manage:main"
-uci-phonotactic-ui = "uci_phonotactic_calculator.web.gradio.web_demo:main"
+uci-phonotactic-ui = "uci_phonotactic_calculator.web.gradio.web_demo_v2:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

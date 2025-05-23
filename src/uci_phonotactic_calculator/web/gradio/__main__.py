@@ -4,7 +4,7 @@ Main entry point for running the UCI Phonotactic Calculator web UI.
 Run with: python -m uci_phonotactic_calculator.web
 """
 
-from uci_phonotactic_calculator.web.web_demo import build_ui
+from uci_phonotactic_calculator.web.gradio.web_demo_v2 import build_ui
 
 if __name__ == "__main__":
     print("Starting web server and opening browser automatically...")
