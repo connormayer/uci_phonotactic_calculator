@@ -58,6 +58,11 @@ where = ["src"]
 # Include all CSV files in src and subpackages
 "uci_phonotactic_calculator.data" = ["**/*.csv", "**/*.txt"]
 "uci_phonotactic_calculator" = ["py.typed"]
+"uci_phonotactic_calculator.web.django" = [
+  "templates/**/*.html",
+  "static/**/*.*",
+  "media/**/*.*"
+]
 
 # Black configuration
 [tool.black]
