@@ -111,10 +111,7 @@ disallow_incomplete_defs = false
 module = ["pandas.*", "colorama.*"]
 ignore_missing_imports = true
 
-[[tool.mypy.overrides]]
-module = "bokeh.*"
-ignore_missing_imports = true
-ignore_errors = true
+# Removed Bokeh override as it's not used in the project
 
 # Ignore issues in web module (already excluded from linting)
 [[tool.mypy.overrides]]
