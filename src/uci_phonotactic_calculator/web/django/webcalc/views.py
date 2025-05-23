@@ -9,8 +9,8 @@ from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView
 from django.views.generic.edit import CreateView
 
-from uci_phonotactic_calculator import utility as util
-from uci_phonotactic_calculator.ngram_calculator import run
+from uci_phonotactic_calculator.utils import utility as util
+from uci_phonotactic_calculator.cli.legacy import run
 from uci_phonotactic_calculator.web.django import settings
 
 from .models import DefaultFile, UploadTrain, UploadWithDefault

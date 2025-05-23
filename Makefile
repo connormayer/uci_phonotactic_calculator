@@ -42,18 +42,18 @@ django-web:
 
 # Run the demo calculator
 demo:
-	python -m uci_phonotactic_calculator.main --use-demo-data output.csv
+	python -m uci_phonotactic_calculator.cli.main --use-demo-data output.csv
 
 # Run ngram calculator with all variants (--all flag)
 all-variants:
 	@echo "Running UCI Phonotactic Calculator with all variants..."
-	python -m uci_phonotactic_calculator.main --use-demo-data --all output.csv
+	python -m uci_phonotactic_calculator.cli.main --use-demo-data --all output.csv
 
 # Run the legacy calculator variant (default mode with 16-column output)
 legacy:
 	@echo "Running UCI Phonotactic Calculator legacy variant..."
 	@echo "Note: Legacy mode is now the default (16-column output)."
-	python -m uci_phonotactic_calculator.main --use-demo-data output.csv
+	python -m uci_phonotactic_calculator.cli.main --use-demo-data output.csv
 
 # Show help
 help:

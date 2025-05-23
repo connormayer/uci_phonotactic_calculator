@@ -199,7 +199,7 @@ def main():
 
     # Handle special flags early
     if prelim.list_data:
-        from . import cli_demo_data
+        from . import demo_data as cli_demo_data
 
         cli_demo_data.list_data_files()
         sys.exit(0)
@@ -234,9 +234,9 @@ def main():
 
     # If --use-demo-data is specified, fill in missing positionals
     if args.use_demo_data:
-        from . import cli_demo_data
+        from .demo_data import get_demo_paths
 
-        train, test = cli_demo_data.get_demo_paths()
+        train, test = get_demo_paths()
         if not args.train_file:
             args.train_file = train
         if not args.test_file:
@@ -253,7 +253,7 @@ def main():
         for k, v in sorted(ALIASES.items()):
             print(f"  {k} → {v}")
         sys.exit(0)
-    from . import cli_utils
+    from . import utils as cli_utils
 
     if args.no_color or not cli_utils.supports_color(sys.stderr):
         cli_utils.style = lambda t, *_, **__: t  # type: ignore[assignment]

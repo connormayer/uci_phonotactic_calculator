@@ -71,8 +71,8 @@ class _GradioProgressAdapter:
 
 
 # ---> public, documented API wrapper around the CLI
-from uci_phonotactic_calculator.cli_demo_data import get_demo_paths
-from uci_phonotactic_calculator.ngram_calculator import run as ngram_run
+from uci_phonotactic_calculator.cli.demo_data import get_demo_paths
+from uci_phonotactic_calculator.cli.legacy import run as ngram_run
 from uci_phonotactic_calculator.plugins import PluginRegistry
 
 TMP_DIR = Path(tempfile.gettempdir())
