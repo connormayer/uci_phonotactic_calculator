@@ -1,4 +1,5 @@
 # src/aggregators_builtin.py
+from ..core.registries import register
 from .aggregate import (
     linear_sum,
     linear_sum_plus1,
@@ -7,7 +8,6 @@ from .aggregate import (
     max_val,
     min_val,
 )
-from .registries import register
 
 register("aggregate_mode", "prod")(log_product)
 register("aggregate_mode", "lse")(logsumexp)

@@ -1,5 +1,5 @@
-from .plugins.utils.smoothing import apply
-from .registries import register
+from ..core.registries import register
+from ..plugins.utils.smoothing import apply
 
 # ──────────────────────────────────────────────────────
 # Sentinel: no smoothing

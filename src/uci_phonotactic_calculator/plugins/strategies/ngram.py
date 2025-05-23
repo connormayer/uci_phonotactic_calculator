@@ -9,10 +9,10 @@ from typing import Optional, Sequence
 
 import numpy as np
 
-from ...config import Config
-from ...corpus import Corpus
-from ...registries import register
-from ...types import CountDict, IndexTuple
+from ...core.config import Config
+from ...core.corpus import Corpus
+from ...core.registries import register
+from ...utils.types import CountDict, IndexTuple
 from .base import BaseCounter
 
 

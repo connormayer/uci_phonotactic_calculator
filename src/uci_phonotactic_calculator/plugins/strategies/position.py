@@ -5,7 +5,7 @@ Position strategies for n-gram models.
 from functools import lru_cache
 from typing import Protocol, runtime_checkable
 
-from ...registries import register, registry
+from ...core.registries import register, registry
 
 
 @runtime_checkable

@@ -1,9 +1,9 @@
 """src/header_utils.py — Centralized header construction for all model plugins."""
 
-from .cli_utils import slug
+from ..cli.utils import slug
+from ..plugins.core import get_model
 from .config import Config
 from .header_schema import SCHEMA
-from .plugins.core import get_model
 
 _WEIGHT_TAG = {
     "none": "unw",

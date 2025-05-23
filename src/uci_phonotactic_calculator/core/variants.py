@@ -10,11 +10,11 @@ from __future__ import annotations
 
 from typing import Iterator, NamedTuple
 
+from ..plugins.core import PluginRegistry, discover_models
+from ..plugins.strategies.position import get_position_strategy
 from . import probability as probability
 from .config import Config
 from .corpus import Corpus
-from .plugins.core import PluginRegistry, discover_models
-from .plugins.strategies.position import get_position_strategy
 from .registries import registry as _r
 
 
@@ -86,7 +86,7 @@ def all_variants(
         Instances in a deterministic order.
     """
     if filters:
-        from .main import _matches_filters
+        from ..cli.main import _matches_filters
     else:
 
         def _matches_filters(*_):
@@ -154,7 +154,6 @@ def legacy_variants() -> list[Variant]:
         ("none", True),
         ("legacy_log", True),
     ]:
-
         variants.append(
             make(
                 ngram_order=1,

@@ -25,7 +25,6 @@ from .registries import (
 
 @dataclass(slots=True)
 class Config:
-
     @property
     def boundary_symbol(self):
         return registry("boundary_scheme")[self.boundary_scheme]()

@@ -27,8 +27,8 @@ warnings.filterwarnings("once", category=DeprecationWarning)
 # the parent package.
 
 if TYPE_CHECKING:
-    from ..config import Config
-    from ..corpus import Corpus
+    from ..core.config import Config
+    from ..core.corpus import Corpus
 
 __all__ = [
     "BaseModel",
@@ -98,7 +98,7 @@ class BaseModel(ABC):
         # Provide a default implementation that uses the model's class name
         # and configuration settings to build a header string
         try:
-            from ..header_utils import build_header
+            from ..core.header_utils import build_header
 
             # Get the model name from registry or use class name
             model_name = next(

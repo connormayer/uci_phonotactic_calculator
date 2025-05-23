@@ -1,6 +1,6 @@
 import argparse
 
-from .cli_utils import BODY_STYLE, HEADER_STYLE, style
+from .utils import BODY_STYLE, HEADER_STYLE, style
 
 
 class ColourHelp(argparse.RawDescriptionHelpFormatter):

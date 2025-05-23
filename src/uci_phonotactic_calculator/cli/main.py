@@ -6,22 +6,21 @@ import sys
 from collections import OrderedDict
 from functools import lru_cache
 
-from uci_phonotactic_calculator.corpus import (
+from ..core.config import Config
+from ..core.corpus import (
     Corpus,  # Ensure Corpus is available in all scopes
 )
-from uci_phonotactic_calculator.filter_aliases import ALIASES, canonical
-from uci_phonotactic_calculator.plugins.core import (
+from ..core.filter_aliases import ALIASES, canonical
+from ..core.variants import all_variants
+from ..plugins.core import (
     PluginRegistry,
     get_model,  # Ensure get_model is available in all scopes
 )
-from uci_phonotactic_calculator.plugins.core import discover_models as _discover
-from uci_phonotactic_calculator.progress import (
+from ..plugins.core import discover_models as _discover
+from ..utils.progress import (
     progress,  # Centralized progress bar logic
 )
-
-from .cli import build_parser
-from .config import Config
-from .variants import all_variants
+from .parser import build_parser
 
 # Imported once here – never re-import inside main(), or it will mask the global.
 
@@ -100,12 +99,12 @@ def parse_filters(args) -> dict[str, str]:
 
 def _run_legacy(args, parser):
     # Only the 16 canonical 2018 variants – no grid search!
-    from .variants import legacy_variants
+    from ..core.variants import legacy_variants
 
     variants = legacy_variants()
 
     # ── NEW: Neighbourhood-density (full) column ─────────────────────
-    from .variants import Variant
+    from ..core.variants import Variant
 
     nh_cfg = Config.default(
         neighbourhood_mode="full",
@@ -244,7 +243,7 @@ def main():
             args.test_file = test
 
     if getattr(args, "list_filters", False):
-        from .filter_aliases import ALIASES
+        from ..core.filter_aliases import ALIASES
 
         core_keys = [k for k in Config.__dataclass_fields__ if not k.startswith("_")]
         print("Core keys:")
@@ -492,7 +491,7 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        from .cli_utils import style
+        from .utils import style
 
         print(style("\n[Interrupted by user]", "yellow", "bold"), file=sys.stderr)
 

@@ -1,7 +1,7 @@
 # src/weighting.py
 import math
 
-from .registries import register
+from ..core.registries import register
 
 
 @register("weight_mode", "none")

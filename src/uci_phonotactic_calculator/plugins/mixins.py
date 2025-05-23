@@ -1,6 +1,6 @@
 """src/plugins/mixins.py — Token-frequency weighting helper only."""
 
-from ..registries import registry
+from ..core.registries import registry
 
 
 class TokenWeightMixin:

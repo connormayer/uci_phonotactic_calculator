@@ -3,6 +3,7 @@
 Make the in-tree `src` package importable when the project has not yet
 been installed with `pip install -e .`.
 """
+
 import sys
 from pathlib import Path
 

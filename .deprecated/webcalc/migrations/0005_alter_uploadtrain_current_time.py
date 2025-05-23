@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("webcalc", "0004_uploadtrain_current_time_and_more"),
     ]

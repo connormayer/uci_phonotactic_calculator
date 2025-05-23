@@ -3,7 +3,7 @@
 import argparse
 from typing import List, Protocol
 
-from .registries import register
+from ..core.registries import register
 
 
 class CLIExtension(Protocol):

@@ -12,6 +12,7 @@ clean:
 # Run linting tools
 lint:
 	ruff check --fix .
+	ruff format
 	black .
 	mypy --strict .
 
@@ -19,6 +20,7 @@ lint:
 format:
 	black .
 	ruff check --fix .
+	ruff format
 
 # Run tests
 test:

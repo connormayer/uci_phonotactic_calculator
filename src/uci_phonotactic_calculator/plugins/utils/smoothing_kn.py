@@ -3,7 +3,7 @@ Placeholder Kneser–Ney smoother (no-op) – serves as an example for extension
 authors.  Real maths deliberately omitted.
 """
 
-from ...registries import register
+from ...core.registries import register
 
 
 @register("smoothing_scheme", "kneser_ney")

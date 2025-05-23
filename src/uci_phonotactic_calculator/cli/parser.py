@@ -1,8 +1,8 @@
 import argparse
 
-from .cli_formatter import ColourHelp
-from .cli_utils import BODY_STYLE, HEADER_STYLE, style
-from .registries import registry
+from ..core.registries import registry
+from .formatter import ColourHelp
+from .utils import BODY_STYLE, HEADER_STYLE, style
 
 
 def _registry_option(
@@ -40,8 +40,7 @@ def _registry_option(
 
 
 def _add_extension_flags(parser: argparse.ArgumentParser) -> None:
-
-    from .registries import registry
+    from ..core.registries import registry
 
     ext_group = parser.add_argument_group(style("Extensions", *HEADER_STYLE))
     for _name, ext in registry("cli_ext").items():
@@ -219,7 +218,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Order of the n-gram model (≥ 1, default 2)",
     )
     group = pos.add_mutually_exclusive_group()
-    from .probability import available_transforms
+    from ..core.probability import available_transforms
 
     group.add_argument(
         "--prob-mode", choices=list(available_transforms()), help="Built-in transforms."

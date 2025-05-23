@@ -14,9 +14,9 @@ Notes:
 
 from functools import lru_cache
 
-from ..cli_utils import slug
-from ..plugins.core import BaseModel, register
-from ..registries import registry
+from ..cli.utils import slug
+from ..core.registries import registry
+from .core import BaseModel, register
 from .fallback import FallbackMixin
 
 

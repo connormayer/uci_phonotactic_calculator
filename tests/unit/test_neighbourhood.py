@@ -4,7 +4,7 @@ Unit tests for the Neighbourhood plugin.
 Focuses on validating the integration with neighborhood mode functions.
 """
 
-from uci_phonotactic_calculator.config import Config
+from uci_phonotactic_calculator.core.config import Config
 from uci_phonotactic_calculator.plugins.neighbourhood import NeighbourhoodModel
 
 # Constants for mode names

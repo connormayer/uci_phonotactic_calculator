@@ -5,9 +5,9 @@ Ensures that all plugins correctly implement the required interface.
 
 import pytest
 
-from uci_phonotactic_calculator.config import Config
-from uci_phonotactic_calculator.corpus import Corpus
-from uci_phonotactic_calculator.plugins import PluginRegistry
+from uci_phonotactic_calculator.core.config import Config
+from uci_phonotactic_calculator.core.corpus import Corpus
+from uci_phonotactic_calculator.plugins.core import PluginRegistry
 
 
 @pytest.mark.parametrize("name,cls", PluginRegistry.items())

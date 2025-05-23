@@ -1,4 +1,4 @@
-from ..constants import MIN_LOG_PROB
+from ..utils.constants import MIN_LOG_PROB
 
 
 class FallbackMixin:

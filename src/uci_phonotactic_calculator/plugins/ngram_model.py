@@ -7,16 +7,16 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from uci_phonotactic_calculator.corpus import Corpus
-from uci_phonotactic_calculator.plugins.core import get_prob_transform
-from uci_phonotactic_calculator.plugins.strategies.position import get_position_strategy
-from uci_phonotactic_calculator.registries import registry
+from ..core.corpus import Corpus
+from ..core.registries import registry
+from .core import get_prob_transform
+from .strategies.position import get_position_strategy
 
 if TYPE_CHECKING:
-    from uci_phonotactic_calculator.config import Config
+    from ..core.config import Config
 
-from ..header_utils import build_header
-from ..plugins.core import BaseModel, register
+from ..core.header_utils import build_header
+from .core import BaseModel, register
 from .fallback import FallbackMixin
 from .mixins import TokenWeightMixin
 from .strategies.position import PositionStrategy
@@ -100,7 +100,6 @@ class NGramModel(TokenWeightMixin, FallbackMixin, BaseModel):
             self._total = sum(self._counts.values()) or 1.0
 
     def _fit_positional(self, corpus):
-
         cfg = self.cfg
         if not corpus.tokens:
             self._logprobs = np.array([self._fallback])  # shape (1,)
@@ -212,7 +211,6 @@ class NGramModel(TokenWeightMixin, FallbackMixin, BaseModel):
         return aggregate_fn(comps)
 
     def _score_positional(self, token: list[str]) -> float:
-
         cfg = self.cfg
         aggregate_fn = registry("aggregate_mode")[cfg.aggregate_mode]
         grams_idx = Corpus.generate_ngrams(

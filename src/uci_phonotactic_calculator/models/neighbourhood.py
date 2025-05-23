@@ -3,11 +3,12 @@
 Built-in edit-distance-1 neighbourhood generators.
 Each function returns a *set* of neighbour tokens (tuple[str, …]).
 """
+
 from __future__ import annotations
 
 from typing import Iterable, Set, Tuple
 
-from .registries import register
+from ..core.registries import register
 
 SymbolT = Tuple[str, ...]
 

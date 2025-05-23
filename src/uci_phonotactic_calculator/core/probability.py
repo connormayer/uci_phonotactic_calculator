@@ -2,7 +2,7 @@
 
 from functools import lru_cache
 
-from .plugins.core import ProbTransformRegistry, discover_models
+from ..plugins.core import ProbTransformRegistry, discover_models
 
 
 @lru_cache(maxsize=None)

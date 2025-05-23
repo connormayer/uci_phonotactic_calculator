@@ -42,8 +42,8 @@ Documentation = "https://github.com/connormayer/uci_phonotactic_calculator#readm
 Issues = "https://github.com/connormayer/uci_phonotactic_calculator/issues"
 
 [project.scripts]
-ngram-calculator = "uci_phonotactic_calculator.main:main"
-uci-phonotactic-calculator = "uci_phonotactic_calculator.main:main"
+ngram-calculator = "uci_phonotactic_calculator:main"
+uci-phonotactic-calculator = "uci_phonotactic_calculator:main"
 uci-phonotactic-web = "uci_phonotactic_calculator.web.django.manage:main"
 uci-phonotactic-ui = "uci_phonotactic_calculator.web.gradio.web_demo:main"
 

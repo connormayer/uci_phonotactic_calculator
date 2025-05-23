@@ -10,7 +10,7 @@ The ‘n’ parameter lets a mode decide how many pads are needed
 
 from typing import List
 
-from .registries import register
+from ..core.registries import register
 
 
 def _prefix(tok: List[str], pad: str, n: int) -> List[str]:
