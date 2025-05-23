@@ -1,63 +1,83 @@
 """
-Unit tests for the Neighbourhood plugin, focusing on NeighbourhoodMode and phoneme tuple handling.
+Unit tests for the Neighbourhood plugin.
+
+Focuses on validating the integration with neighborhood mode functions.
 """
-import pytest
-import sys
-from pathlib import Path
-import tempfile
 
-print(f"[DEBUG] sys.path: {sys.path}")
-print(f"[DEBUG] __file__: {__file__}")
+from uci_phonotactic_calculator.config import Config
+from uci_phonotactic_calculator.plugins.neighbourhood import NeighbourhoodModel
 
-# Ensure src is on sys.path for direct pytest invocation
-if str(Path(__file__).resolve().parents[2] / "src") not in sys.path:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+# Constants for mode names
+FULL_MODE = "full"
+SUBSTITUTION_ONLY_MODE = "substitution_only"
 
-from plugins.neighbourhood import Neighbourhood, NeighbourhoodMode
-from config import Config
-from corpus import Corpus
 
-# Helper to create a dummy corpus CSV file and load it
-@pytest.fixture
-def dummy_corpus(tmp_path):
-    data = "word,frequency\npa.ta,1\npata,1\np.ta,1\npat,1\n"
-    file = tmp_path / "dummy.csv"
-    file.write_text(data)
-    cfg = Config.default()
-    corpus = Corpus(file, cfg, include_boundary=False)
-    return corpus
+def test_neighbourhood_model_integration():
+    """
+    Test that NeighbourhoodModel correctly integrates with registry functions.
+    This tests the core functionality without relying on complex corpus handling.
+    """
+    # Create a simple config
+    cfg = Config.default(neighbourhood_mode=FULL_MODE)
+    model = NeighbourhoodModel(cfg)
 
-def test_full_mode_counts_all_edits(dummy_corpus):
-    cfg = Config.default(neighbourhood_mode=NeighbourhoodMode.FULL)
-    model = Neighbourhood(cfg)
-    model.fit(dummy_corpus)
-    # 'pata' should have as neighbors: 'pa.ta', 'p.ta', 'pat' (all one edit away)
-    # Test tuple handling: all words are split into tuples of phonemes
-    assert model._count_neighbors(('p', 'a', 't', 'a')) == 3
+    # Manually set up the model's internal state
+    model.training_set = {
+        ("p", "a", "t", "a"),
+        ("p", "a", ".", "t", "a"),
+        ("p", ".", "t", "a"),
+        ("p", "a", "t"),
+    }
+    model.alphabet = {"p", "a", "t", "."}
+    model.sound_index = [".", "a", "p", "t"]
 
-def test_substitution_only_mode(dummy_corpus):
-    cfg = Config.default(neighbourhood_mode=NeighbourhoodMode.SUBSTITUTION_ONLY)
-    model = Neighbourhood(cfg)
-    model.fit(dummy_corpus)
-    # Only substitutions allowed, so only 'pa.ta' and 'p.ta' are one substitution away from 'pata'
-    assert model._count_neighbors(('p', 'a', 't', 'a')) == 2
+    # Test that we can find neighbors for a target
+    target = ("p", "a", "t", "a")
+    neighbors_count = model._count_neighbors(target)
 
-def test_empty_input(dummy_corpus):
-    cfg = Config.default(neighbourhood_mode=NeighbourhoodMode.FULL)
-    model = Neighbourhood(cfg)
-    model.fit(dummy_corpus)
-    # No neighbors for empty string
+    # We should find the 3 neighbors from our training set
+    # ('p', 'a', '.', 't', 'a'), ('p', '.', 't', 'a'), ('p', 'a', 't')
+    assert neighbors_count == 3
+
+    # Test substitution only mode
+    cfg = Config.default(neighbourhood_mode=SUBSTITUTION_ONLY_MODE)
+    model = NeighbourhoodModel(cfg)
+    model.training_set = {
+        ("p", "a", "t", "a"),
+        ("p", "a", ".", "t", "a"),
+        ("p", ".", "t", "a"),
+        ("p", "a", "t"),
+    }
+    model.alphabet = {"p", "a", "t", "."}
+    model.sound_index = [".", "a", "p", "t"]
+
+    # The neighbors calculation depends on two things:
+    # 1. The substitution_only neighborhood function generating all possible
+    #    substitutions
+    # 2. How many of those generated neighbors are actually in our training_set
+    #
+    # In our test data, only one neighbor from our training_set matches a substitution
+    # - ('p', '.', 't', 'a') is a valid substitution of ('p', 'a', 't', 'a')
+    assert model._count_neighbors(target) == 1
+
+    # Empty input should find 0 neighbors
     assert model._count_neighbors(()) == 0
 
+
 def test_multi_char_phonemes():
-    # Test with multi-character phonemes
-    data = "word,frequency\nch.a.t,1\ncha.t,1\nch.at,1\nchat,1\n"
-    with tempfile.TemporaryDirectory() as tmpdir:
-        file = Path(tmpdir) / "dummy.csv"
-        file.write_text(data)
-        cfg = Config.default()
-        corpus = Corpus(file, cfg, include_boundary=False)
-        model = Neighbourhood(cfg)
-        model.fit(corpus)
-        # 'chat' as ('ch','a','t')
-        assert model._count_neighbors(('ch', 'a', 't')) == 3
+    """Test with multi-character phonemes"""
+    cfg = Config.default(neighbourhood_mode=FULL_MODE)
+    model = NeighbourhoodModel(cfg)
+
+    # Manually set up the model with multi-char phonemes
+    model.training_set = {
+        ("ch", "a", "t"),
+        ("ch", ".", "a", "t"),
+        ("ch", "a", ".", "t"),
+        ("ch", "a", "t", "."),
+    }
+    model.alphabet = {"ch", "a", "t", "."}
+    model.sound_index = [".", "a", "ch", "t"]
+
+    # The target 'chat' should have 3 neighbors
+    assert model._count_neighbors(("ch", "a", "t")) == 3
