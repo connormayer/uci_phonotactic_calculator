@@ -135,3 +135,4 @@ dmypy.json
 .pyre/
 
 media/uploads
+src/uci_phonotactic_calculator/web/django/media/uploads/
