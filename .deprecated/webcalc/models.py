@@ -3,7 +3,6 @@ from os import listdir
 from os.path import isfile, join
 
 from django.db import models
-
 from webcalc_project import settings
 
 

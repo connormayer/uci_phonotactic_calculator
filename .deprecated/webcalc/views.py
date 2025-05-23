@@ -5,10 +5,10 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView
 from django.views.generic.edit import CreateView
+from webcalc_project import settings
 
 from uci_phonotactic_calculator import utility as util
 from uci_phonotactic_calculator.ngram_calculator import run
-from webcalc_project import settings
 
 # Create your views here.
 from .models import DefaultFile, UploadTrain, UploadWithDefault
