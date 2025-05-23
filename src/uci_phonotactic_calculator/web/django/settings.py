@@ -33,7 +33,8 @@ INSTALLED_APPS = [
     "django_crontab",
 ]
 
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+# Use package-level media directory instead of top-level
+MEDIA_ROOT = os.path.join(Path(__file__).resolve().parent, "media")
 MEDIA_URL = "/media/"
 
 MIDDLEWARE = [
@@ -51,7 +52,7 @@ ROOT_URLCONF = "uci_phonotactic_calculator.web.django.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "templates")],
+        "DIRS": [os.path.join(Path(__file__).resolve().parent, "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -70,7 +71,7 @@ WSGI_APPLICATION = "uci_phonotactic_calculator.web.django.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        "NAME": os.path.join(Path(__file__).resolve().parent, "db.sqlite3"),
     }
 }
 
@@ -101,14 +102,15 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "static/")
+# Use package-level static directory instead of top-level
+STATIC_ROOT = os.path.join(Path(__file__).resolve().parent, "static/")
 
 # Cronjobs for cleaning media files
 CRONJOBS = [
     (
         "*/10 * * * *",
         "uci_phonotactic_calculator.web.django.webcalc.cron.clean_media_folder",
-        ">> " + os.path.join(BASE_DIR, "logs/clean_media_cron.log" + " 2>&1 "),
+        ">> " + os.path.join(Path(__file__).resolve().parent, "logs/clean_media_cron.log" + " 2>&1 "),
     )
 ]
 
