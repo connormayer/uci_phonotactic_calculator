@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('webcalc', '0006_alter_uploadtrain_current_time'),
+        ("webcalc", "0006_alter_uploadtrain_current_time"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='uploadtrain',
-            name='current_time',
+            model_name="uploadtrain",
+            name="current_time",
             field=models.DateTimeField(auto_now_add=True),
         ),
     ]

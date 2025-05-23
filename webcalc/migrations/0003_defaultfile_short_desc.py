@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('webcalc', '0002_remove_defaultfile_short_desc'),
+        ("webcalc", "0002_remove_defaultfile_short_desc"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='defaultfile',
-            name='short_desc',
-            field=models.CharField(default='', max_length=50),
+            model_name="defaultfile",
+            name="short_desc",
+            field=models.CharField(default="", max_length=50),
         ),
     ]

@@ -1,7 +1,7 @@
 import numpy as np
 from django.test import TestCase
 
-from uci_phonotactic_calculator import ngram_calculator
+from src import ngram_calculator
 
 TRAINING_FILE = "data/unit_test_data/unit_test_training_data.txt"
 
@@ -16,7 +16,7 @@ class FitNGramsTestCase(TestCase):
     def setUp(self):
         self.token_freqs = ngram_calculator.read_tokens(TRAINING_FILE)
         self.unique_sounds = sorted(
-            {sound for token, _ in self.token_freqs for sound in token}
+            list(set([sound for token, _ in self.token_freqs for sound in token]))
         ) + ["#"]
 
     def testFitUnigrams(self):
@@ -339,7 +339,7 @@ class TestNGramsTestCase(TestCase):
     def setUp(self):
         self.token_freqs = ngram_calculator.read_tokens(TRAINING_FILE)
         self.unique_sounds = sorted(
-            {sound for token, _ in self.token_freqs for sound in token}
+            list(set([sound for token, _ in self.token_freqs for sound in token]))
         ) + ["#"]
 
         self.unigram_probs = ngram_calculator.fit_unigrams(self.token_freqs)

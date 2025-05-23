@@ -1,16 +1,16 @@
-from distutils.command.upload import upload
-from webcalc_project import settings
-from os import listdir, unlink
-from os.path import join, isfile, getmtime, isdir
-
 import shutil
 import time
+from os import listdir, unlink
+from os.path import getmtime, isdir, isfile, join
+
+from webcalc_project import settings
+
 
 def clean_media_folder():
-    uploads_folder = join(settings.MEDIA_ROOT, 'uploads')
+    uploads_folder = join(settings.MEDIA_ROOT, "uploads")
     cur_time = int(time.time())
     # 10 minutes time limit --> 10*60 seconds
-    limit = 10 * 60 
+    limit = 10 * 60
     for filename in listdir(uploads_folder):
         path = join(uploads_folder, filename)
         last_mod_time = getmtime(path)
@@ -22,4 +22,4 @@ def clean_media_folder():
                     shutil.rmtree(path)
 
             except Exception as e:
-                print('Failed to delete %s. Reason: %s' % (path, e))
+                print("Failed to delete %s. Reason: %s" % (path, e))
