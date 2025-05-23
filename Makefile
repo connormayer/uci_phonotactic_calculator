@@ -30,7 +30,7 @@ build: clean
 
 # Run the web UI
 web:
-	python -c "from uci_phonotactic_calculator.web.web_demo import main; main()"
+	python -c "from uci_phonotactic_calculator.web.gradio.web_demo import main; main()"
 
 # Run the Django web interface
 django-web:
