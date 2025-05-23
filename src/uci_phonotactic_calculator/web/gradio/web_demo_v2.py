@@ -212,7 +212,9 @@ def score(
             # 4️⃣ neighbourhood mode → real CLI flag
             elif k == "neighbourhood_mode" and v:
                 logger.info(f"Setting neighbourhood mode to: {v}")
-                extra_args.extend(["--neighbourhood-mode", v])  # Pass as an actual CLI flag
+                extra_args.extend(
+                    ["--neighbourhood-mode", v]
+                )  # Pass as an actual CLI flag
                 continue
 
             # anything else really is a grid-filter
@@ -236,11 +238,11 @@ def score(
     try:
         # Combine n-gram order with any other extra args we've set up
         combined_extra_args = ["-n", str(ngram_order)] + extra_args
-        
+
         # Add neighbourhood mode extra args if provided
         if neighbourhood_extra_args:
             combined_extra_args.extend(neighbourhood_extra_args)
-            
+
         logger.info(f"Running with extra_args: {combined_extra_args}")
 
         ngram_run(
@@ -472,7 +474,7 @@ def _calculator_tab():
 
             # N-gram order slider
             components["n_slider"] = gr.Slider(1, 4, 2, step=1, label="N-gram order")
-            
+
             # Add Run full variant grid checkbox
             components["run_grid"] = gr.Checkbox(False, label="Run full variant grid")
 
@@ -560,10 +562,14 @@ def _calculator_tab():
         # ─ neighbourhood ─────────────────────
         # We now pass neighbourhood mode as a CLI flag, not as a filter
         # So we don't need to add it to the filter tokens
-        
+
         # Add the neighborhood mode to extra_args when needed
         extra_args = []
-        if model_name == "neighbourhood" and neighbourhood_mode not in (None, "full", "None"):
+        if model_name == "neighbourhood" and neighbourhood_mode not in (
+            None,
+            "full",
+            "None",
+        ):
             extra_args.extend(["--neighbourhood-mode", neighbourhood_mode])
 
         # ─ anything typed in free-form box ───
