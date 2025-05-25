@@ -87,9 +87,7 @@ class FitNGramsTestCase(unittest.TestCase):
             self.token_freqs, self.unique_sounds
         )
 
-        t_idx = self.unique_sounds.index("t")
-        a_idx = self.unique_sounds.index("a")
-        wb_idx = self.unique_sounds.index("#")
+        # Indices not needed since we're directly using the expected matrix
 
         expected_probs = np.log(
             np.array(
