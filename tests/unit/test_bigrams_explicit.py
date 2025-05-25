@@ -45,9 +45,9 @@ def test_fit_bigrams(training_path, weighted, smoothed, weight_mode, smooth_sche
         expected_linear = np.array(
             [
                 # a_      t_      #_
-                [1 / 9, 3 / 9, 5 / 9],  # prev = a
-                [6 / 7, 1 / 7, 0 / 7],  # prev = t
-                [2 / 5, 3 / 5, 0 / 5],  # prev = #
+                [1 / 9, 3 / 9, 5 / 9],
+                [6 / 7, 1 / 7, 0 / 7],
+                [2 / 5, 3 / 5, 0 / 5],
             ]
         )
     elif not weighted and smoothed:
@@ -78,9 +78,9 @@ def test_fit_bigrams(training_path, weighted, smoothed, weight_mode, smooth_sche
 
         expected_linear = np.array(
             [
-                [a_a / a_c, a_t / a_c, a_wb / a_c],      # prev = a
-                [t_a / t_c, t_t / t_c, t_wb / t_c],      # prev = t
-                [wb_a / wb_c, wb_t / wb_c, wb_wb / wb_c], # prev = #
+                [a_a / a_c, a_t / a_c, a_wb / a_c],
+                [t_a / t_c, t_t / t_c, t_wb / t_c],
+                [wb_a / wb_c, wb_t / wb_c, wb_wb / wb_c],
             ]
         )
     else:  # weighted and smoothed
@@ -112,6 +112,8 @@ def test_fit_bigrams(training_path, weighted, smoothed, weight_mode, smooth_sche
     expected_log[expected_linear == 0] = float("-inf")
 
     # 4️⃣  Compare with a sensible float tolerance
-    assert np.allclose(
-        model._logprobs, expected_log, rtol=5e-3, atol=1e-8
-    ), f"\nExpected:\n{expected_log}\n\nGot:\n{model._logprobs}\n\nSound index: {corpus.sound_index}"
+    assert np.allclose(model._logprobs, expected_log, rtol=5e-3, atol=1e-8), (
+        f"\nExpected:\n{expected_log}\n\n"
+        f"Got:\n{model._logprobs}\n\n"
+        f"Sound index: {corpus.sound_index}"
+    )
