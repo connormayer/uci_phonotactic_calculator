@@ -6,9 +6,9 @@ scores test tokens, and writes the results using a dynamically generated header.
 """
 
 import argparse
-from io_utils import read_tokens, write_results
-from ngram_models import UnigramModel, BigramModel, WORD_BOUNDARY
-from model_configs import get_model_configs
+from .io_utils import read_tokens, write_results
+from .ngram_models import UnigramModel, BigramModel, WORD_BOUNDARY
+from .model_configs import get_model_configs
 
 
 def run_calculator(train_file, test_file, output_file):

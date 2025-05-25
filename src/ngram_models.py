@@ -11,7 +11,7 @@ import nltk
 import numpy as np
 from collections import defaultdict
 
-from score_utils import (
+from .score_utils import (
     generic_unigram_score,
     generic_bigram_score,
     generic_pos_unigram_score,

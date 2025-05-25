@@ -5,7 +5,7 @@ This module now uses a dynamically generated header via get_header() from consta
 """
 
 import csv
-from constants import get_header
+from .constants import get_header
 
 WORD_BOUNDARY = "#"
 

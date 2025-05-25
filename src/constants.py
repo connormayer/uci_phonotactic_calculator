@@ -5,7 +5,7 @@ based on current model configuration dictionaries.
 
 """
 
-from model_configs import get_model_configs
+from .model_configs import get_model_configs
 
 
 def get_header():
