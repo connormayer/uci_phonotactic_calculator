@@ -64,8 +64,14 @@ class Corpus:
         self._boundary = pad_sym
         self.boundary_symbol = pad_sym  # boundary symbol from config
 
-        # Sort into a reproducible index
-        self.sound_index = sorted(vocab)
+        # Sort so phonemes are alphabetical; append the boundary symbol **only
+        # if it is really part of the vocabulary** (i.e. boundary_mode ≠ "none")
+        if pad_sym in vocab:
+            self.sound_index = sorted(sym for sym in vocab if sym != pad_sym) + [
+                pad_sym
+            ]
+        else:
+            self.sound_index = sorted(vocab)
 
     def ngrams(
         self, token: Sequence[str], n: int, *, index_map: dict[str, int] | None = None

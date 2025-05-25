@@ -19,4 +19,5 @@ class ConditionalTransform(BaseTransform):
         """
         pred_sum = counts.sum(axis=-1, keepdims=True)
         pred_sum[pred_sum == 0] = 1
-        return np.log(counts / pred_sum)
+        with np.errstate(divide="ignore"):
+            return np.log(counts / pred_sum)
