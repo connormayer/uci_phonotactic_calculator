@@ -1,4 +1,3 @@
-# src/neighbourhood_builtin.py
 """
 Built-in edit-distance-1 neighbourhood generators.
 Each function returns a *set* of neighbour tokens (tuple[str, …]).
