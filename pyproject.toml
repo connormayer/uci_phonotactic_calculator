@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "uci-phonotactic-calculator"
-version = "0.2.3"
+version = "0.2.4"
 description = "A toolkit for phonotactic probability calculation and analysis."
 authors = [
     { name = "Connor Mayer", email = "connor.mayer@uci.edu" }
