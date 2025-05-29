@@ -16,7 +16,7 @@ Implementations are provided for:
 from abc import ABC, abstractmethod
 from contextlib import nullcontext
 from os import environ
-from typing import ContextManager
+from typing import Any, ContextManager, Optional, TypeVar
 
 from rich.progress import (
     BarColumn,
@@ -35,7 +35,12 @@ class BaseProgress(ABC):
         pass
 
     @abstractmethod
-    def __exit__(self, exc_type, exc, tb):
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Any,
+    ) -> None:
         """Exit the progress context."""
         pass
 
@@ -45,7 +50,7 @@ class BaseProgress(ABC):
         pass
 
     @abstractmethod
-    def update(self, task_id: int, advance: int = 1):
+    def update(self, task_id: int, advance: int = 1) -> None:
         """Update progress for a specific task."""
         pass
 
@@ -58,26 +63,34 @@ class RichProgress(BaseProgress):
 
     def __init__(self, enabled: bool = True):
         self.enabled = enabled and not self._env_no_progress()
-        self._progress = self._make() if self.enabled else None
+        self._progress: Progress | None = self._make() if self.enabled else None
 
-    def __enter__(self):
-        if self.enabled:
+    def __enter__(self) -> "RichProgress":
+        if self.enabled and self._progress is not None:
             self._progress.__enter__()
         return self
 
-    def __exit__(self, exc_type, exc, tb):
-        if self.enabled:
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Any,
+    ) -> None:
+        if self.enabled and self._progress is not None:
             self._progress.__exit__(exc_type, exc, tb)
 
     def add_task(self, description: str, total: int | None = None) -> int:
-        if not self.enabled:
+        if not self.enabled or self._progress is None:
             return 0
         return self._progress.add_task(description, total=total)
 
-    def update(self, task_id: int, advance: int = 1):
-        if not self.enabled:
+    def update(self, task_id: int, advance: int = 1) -> None:
+        if not self.enabled or self._progress is None:
             return
-        self._progress.update(task_id, advance=advance)
+        # TaskID is expected by Progress.update
+        from rich.progress import TaskID
+
+        self._progress.update(TaskID(task_id), advance=advance)
 
     def _make(self) -> Progress:
         """Create a Rich Progress instance with standard columns."""
@@ -105,11 +118,11 @@ class GradioProgress(BaseProgress):
 
     def __init__(self, enabled: bool = True):
         self.enabled = enabled
-        self._g_prog = None  # callable returned by gr.Progress
-        self._cm = None  # context-manager object (old API) or None
+        self._g_prog: Any = None  # callable returned by gr.Progress
+        self._cm: Any = None  # context-manager object (old API) or None
         self._tasks: dict[int, list[int]] = {}  # task_id -> [current, total]
 
-    def __enter__(self):
+    def __enter__(self) -> "GradioProgress":
         if self.enabled:
             # Lazy import so CLI users don't need Gradio installed
             import gradio as gr
@@ -124,7 +137,12 @@ class GradioProgress(BaseProgress):
                 self._g_prog = prog  # prog itself is callable
         return self
 
-    def __exit__(self, exc_type, exc, tb):
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Any,
+    ) -> None:
         cm = getattr(self, "_cm", None)
         if cm is not None:
             cm.__exit__(exc_type, exc, tb)
@@ -144,7 +162,7 @@ class GradioProgress(BaseProgress):
                 pass
         return task_id
 
-    def update(self, task_id: int, advance: int = 1):
+    def update(self, task_id: int, advance: int = 1) -> None:
         cur, tot = self._tasks[task_id]
         cur += advance
         self._tasks[task_id][0] = cur
@@ -152,7 +170,10 @@ class GradioProgress(BaseProgress):
             self._g_prog(cur, tot)
 
 
-def progress(enabled: bool = True) -> ContextManager:
+T = TypeVar("T", bound=BaseProgress)
+
+
+def progress(enabled: bool = True) -> ContextManager[BaseProgress]:
     """
     Factory function to create a progress bar (or a no-op if disabled).
     Returns a RichProgress by default.
@@ -164,7 +185,8 @@ def progress(enabled: bool = True) -> ContextManager:
     """
     if enabled:
         return RichProgress(enabled)
-    return nullcontext()  # type: ignore[return-value]
+    # Cast nullcontext to the right type
+    return nullcontext(BaseProgress())  # type: ignore
 
 
 __all__ = ["BaseProgress", "RichProgress", "GradioProgress", "progress"]

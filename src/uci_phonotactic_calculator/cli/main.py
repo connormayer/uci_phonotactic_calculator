@@ -5,6 +5,7 @@ import os
 import sys
 from collections import OrderedDict
 from functools import lru_cache
+from typing import Any, Dict, Optional
 
 from ..core.config import Config
 from ..core.corpus import (
@@ -41,7 +42,7 @@ def _matches_filters(cfg: Config, filters: dict[str, str]) -> bool:
 _discover()
 
 
-def parse_cfg(args) -> Config:
+def parse_cfg(args: argparse.Namespace) -> Config:
     """
     Build a Config from parsed arguments, applying overrides to defaults.
     """
@@ -60,7 +61,7 @@ def parse_cfg(args) -> Config:
     )
 
 
-def parse_filters(args) -> dict[str, str]:
+def parse_filters(args: argparse.Namespace) -> dict[str, str]:
     """
     Parse and validate the --filter arguments from CLI args.
     - Accepts None or an empty list and returns an empty dict.
@@ -70,7 +71,7 @@ def parse_filters(args) -> dict[str, str]:
     - Boolean strings (true/1, false/0) are normalized to 'true'/'false'.
     Returns a dict[str, str].
     """
-    filters = {}
+    filters: dict[str, str] = {}
     filter_args = getattr(args, "filter", None)
     if not filter_args:
         return filters
@@ -97,7 +98,7 @@ def parse_filters(args) -> dict[str, str]:
     return filters
 
 
-def _run_legacy(args, parser):
+def _run_legacy(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     # Only the 16 canonical 2018 variants – no grid search!
     from ..core.variants import legacy_variants
 
@@ -117,34 +118,37 @@ def _run_legacy(args, parser):
     header_to_variant = {v.header: v for v in variants}
 
     @lru_cache(maxsize=None)
-    def get_cached_model(header: str):
+    def get_cached_model(header: str) -> Any:
         var = header_to_variant[header]
         corpus = Corpus(args.train_file, var.cfg)
         model = get_model(var.model_name)(var.cfg)
         model.fit(corpus)
         return model
 
-    test_corpus = Corpus(args.test_file, variants[0].cfg)
-    if not test_corpus.tokens:
+    test_corpus_2 = Corpus(args.test_file, variants[0].cfg)
+    if not test_corpus_2.tokens:
         parser.error(f"Test file ‘{args.test_file}’ contains no token rows.")
 
-    rows = []
-    for tok in test_corpus.tokens:
+    rows_output = []
+    for tok in test_corpus_2.tokens:
         row = OrderedDict()
         row["word"] = " ".join(tok)
-        row["word_len"] = len(tok)
+        # Convert to string for consistent CSV column types
+        row["word_len"] = str(len(tok))
         for header in headers:
             m = get_cached_model(header)
             score = m.score(tok)
             row[header] = score if score != float("-inf") else float("nan")
-        rows.append(row)
+        rows_output.append(row)
 
-    fieldnames = ["word", "word_len"] + headers
+    fieldnames_output = ["word", "word_len"] + headers
     try:
         with open(args.output_file, "w", newline="", encoding="utf-8") as fh:
-            writer = csv.DictWriter(fh, fieldnames=fieldnames, lineterminator="\n")
+            writer = csv.DictWriter(
+                fh, fieldnames=fieldnames_output, lineterminator="\n"
+            )
             writer.writeheader()
-            writer.writerows(rows)
+            writer.writerows(rows_output)
     except PermissionError as e:
         print(
             f"Permission denied: cannot write to '{args.output_file}': {e}",
@@ -157,7 +161,7 @@ def _run_legacy(args, parser):
     sys.exit(0)
 
 
-def main():
+def main() -> None:
     """
     Parse command-line arguments and execute one of three modes:
     (1) single model, (2) full variant grid, or (3) filtered grid via --filter.
@@ -256,7 +260,7 @@ def main():
     from . import utils as cli_utils
 
     if args.no_color or not cli_utils.supports_color(sys.stderr):
-        cli_utils.style = lambda t, *_, **__: t  # type: ignore[assignment]
+        cli_utils.style = lambda t, *_, **__: t
     # Patch: convert string 'none' to None for position_strategy to avoid
     # DeprecationWarning
     if (
@@ -265,7 +269,7 @@ def main():
         and args.position_strategy.lower() == "none"
     ):
         args.position_strategy = None
-    filters = parse_filters(args)
+    filters: Dict[str, str] = parse_filters(args)
 
     # Mode resolution
     run_all = bool(getattr(args, "all", False))
@@ -314,9 +318,9 @@ def main():
         aggregate_mode: str,
         ngram_order: int,
         *,
-        position_strategy: str | None = None,
+        position_strategy: Optional[str] = None,
         count_strategy: str = "ngram",
-    ):
+    ) -> Any:
         """
         Build, train, and cache one variant of the model (positional flag removed).
         """
@@ -338,11 +342,11 @@ def main():
         return model
 
     # Load test corpus once (we only need its tokens)
-    test = Corpus(
+    test_corpus = Corpus(
         args.test_file,
         cfg,
     )
-    if not test.tokens:
+    if not test_corpus.tokens:
         parser.error(f"Test file ‘{args.test_file}’ contains no token rows.")
 
     # Prepare output directory
@@ -372,23 +376,24 @@ def main():
             },
         )
         single_variant = SingleVariant()
-        fieldnames = [*base_fields, *variant_headers]
-        rows: list[OrderedDict[str, float | str | int]] = []
+        fieldnames_output = [*base_fields, *variant_headers]
         # Progress bar for training loop
         variants_to_run = [single_variant]
     elif run_all:
         # Multi-model: build all headers up front
-        variant_headers = [v.header for v in all_variants(test, filters)]
+        variant_headers = [v.header for v in all_variants(test_corpus, filters)]
         if len(set(variant_headers)) != len(variant_headers):
             dup = [h for h in variant_headers if variant_headers.count(h) > 1][0]
             parser.error(f"Internal error: duplicate CSV header ‘{dup}’.")
-        fieldnames = [*base_fields, *variant_headers]
-        rows: list[OrderedDict[str, float | str | int]] = []
+        fieldnames_output = [*base_fields, *variant_headers]
         # Progress bar for training loop
-        variants_to_run = list(all_variants(test, filters))
+        variants_to_run = list(all_variants(test_corpus, filters))
     else:
         # Neither single nor all: do nothing (legacy already handled above)
         return
+
+    # Initialize rows_output after determining which mode we're running in
+    rows_output: list[dict[str, str]] = []
 
     with progress(args.progress) as bar:
         train_task = None
@@ -414,9 +419,9 @@ def main():
     with progress(args.progress) as bar:
         score_task = None
         if bar is not None:
-            score_task = bar.add_task("Scoring", total=len(test.tokens))
-        for tok in test.tokens:
-            entry = OrderedDict((f, None) for f in fieldnames)
+            score_task = bar.add_task("Scoring", total=len(test_corpus.tokens))
+        for tok in test_corpus.tokens:
+            entry: Dict[str, Any] = OrderedDict((f, None) for f in fieldnames_output)
             entry["word"] = " ".join(tok)
             entry["word_len"] = len(tok)
             if run_single:
@@ -445,7 +450,7 @@ def main():
                     score if score != float("-inf") else float("nan")
                 )
             else:
-                for variant in all_variants(test, filters):
+                for variant in all_variants(test_corpus, filters):
                     model_cls = get_model(variant.model_name)
                     if not model_cls.supports(variant.cfg):
                         continue  # belt-and-suspenders
@@ -466,16 +471,18 @@ def main():
                     entry[variant.header] = (
                         score if score != float("-inf") else float("nan")
                     )
-            rows.append(entry)
+            rows_output.append(entry)
             if bar is not None:
                 bar.update(score_task, advance=1)
 
     # Write out a single CSV: first two cols + one per variant header
     try:
         with open(args.output_file, "w", newline="", encoding="utf-8") as fh:
-            writer = csv.DictWriter(fh, fieldnames=fieldnames, lineterminator="\n")
+            writer = csv.DictWriter(
+                fh, fieldnames=fieldnames_output, lineterminator="\n"
+            )
             writer.writeheader()
-            writer.writerows(rows)
+            writer.writerows(rows_output)
     except PermissionError as e:
         print(
             f"Permission denied: cannot write to '{args.output_file}': {e}",

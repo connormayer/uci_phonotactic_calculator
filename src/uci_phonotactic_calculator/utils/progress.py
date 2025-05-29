@@ -22,7 +22,7 @@ from .progress_base import RichProgress
 from .progress_base import progress as base_progress
 
 
-def progress(enabled: bool = True) -> ContextManager:
+def progress(enabled: bool = True) -> ContextManager[RichProgress]:
     """
     Context manager for a Rich progress bar, or a no-op if disabled.
     Progress is suppressed if either:
@@ -31,7 +31,8 @@ def progress(enabled: bool = True) -> ContextManager:
         or any non-empty non-false value (case-insensitive).
     This allows CI, Docker, or scripts to suppress bars without editing command lines.
     """
-    return base_progress(enabled)
+    # Cast to the expected return type
+    return base_progress(enabled)  # type: ignore[return-value]
 
 
 __all__ = ["progress", "RichProgress"]

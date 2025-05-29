@@ -1,4 +1,5 @@
 import argparse
+from typing import Any, NoReturn, Optional
 
 from ..core.registries import registry
 from .formatter import ColourHelp
@@ -10,12 +11,12 @@ def _registry_option(
     *,
     flag: str,
     category: str,
-    default: str,
+    default: Optional[str],
     help: str,
-    short: str | None = None,
+    short: Optional[str] = None,
     allow_none: bool = False,
-    metavar: str | None = None,  # ← new
-):
+    metavar: Optional[str] = None,  # ← new
+) -> None:
     choices = sorted(registry(category).keys())
     # always inject the sentinel when requested
     if allow_none and "none" not in choices:
@@ -24,7 +25,7 @@ def _registry_option(
     display_default = default
     if default is None:
         display_default = "none"
-    if display_default not in choices:
+    if display_default not in choices and display_default is not None:
         choices.append(display_default)
     # argparse expects all choices as str, and None will break join()
     choices_str = [str(c) if c is not None else "none" for c in choices]
@@ -49,6 +50,21 @@ def _add_extension_flags(parser: argparse.ArgumentParser) -> None:
             ext_group._add_action(a)
 
 
+def _create_parser_with_styled_error() -> type[argparse.ArgumentParser]:
+    """Create an ArgumentParser subclass with a styled error method."""
+    import sys
+
+    class StyledErrorParser(argparse.ArgumentParser):
+        def error(self, message: str) -> NoReturn:
+            # usage lines are already colourised by ColourHelp
+            self.print_usage(sys.stderr)
+            prefix = style("error:", *HEADER_STYLE)
+            body = style(message, *BODY_STYLE)
+            self.exit(2, f"{prefix} {body}\n")
+
+    return StyledErrorParser
+
+
 def build_parser() -> argparse.ArgumentParser:
     # Banner: header uses HEADER_STYLE, bullets must keep BODY_STYLE
     # for visual consistency with help body text.
@@ -65,7 +81,9 @@ def build_parser() -> argparse.ArgumentParser:
         "train.csv test.csv out.csv",
     ]
     banner = "\n".join([header] + [style(line, *BODY_STYLE) for line in bullets])
-    parser = argparse.ArgumentParser(
+    # Use our custom parser class with styled error
+    ParserClass = _create_parser_with_styled_error()
+    parser = ParserClass(
         description=banner,
         formatter_class=ColourHelp,
     )
@@ -177,6 +195,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--filter",
         action="append",
         metavar="KEY=VAL",
+        default=[],
         help=style(
             "Restrict the grid search to configs whose Config.<KEY> equals <VAL>. "
             "Repeat the flag to combine filters (logical AND). "
@@ -189,7 +208,7 @@ def build_parser() -> argparse.ArgumentParser:
     # Run-mode group
     runmode = parser.add_argument_group(style("Run-mode", *HEADER_STYLE))
 
-    def legacy_flag(value):
+    def legacy_flag(value: Any) -> None:
         raise argparse.ArgumentTypeError(
             "--legacy is deprecated: the 16-column output is now the default. "
             "Please remove this flag."
@@ -239,20 +258,6 @@ def build_parser() -> argparse.ArgumentParser:
         )
 
     _add_extension_flags(parser)
-    # ─────────────────────────────────────────────────────────
-    # Give argparse.error() the same colour treatment
-    # ─────────────────────────────────────────────────────────
-    import sys
-
-    def _styled_error(self, message):
-        # usage lines are already colourised by ColourHelp
-        self.print_usage(sys.stderr)
-        prefix = style("error:", *HEADER_STYLE)
-        body = style(message, *BODY_STYLE)
-        self.exit(2, f"{prefix} {body}\n")
-
-    # monkey-patch the instance
-    parser.error = _styled_error.__get__(parser)
     return parser
 
 
