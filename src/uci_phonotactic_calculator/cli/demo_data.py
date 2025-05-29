@@ -5,7 +5,7 @@ CLI helpers for demo data: --list-data and --use-demo-data
 import importlib.resources as pkg_resources
 
 
-def list_data_files():
+def list_data_files() -> None:
     base = "uci_phonotactic_calculator.data"
     # List top-level files
     for f in pkg_resources.files(base).iterdir():
@@ -19,7 +19,7 @@ def list_data_files():
                     print(f"{f}")
 
 
-def get_demo_paths():
+def get_demo_paths() -> tuple[str, str]:
     base = "uci_phonotactic_calculator.data"
     train = pkg_resources.files(base).joinpath("english.csv")
     test = pkg_resources.files(f"{base}.sample_test_data").joinpath(

@@ -8,9 +8,10 @@ sparse_laplace(table,vocab) – +1 for dict-based sparse tables
 apply(cfg, table, vocab)    – single entry-point used by every plugin
 """
 
-from typing import Mapping, MutableMapping, Tuple, TypeAlias
+from typing import Mapping, MutableMapping, Tuple, TypeAlias, Union
 
 import numpy as np
+from numpy.typing import NDArray
 
 # ---------------------------------------------------------------------
 # Public type aliases — importable by other modules
@@ -51,7 +52,7 @@ def sparse_laplace(
     return table
 
 
-def dense_laplace(arr: np.ndarray) -> np.ndarray:
+def dense_laplace(arr: NDArray[np.float64]) -> NDArray[np.float64]:
     """
     Vectorised +1 Laplace smoothing for dense count tensors.
     The call is in-place-safe: it returns the view `arr` itself with 1.0 added,
@@ -61,7 +62,11 @@ def dense_laplace(arr: np.ndarray) -> np.ndarray:
     return arr
 
 
-def apply(table, *, vocab=None):
+def apply(
+    table: Union[NDArray[np.float64], MutableMapping[IndexTuple, float]],
+    *,
+    vocab: Union[Mapping[IndexTuple, float], set[IndexTuple], None] = None,
+) -> Union[NDArray[np.float64], MutableMapping[IndexTuple, float]]:
     """
     Unified Laplace smoothing entry-point used by all plugins.
 

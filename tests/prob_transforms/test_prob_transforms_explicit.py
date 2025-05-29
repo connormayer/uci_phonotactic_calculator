@@ -13,6 +13,7 @@ Corpus lines (freqs in parentheses):
 
 import numpy as np
 import pytest
+from numpy.typing import NDArray
 
 from uci_phonotactic_calculator.core.config import Config
 from uci_phonotactic_calculator.core.corpus import Corpus
@@ -28,7 +29,7 @@ IDX = {s: i for i, s in enumerate(SYMS)}
 # ------------------------------------------------------------------ #
 
 
-def _bigram_counts_from_corpus(corpus: Corpus) -> np.ndarray:
+def _bigram_counts_from_corpus(corpus: Corpus) -> NDArray[np.float64]:
     """
     Return a 3×3 dense count matrix in the fixed A/T/# order.
     boundary_mode='both' so every token is framed with pads.

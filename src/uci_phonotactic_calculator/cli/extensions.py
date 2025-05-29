@@ -1,16 +1,16 @@
 """Light-weight hook so external packages can inject extra CLI flags."""
 
 import argparse
-from typing import List, Protocol
+from typing import Protocol
 
 from ..core.registries import register
 
 
 class CLIExtension(Protocol):
-    def flags(self) -> List[argparse.Action]: ...
+    def flags(self) -> list[argparse.Action]: ...
 
 
-def register_cli_ext(name):
+def register_cli_ext(name: str) -> object:
     """Register a CLI extension with the given name."""
     return register("cli_ext", name)
 

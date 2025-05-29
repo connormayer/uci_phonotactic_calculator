@@ -6,7 +6,7 @@ from __future__ import annotations
 import csv
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Sequence, Tuple
+from typing import Any, Sequence
 
 from .config import Config
 from .registries import registry
@@ -31,7 +31,7 @@ class Corpus:
         self,
         file_path: str | Path,
         cfg: Config,
-    ):
+    ) -> None:
         """
         Load tokens and optional frequencies from a CSV, build the vocabulary,
         and sort it into a sound index.
@@ -75,7 +75,7 @@ class Corpus:
 
     def ngrams(
         self, token: Sequence[str], n: int, *, index_map: dict[str, int] | None = None
-    ) -> list[tuple]:
+    ) -> list[tuple[Any, ...]]:
         """
         Instance wrapper for generate_ngrams that always uses self._boundary
         and self.cfg.boundary_mode.
@@ -96,7 +96,7 @@ class Corpus:
         *,
         index_map: dict[str, int] | None = None,
         boundary: str = "#",
-    ) -> List[Tuple]:
+    ) -> list[tuple[Any, ...]]:
         """
         Generate n-grams from a token using a registry-driven boundary mode.
         If index_map is supplied, returns tuples of ints; otherwise, returns tuples

@@ -1,7 +1,9 @@
 import math
+from typing import cast
 
 import numpy as np
 import pytest
+from numpy.typing import NDArray
 
 from uci_phonotactic_calculator.core.config import Config
 from uci_phonotactic_calculator.core.corpus import Corpus
@@ -37,7 +39,8 @@ def test_fit_unigrams(training_path, weighted, weight_mode):
 
     # model._logprobs is a 1-D array with indices matching corpus.sound_index
     # In this corpus sound_index == ["a", "t"]
-    learnt = model._logprobs
+    # Type ignore needed because _logprobs is an implementation detail not in BaseModel
+    learnt = cast(NDArray[np.float64], model._logprobs)  # type: ignore
     assert corpus.sound_index == ["a", "t"]
 
     # ----- 3. reference values ------------------------------------------------------
@@ -92,11 +95,8 @@ def test_unigram_score(training_path, weighted, weight_mode):
 
     # manual sum of component log-probs
     a_idx, t_idx = 0, 1  # sound_index is ["a","t"]
-    expected = (
-        model._logprobs[t_idx]
-        + model._logprobs[a_idx]
-        + model._logprobs[t_idx]
-        + model._logprobs[a_idx]
-    )
+    # Use type assertion for implementation-specific attribute
+    logprobs = cast(NDArray[np.float64], model._logprobs)  # type: ignore
+    expected = logprobs[t_idx] + logprobs[a_idx] + logprobs[t_idx] + logprobs[a_idx]
 
     assert np.isclose(score, expected)

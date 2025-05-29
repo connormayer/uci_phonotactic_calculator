@@ -1,7 +1,9 @@
 import math
+from typing import cast
 
 import numpy as np
 import pytest
+from numpy.typing import NDArray
 
 from uci_phonotactic_calculator.core.config import Config
 from uci_phonotactic_calculator.core.corpus import Corpus
@@ -112,8 +114,10 @@ def test_fit_bigrams(training_path, weighted, smoothed, weight_mode, smooth_sche
     expected_log[expected_linear == 0] = float("-inf")
 
     # 4️⃣  Compare with a sensible float tolerance
-    assert np.allclose(model._logprobs, expected_log, rtol=5e-3, atol=1e-8), (
+    # Use type assertion for implementation-specific attribute
+    logprobs = cast(NDArray[np.float64], model._logprobs)  # type: ignore
+    assert np.allclose(logprobs, expected_log, rtol=5e-3, atol=1e-8), (
         f"\nExpected:\n{expected_log}\n\n"
-        f"Got:\n{model._logprobs}\n\n"
+        f"Got:\n{logprobs}\n\n"
         f"Sound index: {corpus.sound_index}"
     )

@@ -1,4 +1,7 @@
+from typing import cast
+
 import numpy as np
+from numpy.typing import NDArray
 
 from ...plugins.core import BaseTransform, register_prob
 
@@ -10,7 +13,7 @@ class ConditionalTransform(BaseTransform):
     Normalises over the last axis (the predicted symbol).
     """
 
-    def transform(self, counts: np.ndarray) -> np.ndarray:
+    def transform(self, counts: NDArray[np.float64]) -> NDArray[np.float64]:
         """
         Conditional probability: P(next | prev) = count / sum_over_prediction_axis.
         For n-gram arrays, normalizes over the last axis (axis -1, the predicted symbol)
@@ -20,4 +23,5 @@ class ConditionalTransform(BaseTransform):
         pred_sum = counts.sum(axis=-1, keepdims=True)
         pred_sum[pred_sum == 0] = 1
         with np.errstate(divide="ignore"):
-            return np.log(counts / pred_sum)
+            # Explicitly cast the result to avoid Any return
+            return cast(NDArray[np.float64], np.log(counts / pred_sum))

@@ -13,11 +13,16 @@ Notes:
 """
 
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
 from ..cli.utils import slug
 from ..core.registries import registry
 from .core import BaseModel, register
 from .fallback import FallbackMixin
+
+if TYPE_CHECKING:
+    from ..core.config import Config
+    from ..core.corpus import Corpus
 
 
 # Separate cached function to avoid memory leaks when used with instance methods
@@ -45,7 +50,7 @@ class NeighbourhoodModel(FallbackMixin, BaseModel):
       - SUBSTITUTION_ONLY: allows only substitutions (no insertions or deletions).
     """
 
-    def fit(self, corpus):
+    def fit(self, corpus: "Corpus") -> None:
         """
         Store the training tokens (flattened) for neighbor comparisons.
         """
@@ -85,11 +90,11 @@ class NeighbourhoodModel(FallbackMixin, BaseModel):
     # CSV header helpers
     # ------------------------------------------------------------------
     @classmethod
-    def header(cls, cfg):
+    def header(cls, cfg: "Config") -> str:
         return slug("neighbourhood", cfg.neighbourhood_mode or "full")
 
     @classmethod
-    def supports(cls, cfg):
+    def supports(cls, cfg: "Config") -> bool:
         # Neighbourhood model accepts any Config
         return True
 

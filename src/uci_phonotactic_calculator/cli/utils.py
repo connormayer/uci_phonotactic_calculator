@@ -67,7 +67,7 @@ if sys.platform == "win32":
 
 
 @lru_cache(maxsize=None)
-def _stream_supports_color(stream):
+def _stream_supports_color(stream: object) -> bool:
     if os.environ.get("NO_COLOR") is not None:
         return False
     if os.environ.get("FORCE_COLOR") is not None:
@@ -80,7 +80,7 @@ def _stream_supports_color(stream):
     return True
 
 
-def supports_color(stream=sys.stderr):
+def supports_color(stream: object = sys.stderr) -> bool:
     """Returns True if the stream supports color output.
 
     Considers TTY state and environment flags.
@@ -88,7 +88,7 @@ def supports_color(stream=sys.stderr):
     return _stream_supports_color(stream)
 
 
-def style(text, *styles):
+def style(text: str, *styles: str) -> str:
     """
     Wraps text in ANSI codes if supported, else returns raw text.
     Usage: style('Warning!', 'bold', 'yellow')

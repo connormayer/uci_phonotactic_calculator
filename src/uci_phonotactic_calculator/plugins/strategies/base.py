@@ -19,7 +19,7 @@ class BaseCounter(ABC):
 
     @abstractmethod
     def accumulate(
-        self, token: Sequence[str], weight: Optional[float], **kwargs
+        self, token: Sequence[str], weight: Optional[float], **kwargs: Any
     ) -> None:
         """
         Incorporate a single token with its weight into the counts.
@@ -36,7 +36,7 @@ class BaseCounter(ABC):
 
     def accumulate_idx(
         self, idx: Tuple[int, ...], weight: float, boundary: str = "#"
-    ) -> None:  # pragma: no cover
+    ) -> None:
         """
         Optional fast-path: increment a *pre-indexed* n-gram, with optional boundary
         symbol for consistency.

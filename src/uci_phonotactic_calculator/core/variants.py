@@ -8,10 +8,18 @@ Supports three execution modes:
 
 from __future__ import annotations
 
-from typing import Iterator, NamedTuple
+from typing import (
+    Any,
+    Dict,
+    Iterator,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+)
 
 from ..plugins.core import PluginRegistry, discover_models
-from ..plugins.strategies.position import get_position_strategy
+from ..plugins.strategies.position import PositionStrategy, get_position_strategy
 from . import probability as probability
 from .config import Config
 from .corpus import Corpus
@@ -22,6 +30,7 @@ def _canonical_agg(name: str) -> str:
     return name
 
 
+# Ensure we properly handle the untyped function call
 discover_models()  # one-time plugin + transform discovery
 
 
@@ -40,10 +49,16 @@ class Variant(NamedTuple):
     header: str
     model_name: str
     cfg: Config
-    strategy: str | None
+    strategy: PositionStrategy | None
 
 
-def _make_variant(plugin, order, cfg, strategy=None, _seen_headers=None):
+def _make_variant(
+    plugin: str,
+    order: int,
+    cfg: Config,
+    strategy: Optional[PositionStrategy] = None,
+    _seen_headers: Optional[Set[str]] = None,
+) -> Variant:
     from .header_utils import build_header
 
     header = build_header(plugin, cfg)
@@ -89,7 +104,7 @@ def all_variants(
         from ..cli.main import _matches_filters
     else:
 
-        def _matches_filters(*_):
+        def _matches_filters(cfg: Config, filters: Dict[str, str]) -> bool:
             return True
 
     for count_strategy in _r("count_strategy") or {"ngram": None}:
@@ -136,13 +151,13 @@ def all_variants(
                                     yield _make_variant("ngram", order, cfg, strategy)
 
 
-def legacy_variants() -> list[Variant]:
+def legacy_variants() -> List[Variant]:
     """
     Return the sixteen Variant objects that exactly reproduce the 2018 output.
     Column order: 4 uni, 4 bi, 4 positional-uni, 4 positional-bi.
     """
 
-    def make(**kw):
+    def make(**kw: Any) -> Variant:
         return _make_variant("ngram", kw["ngram_order"], Config.default(**kw), None)
 
     variants = []
@@ -184,7 +199,7 @@ def legacy_variants() -> list[Variant]:
         )
 
     # helper for positional strategies
-    def pos(n, weight, smooth, prob):
+    def pos(n: int, weight: str, smooth: bool, prob: str) -> Variant:
         cfg = Config.default(
             ngram_order=n,
             boundary_mode="none",  # positional sets inherit 'none' (no pads)
@@ -194,7 +209,8 @@ def legacy_variants() -> list[Variant]:
             prob_mode=prob,
             aggregate_mode="sum_plus1",
         )
-        return _make_variant("ngram", n, cfg, get_position_strategy("absolute", n=n))
+        strategy = get_position_strategy("absolute", n=n)
+        return _make_variant("ngram", n, cfg, strategy)
 
     # 9–12  POSITIONAL UNIGRAMS  (absolute, joint P)
     for weight, smooth in [

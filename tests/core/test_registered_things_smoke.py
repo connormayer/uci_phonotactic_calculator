@@ -8,6 +8,7 @@ For each category we only verify that:
 """
 
 import inspect
+from typing import Any, Dict
 
 import numpy as np
 import pytest
@@ -27,23 +28,25 @@ CATEGORIES = [
 
 
 @pytest.mark.parametrize("category", CATEGORIES)
-def test_every_registry_entry_is_callable(category):
+def test_every_registry_entry_is_callable(category: str) -> None:
     for name, obj in registry(category).items():
         # Some entries are classes, some are plain functions
         assert callable(obj), f"{category}:{name} is not callable"
 
         # Minimal smoke-invoke:
         sig = inspect.signature(obj)
-        kwargs = {}
+        kwargs: Dict[str, Any] = {}
         # try to satisfy required parameters generically
         if "table" in sig.parameters:
-            kwargs["table"] = np.zeros((2, 2))
+            kwargs["table"] = np.zeros((2, 2), dtype=np.float64)
         if "vocab" in sig.parameters:
-            kwargs["vocab"] = {(0,), (1,), (1,)}
+            # Create list instead of set to ensure consistent parameter type
+            kwargs["vocab"] = ["0", "1"]
         if "token" in sig.parameters:
             kwargs["token"] = ["a"]
         if "alphabet" in sig.parameters:
-            kwargs["alphabet"] = {"a"}
+            # Create list instead of set to ensure consistent parameter type
+            kwargs["alphabet"] = ["a"]
         if "n" in sig.parameters:
             kwargs["n"] = 1
         if "pad_sym" in sig.parameters:

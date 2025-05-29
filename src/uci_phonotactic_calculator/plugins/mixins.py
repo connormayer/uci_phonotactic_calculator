@@ -22,8 +22,8 @@ class TokenWeightMixin:
     """
 
     def _w(self, freq: float) -> float:
-        func = registry("weight_mode")[self.cfg.weight_mode]
-        return func(freq)
+        func = registry("weight_mode")[self.cfg.weight_mode]  # type: ignore[attr-defined]
+        return float(func(freq))
 
 
 # End of src/plugins/mixins.py

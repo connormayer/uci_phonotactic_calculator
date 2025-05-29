@@ -96,7 +96,7 @@ relative = Relative
 # ──────────────────────────────────────────────────────────────
 # Registry wiring  +  public accessor
 # ──────────────────────────────────────────────────────────────
-def get_position_strategy(name: str | None, n: int = 1):
+def get_position_strategy(name: str | None, n: int = 1) -> PositionStrategy | None:
     """
     Return an instance of the requested PositionStrategy or None.
 
@@ -116,8 +116,21 @@ def get_position_strategy(name: str | None, n: int = 1):
     """
     if name in (None, "", "none"):
         return None
-    cls = registry("position_strategy")[name]
-    return cls() if name == "absolute" else cls(n)
+    # Get the concrete class from the registry
+    concrete_cls: type[PositionStrategy] = registry("position_strategy")[str(name)]
+
+    # Create an instance of the concrete class with appropriate arguments
+    # We know that concrete implementations like Absolute and Relative
+    # conform to the PositionStrategy protocol
+    if name == "absolute":
+        return concrete_cls()
+    elif name == "relative":
+        # Relative class specifically expects an 'n' parameter, not the protocol itself
+        relative_cls = concrete_cls
+        return relative_cls(n)  # type: ignore
+    else:
+        # For any other strategy, assume it takes no arguments
+        return concrete_cls()
 
 
 __all__ = [

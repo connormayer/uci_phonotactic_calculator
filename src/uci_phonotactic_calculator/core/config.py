@@ -23,20 +23,25 @@ from .registries import (
 # TODO-v2.0: final removal of legacy 'positional' kwarg
 
 
-@dataclass(slots=True)
+# Using slots=False to avoid conflicts with class variables
+@dataclass(slots=False)
 class Config:
     @property
-    def boundary_symbol(self):
-        return registry("boundary_scheme")[self.boundary_scheme]()
+    def boundary_symbol(self) -> str:
+        result: str = registry("boundary_scheme")[self.boundary_scheme]()
+        return result
+
+    # Class variable for tracking warnings
+    _warned_none_str: bool = False
 
     @staticmethod
-    def _normalize_none_string(value):
+    def _normalize_none_string(value: object) -> str | None:
         """Normalize string 'none' (case-insensitive) to None, with a warning.
 
         The warning is shown only once per session.
         """
         if isinstance(value, str) and value.lower() == "none":
-            if not hasattr(Config, "_warned_none_str"):
+            if not Config._warned_none_str:
                 warnings.warn(
                     "String 'none' for position_strategy is deprecated; use None.",
                     DeprecationWarning,
@@ -44,7 +49,10 @@ class Config:
                 )
                 Config._warned_none_str = True
             return None
-        return value
+        if isinstance(value, str):
+            return value
+        # Explicitly return None to avoid Any return type
+        return None
 
     """
     Configuration for n-gram models.
@@ -78,7 +86,7 @@ class Config:
     count_strategy: str = "ngram"
 
     @staticmethod
-    def default(**overrides) -> "Config":
+    def default(**overrides: object) -> "Config":
         """
         Return a Config initialized with defaults,
         """
@@ -99,7 +107,7 @@ class Config:
         cfg.position_strategy = (
             None
             if cfg.position_strategy in (None, "", "none")
-            else validate_choice("position_strategy", cfg.position_strategy)
+            else validate_choice("position_strategy", str(cfg.position_strategy))
         )
         cfg.smoothing_scheme = validate_choice("smoothing_scheme", cfg.smoothing_scheme)
         cfg.boundary_scheme = validate_choice("boundary_scheme", cfg.boundary_scheme)

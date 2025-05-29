@@ -9,11 +9,11 @@ TOKEN = ["a", "b", "c"]  # 3-symbol word
 PAD = "#"  # default boundary symbol
 
 
-def _grams(mode):
+def _grams(mode: str) -> list[tuple[str, str]]:
     return Corpus.generate_ngrams(TOKEN, 2, boundary_mode=mode, boundary=PAD)
 
 
-def test_prefix_padding():
+def test_prefix_padding() -> None:
     grams = _grams("prefix")
     # with n=2 we expect one pad on the left
     assert grams[0] == (PAD, "a")
@@ -21,7 +21,7 @@ def test_prefix_padding():
     assert len(grams) == len(TOKEN)  # 3 bigrams
 
 
-def test_suffix_padding():
+def test_suffix_padding() -> None:
     grams = _grams("suffix")
     # pad appears at the right only
     assert grams[0] == ("a", "b")

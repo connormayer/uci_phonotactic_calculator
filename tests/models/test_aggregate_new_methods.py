@@ -18,6 +18,7 @@ P(a) = 9/16   ;   P(t) = 7/16
 """
 
 import math
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -32,21 +33,21 @@ from uci_phonotactic_calculator.plugins.core import get_model
 # ------------------------------------------------------------------ #
 
 
-def test_linear_mean_helper():
+def test_linear_mean_helper() -> None:
     """Arithmetic mean  log( (p1 + p2) / 2 )"""
     comps = [math.log(0.1), math.log(0.2)]
     expected = math.log((0.1 + 0.2) / 2)
     assert math.isclose(ag.linear_mean(comps), expected)
 
 
-def test_geometric_mean_helper():
+def test_geometric_mean_helper() -> None:
     """Geometric mean  log( √(p1·p2) )  = (Σ log p) / 2"""
     comps = [math.log(0.1), math.log(0.2)]
     expected = (math.log(0.1) + math.log(0.2)) / 2
     assert math.isclose(ag.geometric_mean(comps), expected)
 
 
-def test_harmonic_mean_helper():
+def test_harmonic_mean_helper() -> None:
     """
     Harmonic mean
         H =  n / Σ(1/p_i)
@@ -86,7 +87,11 @@ TOKEN = ["t", "a", "t", "a"]  # the same word existing in the corpus
     ],
     ids=["arithmetic_mean", "geometric_mean", "harmonic_mean"],
 )
-def test_unigram_score_with_new_aggregators(training_path, agg_key, expect_linear):
+def test_unigram_score_with_new_aggregators(
+    training_path: Path,
+    agg_key: str,
+    expect_linear: float,
+) -> None:
     """
     Fit a **unigram** model with the chosen aggregation mode and verify
     model.score(token) == hand-worked expectation.

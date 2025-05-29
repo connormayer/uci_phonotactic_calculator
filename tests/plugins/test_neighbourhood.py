@@ -53,7 +53,7 @@ def full_neighbours(token: SymbolT, alphabet: Set[str]) -> Set[SymbolT]:
     Return the FULL edit-distance-1 neighbour set (subst, ins, del).
     Matches the registry function 'full' but written inline for clarity.
     """
-    out = set()
+    out: Set[SymbolT] = set()
     L = len(token)
     # substitutions
     for i, sym in enumerate(token):

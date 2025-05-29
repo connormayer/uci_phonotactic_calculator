@@ -1,11 +1,14 @@
 import csv
 import sys
 
-
 # ------------------------------------------------------------------ #
 # helpers
 # ------------------------------------------------------------------ #
-def _run_cli(monkeypatch, tmp_path, argv_tail):
+from pathlib import Path
+from typing import Any, Sequence
+
+
+def _run_cli(monkeypatch: Any, tmp_path: Path, argv_tail: Sequence[str]) -> Path:
     """
     Invoke cli.main with a patched sys.argv.
     Always returns the Path of the output CSV produced.
@@ -29,7 +32,7 @@ def _run_cli(monkeypatch, tmp_path, argv_tail):
 # ------------------------------------------------------------------ #
 # 1) legacy 16-column run (+neighbourhood) ---------------------------
 # ------------------------------------------------------------------ #
-def test_cli_legacy(monkeypatch, tmp_path):
+def test_cli_legacy(monkeypatch: Any, tmp_path: Path) -> None:
     out_csv = _run_cli(monkeypatch, tmp_path, [])
     assert out_csv.exists()
 
@@ -42,7 +45,7 @@ def test_cli_legacy(monkeypatch, tmp_path):
 # ------------------------------------------------------------------ #
 # 2) explicit model, trigram order ----------------------------------
 # ------------------------------------------------------------------ #
-def test_cli_single_model_trigram(monkeypatch, tmp_path):
+def test_cli_single_model_trigram(monkeypatch: Any, tmp_path: Path) -> None:
     out_csv = _run_cli(
         monkeypatch,
         tmp_path,

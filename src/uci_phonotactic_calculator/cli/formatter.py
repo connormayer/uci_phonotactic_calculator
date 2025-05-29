@@ -1,15 +1,29 @@
 import argparse
+from argparse import (
+    Action,
+    RawDescriptionHelpFormatter,
+    _MutuallyExclusiveGroup,
+)
+from typing import Iterable, Optional
 
 from .utils import BODY_STYLE, HEADER_STYLE, style
 
 
-class ColourHelp(argparse.RawDescriptionHelpFormatter):
-    def start_section(self, heading):
+class ColourHelp(RawDescriptionHelpFormatter):
+    def start_section(self, heading: Optional[str]) -> None:
+        # Match parent class signature which accepts None
         # Colour section headings
-        heading = style(heading, *HEADER_STYLE)
-        super().start_section(heading)
+        styled_heading = style(heading or "", *HEADER_STYLE) if heading else None
+        super().start_section(styled_heading)
 
-    def format_usage(self):
+    def _format_usage(
+        self,
+        usage: str | None,
+        actions: Iterable[Action],
+        groups: Iterable[_MutuallyExclusiveGroup],
+        prefix: str | None,
+    ) -> str:
+        # This overrides the private method in the parent class
         """
         Return a multi-line usage string where every optional flag appears
         on its own line, e.g.
@@ -19,7 +33,10 @@ class ColourHelp(argparse.RawDescriptionHelpFormatter):
                    ...
                    train_file test_file output_file
         """
-        usage = super().format_usage().lstrip("usage:").strip()
+        # Call the parent method to format the basic usage text
+        formatted_usage = super()._format_usage(usage, actions, groups, prefix)
+        # Strip the 'usage:' prefix and leading/trailing whitespace
+        usage = formatted_usage.lstrip("usage:").strip()
         tokens = []
         chunk = []
         depth = 0
@@ -38,13 +55,15 @@ class ColourHelp(argparse.RawDescriptionHelpFormatter):
         lines[0] = style("usage:", *HEADER_STYLE) + lines[0][6:]
         return "\n".join(lines) + "\n"
 
-    def _format_action(self, action):
+    def _format_action(self, action: argparse.Action) -> str:
         parts = super()._format_action(action)
         # Every line inside a section gets the unified body style
         return style(parts, *BODY_STYLE)
 
-    def _get_help_string(self, action):
+    def _get_help_string(self, action: argparse.Action) -> str:
         help_str = action.help
+        if help_str is None:
+            return ""
         if "%(default)" in help_str:
             default_str = str(action.default)
             help_str = help_str.replace("%(default)s", style(default_str, *BODY_STYLE))

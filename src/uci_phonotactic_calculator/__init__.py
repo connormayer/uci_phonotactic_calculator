@@ -28,7 +28,7 @@ __all__ = ["run", "main", "Config", "Corpus"]
 __version__ = "0.2.2"
 
 
-def import_all_submodules(package_name):
+def import_all_submodules(package_name: str) -> None:
     """Import all submodules of a package for side effects."""
     print(f"[DEBUG] Dynamic plugin import running for {package_name}...")
     package = importlib.import_module(package_name)

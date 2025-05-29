@@ -15,7 +15,7 @@ P1, P2 = 0.1, 0.2
 LOG_P1, LOG_P2 = math.log(P1), math.log(P2)
 
 
-def test_log_product():
+def test_log_product() -> None:
     """
     Geometrically: log(P₁·P₂)  ==  log P₁ + log P₂
     Numerical:     log(0.1) + log(0.2)  →  log(0.02)
@@ -25,7 +25,7 @@ def test_log_product():
     assert math.isclose(got, expected)
 
 
-def test_logsumexp():
+def test_logsumexp() -> None:
     """
     LSE = log( P₁ + P₂ )
     """
@@ -34,7 +34,7 @@ def test_logsumexp():
     assert math.isclose(got, expected)
 
 
-def test_linear_sum():
+def test_linear_sum() -> None:
     """
     linear_sum(): convert log→linear, add, take log.
                   Should equal the LSE above.
@@ -44,7 +44,7 @@ def test_linear_sum():
     assert math.isclose(got, expected)
 
 
-def test_linear_sum_plus1():
+def test_linear_sum_plus1() -> None:
     """
     Legacy formula: 1 + Σ Pᵢ   (kept in *linear* space)
     """
@@ -53,7 +53,7 @@ def test_linear_sum_plus1():
     assert math.isclose(got, expected)
 
 
-def test_min_max_and_empty():
+def test_min_max_and_empty() -> None:
     comps = [LOG_P1, LOG_P2]
 
     assert ag.min_val(comps) == min(comps)  # lower log-p

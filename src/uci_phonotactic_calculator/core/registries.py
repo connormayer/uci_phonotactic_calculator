@@ -1,12 +1,16 @@
 from collections import defaultdict
+from typing import Any, Callable, DefaultDict, Dict, TypeVar
 
-_R = defaultdict(dict)  # {category: {name: obj}}
+_R: DefaultDict[str, Dict[str, Any]] = defaultdict(dict)  # {category: {name: obj}}
 
 
-def register(category: str, name: str):
+T = TypeVar("T")
+
+
+def register(category: str, name: str) -> Callable[[T], T]:
     """Decorator: @register('aggregate_mode', 'prod')(fn)."""
 
-    def deco(obj):
+    def deco(obj: T) -> T:
         if name in _R[category]:
             raise KeyError(f"{category} “{name}” already registered")
         _R[category][name] = obj
@@ -15,7 +19,7 @@ def register(category: str, name: str):
     return deco
 
 
-def registry(category: str):
+def registry(category: str) -> Dict[str, Any]:
     """Return the live dict for ‹category› (never raises)."""
     return _R[category]
 

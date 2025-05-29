@@ -20,6 +20,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Callable, Dict, Type
 
 import numpy as np
+from numpy.typing import NDArray
 
 warnings.filterwarnings("once", category=DeprecationWarning)
 
@@ -135,7 +136,7 @@ class BaseTransform(ABC):
         return True  # override if a transform has limits
 
     @abstractmethod
-    def transform(self, counts: "np.ndarray") -> "np.ndarray": ...
+    def transform(self, counts: NDArray[np.float64]) -> NDArray[np.float64]: ...
 
 
 # ------------------------------------------------------------------ #
@@ -155,7 +156,7 @@ def _discover_submodules(pkg_name: str) -> None:
         importlib.import_module(f"{pkg_name}.{mod_name}")
 
 
-def discover_models():
+def discover_models() -> None:
     """
     Import every n-gram model plugin **and** every probability-transform
     module exactly once.  Subsequent calls are no-ops.
@@ -178,7 +179,7 @@ def discover_models():
 # ------------------------------------------------------------------ #
 # 5) Public accessor
 # ------------------------------------------------------------------ #
-def get_model(name: str):
+def get_model(name: str) -> Type["BaseModel"]:
     """
     Retrieve a model class by name.
     """

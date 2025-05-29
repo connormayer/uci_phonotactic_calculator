@@ -7,16 +7,17 @@ Provides easy access to data files for CLI usage.
 import argparse
 import importlib.resources as pkg_resources
 import sys
+from typing import Optional
 
 
-def list_data_files(subdir=None):
+def list_data_files(subdir: Optional[str] = None) -> list[str]:
     base = "uci_phonotactic_calculator.data"
     if subdir:
         base = f"{base}.{subdir}"
     return [str(f) for f in pkg_resources.files(base).iterdir() if f.is_file()]
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Print absolute paths to packaged data files."
     )

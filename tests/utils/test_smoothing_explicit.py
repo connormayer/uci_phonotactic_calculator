@@ -15,8 +15,9 @@ def test_dense_laplace_increments_in_place():
 
 
 def test_sparse_laplace_adds_missing_keys_and_increments():
-    table = {(0,): 2.0, (1,): 0.0}
-    vocab = {(0,), (1,), (2,)}
+    # Use proper type annotations to match expected types
+    table: dict[tuple[int, ...], float] = {(0,): 2.0, (1,): 0.0}
+    vocab: set[tuple[int, ...]] = {(0,), (1,), (2,)}
     sparse_laplace(table, vocab)
     expected = {(0,): 3.0, (1,): 1.0, (2,): 1.0}
     assert table == expected

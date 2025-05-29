@@ -17,7 +17,7 @@ def _weight_token(mode: str) -> str:
     return _WEIGHT_TAG.get(mode, mode)
 
 
-def _smooth_tag(cfg) -> str:
+def _smooth_tag(cfg: Config) -> str:
     return (
         "none"
         if cfg.smoothing_scheme == "none"
@@ -60,7 +60,7 @@ def _aggregate_alias(mode: str) -> str:
     return mode
 
 
-def build_header(plugin: str, cfg: "Config") -> str:
+def build_header(plugin: str, cfg: Config) -> str:
     parts: list[str] = [plugin]
 
     for field in SCHEMA:

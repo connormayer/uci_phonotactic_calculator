@@ -36,7 +36,7 @@ def valid_file(file_path: str) -> Tuple[bool, str]:
     return True, ""
 
 
-def get_filename(test_file: str, timestamp) -> str:
+def get_filename(test_file: str, timestamp: float) -> str:
     """
     Given a test‑file path and a timestamp, construct an output filename
     under a timestamped folder.

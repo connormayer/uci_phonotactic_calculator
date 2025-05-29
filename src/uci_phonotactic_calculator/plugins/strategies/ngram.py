@@ -5,15 +5,20 @@ src/plugins/strategies/ngram.py — Generic n‑gram counting strategy for any n
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Optional, Sequence
+from typing import Any, MutableMapping, Optional, Sequence, Union
 
 import numpy as np
+from numpy.typing import NDArray
 
 from ...core.config import Config
 from ...core.corpus import Corpus
 from ...core.registries import register
-from ...utils.types import CountDict, IndexTuple
+from ...utils.types import IndexTuple
 from .base import BaseCounter
+
+# Type for our use case: mapping from index tuples to float values
+# This represents the counts of each n-gram index
+IndexCountDict = MutableMapping[IndexTuple, float]
 
 
 @register("count_strategy", "ngram")
@@ -35,10 +40,12 @@ class NGramCounter(BaseCounter):
         N = len(sound_index)
         self._sym2idx = {s: i for i, s in enumerate(sound_index)}
         if self._dense:
-            self.counts: np.ndarray = np.zeros((N,) * order, dtype=float)
+            self.counts: NDArray[np.float64] = np.zeros((N,) * order, dtype=float)
         else:
             # mutable mapping from index-tuples to float counts
-            self.counts: CountDict = defaultdict(float)  # type: ignore[var-annotated]
+            self.counts_dict: IndexCountDict = defaultdict(float)
+            # Ensure the type checker knows which attribute we're using
+            self._counts_attr = "counts" if self._dense else "counts_dict"
 
     def accumulate_idx(
         self, idx: IndexTuple, weight: float, boundary: str = "#"
@@ -57,11 +64,13 @@ class NGramCounter(BaseCounter):
         if self._dense:
             self.counts[idx] += weight
         else:
-            self.counts[idx] = self.counts.get(idx, 0.0) + weight
+            self.counts_dict[idx] = self.counts_dict[idx] + weight
 
     def accumulate(
-        self, token: Sequence[str], weight: Optional[float], boundary: str = "#"
+        self, token: Sequence[str], weight: Optional[float], **kwargs: Any
     ) -> None:
+        # Extract boundary from kwargs or use default
+        boundary = kwargs.get("boundary", "#")
         """
         Add counts for a single token sequence using Corpus.generate_ngrams.
 
@@ -83,11 +92,14 @@ class NGramCounter(BaseCounter):
                 continue
             self.accumulate_idx(idx, weight)
 
-    def finalise(self) -> np.ndarray | CountDict:
+    def finalise(self) -> Union[NDArray[np.float64], IndexCountDict]:
         """
         Return the raw counts structure (np.ndarray or CountDict).
         """
-        return self.counts
+        if self._dense:
+            return self.counts
+        else:
+            return self.counts_dict
 
 
 # End of src/plugins/strategies/ngram.py
