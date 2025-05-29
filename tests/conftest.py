@@ -68,4 +68,22 @@ def tiny_csv(tmp_path):
     return p
 
 
+# ---------------------------------------------------------------------
+# Always populate every registry before collection
+# ---------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _discover_all_plugins():
+    """
+    Autouse: import-once hook that forces plug-in discovery
+    for the entire test session.  Guarantees that every new
+    model, prob-transform, count strategy, etc. is visible to
+    registry-iteration tests without touching the suite.
+    """
+    from uci_phonotactic_calculator.plugins.core import discover_models
+
+    discover_models()
+
+
 # End of tests/conftest.py

@@ -4,11 +4,15 @@ import pytest
 
 from uci_phonotactic_calculator.core.config import Config
 from uci_phonotactic_calculator.core.corpus import Corpus
+from uci_phonotactic_calculator.core.registries import registry as _r
 from uci_phonotactic_calculator.plugins.core import PluginRegistry
 
+COUNT_STRATEGIES = list(_r("count_strategy")) or ["ngram"]
 
+
+@pytest.mark.parametrize("count_strategy", COUNT_STRATEGIES)
 @pytest.mark.parametrize("name,cls", PluginRegistry.items())
-def test_plugin_fits_and_scores(tmp_path, training_path, name, cls):
+def test_plugin_fits_and_scores(tmp_path, training_path, count_strategy, name, cls):
     """
     • Fit every registered plugin on the shared five-token corpus.
     • Ensure score() returns a *finite* float for an in-vocabulary token
@@ -20,6 +24,7 @@ def test_plugin_fits_and_scores(tmp_path, training_path, name, cls):
         ngram_order=order,
         boundary_mode="none",  # simplest pad behaviour
         neighbourhood_mode="full",  # harmless default for non-neighbourhood models
+        count_strategy=count_strategy,
     )
 
     # Write a throw-away CSV that contains at least one ‘a’ phoneme

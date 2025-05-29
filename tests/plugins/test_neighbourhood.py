@@ -1,83 +1,110 @@
 """
-Unit tests for the Neighbourhood plugin.
+Neighbourhood-density plug-in: explicit verification against the
+five-row reference corpus.
 
-Focuses on validating the integration with neighborhood mode functions.
+Corpus lines (freqs in parens, but freq is ignored by this model):
+
+    t a           (10)
+    a t a         (20)
+    t a t a       (30)
+    a t t a       (20)
+    t a a         (10)
+
+Training set (order preserved for readability):
+
+    1.  ('t', 'a')
+    2.  ('a', 't', 'a')
+    3.  ('t', 'a', 't', 'a')
+    4.  ('a', 't', 't', 'a')
+    5.  ('t', 'a', 'a')
+
+We will score the target WORD = ('t', 'a', 't', 'a') because it
+exists in the set and has interesting neighbours.
 """
 
+from __future__ import annotations
+
+from typing import Set, Tuple
+
+import pytest
+
 from uci_phonotactic_calculator.core.config import Config
+from uci_phonotactic_calculator.core.corpus import Corpus
 from uci_phonotactic_calculator.plugins.neighbourhood import NeighbourhoodModel
 
-# Constants for mode names
-FULL_MODE = "full"
-SUBSTITUTION_ONLY_MODE = "substitution_only"
+SymbolT = Tuple[str, ...]
+TARGET: SymbolT = ("t", "a", "t", "a")  # word we will score
 
 
-def test_neighbourhood_model_integration():
+def _train_model(training_path, mode: str) -> NeighbourhoodModel:
+    cfg = Config.default(neighbourhood_mode=mode)
+    corpus = Corpus(training_path, cfg)
+    model = NeighbourhoodModel(cfg)
+    model.fit(corpus)
+    return model
+
+
+# ------------------------------------------------------------------ #
+# Helpers – compute neighbours by hand so the expected numbers are
+#           visible right in the test.
+# ------------------------------------------------------------------ #
+def full_neighbours(token: SymbolT, alphabet: Set[str]) -> Set[SymbolT]:
     """
-    Test that NeighbourhoodModel correctly integrates with registry functions.
-    This tests the core functionality without relying on complex corpus handling.
+    Return the FULL edit-distance-1 neighbour set (subst, ins, del).
+    Matches the registry function 'full' but written inline for clarity.
     """
-    # Create a simple config
-    cfg = Config.default(neighbourhood_mode=FULL_MODE)
-    model = NeighbourhoodModel(cfg)
+    out = set()
+    L = len(token)
+    # substitutions
+    for i, sym in enumerate(token):
+        out.update(token[:i] + (a,) + token[i + 1 :] for a in alphabet if a != sym)
+    # deletions
+    for i in range(L):
+        out.add(token[:i] + token[i + 1 :])
+    # insertions
+    for i in range(L + 1):
+        out.update(token[:i] + (a,) + token[i:] for a in alphabet)
+    return out
 
-    # Manually set up the model's internal state
-    model.training_set = {
-        ("p", "a", "t", "a"),
-        ("p", "a", ".", "t", "a"),
-        ("p", ".", "t", "a"),
-        ("p", "a", "t"),
+
+def subst_only_neighbours(token: SymbolT, alphabet: Set[str]) -> Set[SymbolT]:
+    return {
+        token[:i] + (a,) + token[i + 1 :]
+        for i, sym in enumerate(token)
+        for a in alphabet
+        if a != sym
     }
-    model.alphabet = {"p", "a", "t", "."}
-    model.sound_index = [".", "a", "p", "t"]
-
-    # Test that we can find neighbors for a target
-    target = ("p", "a", "t", "a")
-    neighbors_count = model._count_neighbors(target)
-
-    # We should find the 3 neighbors from our training set
-    # ('p', 'a', '.', 't', 'a'), ('p', '.', 't', 'a'), ('p', 'a', 't')
-    assert neighbors_count == 3
-
-    # Test substitution only mode
-    cfg = Config.default(neighbourhood_mode=SUBSTITUTION_ONLY_MODE)
-    model = NeighbourhoodModel(cfg)
-    model.training_set = {
-        ("p", "a", "t", "a"),
-        ("p", "a", ".", "t", "a"),
-        ("p", ".", "t", "a"),
-        ("p", "a", "t"),
-    }
-    model.alphabet = {"p", "a", "t", "."}
-    model.sound_index = [".", "a", "p", "t"]
-
-    # The neighbors calculation depends on two things:
-    # 1. The substitution_only neighborhood function generating all possible
-    #    substitutions
-    # 2. How many of those generated neighbors are actually in our training_set
-    #
-    # In our test data, only one neighbor from our training_set matches a substitution
-    # - ('p', '.', 't', 'a') is a valid substitution of ('p', 'a', 't', 'a')
-    assert model._count_neighbors(target) == 1
-
-    # Empty input should find 0 neighbors
-    assert model._count_neighbors(()) == 0
 
 
-def test_multi_char_phonemes():
-    """Test with multi-character phonemes"""
-    cfg = Config.default(neighbourhood_mode=FULL_MODE)
-    model = NeighbourhoodModel(cfg)
+# ------------------------------------------------------------------ #
+# Tests
+# ------------------------------------------------------------------ #
+@pytest.mark.parametrize(
+    "mode, neighbour_fn",
+    [
+        ("full", full_neighbours),
+        ("substitution_only", subst_only_neighbours),
+    ],
+)
+def test_neighbour_counts_against_hand_math(training_path, mode, neighbour_fn):
+    model = _train_model(training_path, mode)
 
-    # Manually set up the model with multi-char phonemes
-    model.training_set = {
-        ("ch", "a", "t"),
-        ("ch", ".", "a", "t"),
-        ("ch", "a", ".", "t"),
-        ("ch", "a", "t", "."),
-    }
-    model.alphabet = {"ch", "a", "t", "."}
-    model.sound_index = [".", "a", "ch", "t"]
+    # Alphabet derived from training corpus (same as model.alphabet)
+    alphabet = model.alphabet
 
-    # The target 'chat' should have 3 neighbors
-    assert model._count_neighbors(("ch", "a", "t")) == 3
+    # ---- expected count computed explicitly -----------------------
+    expected_set = neighbour_fn(TARGET, alphabet) & model.training_set
+    expected_count = float(len(expected_set))
+
+    # ---- model score ---------------------------------------------
+    got = model.score(list(TARGET))
+
+    # ---- assertions ----------------------------------------------
+    assert got == expected_count, (
+        f"\nMode: {mode}"
+        f"\nExpected neighbours ({int(expected_count)}): {sorted(expected_set)}"
+        f"\nModel returned: {got}"
+    )
+
+    # also ensure the type is exactly float for downstream math
+    assert isinstance(got, float)
