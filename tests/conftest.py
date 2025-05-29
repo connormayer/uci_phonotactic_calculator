@@ -6,6 +6,7 @@ been installed with `pip install -e .`.
 
 import csv
 import sys
+import textwrap
 from pathlib import Path
 
 import pytest
@@ -52,6 +53,19 @@ def config_factory():
         cfg = config_factory(ngram_order=2, boundary_mode="none")
     """
     return lambda **kw: Config.default(**kw)
+
+
+@pytest.fixture
+def tiny_csv(tmp_path):
+    p = tmp_path / "tiny.csv"
+    p.write_text(
+        textwrap.dedent(
+            """
+        a,1
+    """
+        )
+    )
+    return p
 
 
 # End of tests/conftest.py

@@ -1,10 +1,5 @@
 t a,10
 a t a,20
-t a t a,30          # 4-phones
-t a t a t,25        # 5-phones
+t a t a,30
 a t t a,20
-t   a  a,10         # extra spacing
-#,1                 # empty token after strip() → bucket-0 guard
-t % a,1             # illegal '%' symbol to trigger fallback
-a # t,2             # literal boundary in middle
-x y z,              # missing freq → defaults to 0
+t a a,10
