@@ -185,8 +185,11 @@ def progress(enabled: bool = True) -> ContextManager[BaseProgress]:
     """
     if enabled:
         return RichProgress(enabled)
-    # Cast nullcontext to the right type
-    return nullcontext(BaseProgress())  # type: ignore
+    # Return a nullcontext without trying to instantiate BaseProgress
+    # We use cast to satisfy the type system, but at runtime this is just a nullcontext
+    from typing import cast
+
+    return cast(ContextManager[BaseProgress], nullcontext())
 
 
 __all__ = ["BaseProgress", "RichProgress", "GradioProgress", "progress"]
