@@ -81,4 +81,47 @@ def max_val(components: Sequence[float]) -> float:
     return float(max(components)) if components else float("-inf")
 
 
+# ──────────────────────────────────────────────────────────────
+# NEW helpers
+# ──────────────────────────────────────────────────────────────
+def linear_mean(components: Sequence[float]) -> float:
+    """
+    Arithmetic mean of linear-space probabilities, returned in log-space.
+    log( (∑ exp(xᵢ)) / n )  ==  log ∑ p − log n
+    """
+    n = len(components)
+    if n == 0:
+        return float("-inf")
+    total = np.sum(np.exp(components))
+    return float("-inf") if total == 0 else float(np.log(total) - np.log(n))
+
+
+def geometric_mean(components: Sequence[float]) -> float:
+    """
+    Geometric mean: (∏ p)¹⁄ⁿ   →   (Σ log p) / n   in log-space.
+    """
+    n = len(components)
+    if n == 0:
+        return float("-inf")
+    return float(np.sum(components) / n)
+
+
+def harmonic_mean(components: Sequence[float]) -> float:
+    """
+    Harmonic mean:     n / (∑ 1/pᵢ)
+    log-space trick:   log n  −  log ∑ (1/pᵢ)
+                     = log n  −  log ∑ exp(−xᵢ)
+    """
+    n = len(components)
+    if n == 0:
+        return float("-inf")
+
+    linear = np.exp(components, where=~np.isneginf(components))
+    if np.any(linear == 0):
+        # Any zero probability ⇒ HM = 0 ⇒ log(0) = -inf
+        return float("-inf")
+    denom = np.sum(1.0 / linear)
+    return float("-inf") if denom == 0 else float(np.log(n) - np.log(denom))
+
+
 # End of src/aggregate.py
