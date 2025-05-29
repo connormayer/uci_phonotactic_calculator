@@ -90,7 +90,7 @@ known-first-party = ["uci_phonotactic_calculator"]
 
 # MyPy configuration
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
