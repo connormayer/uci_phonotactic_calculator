@@ -118,6 +118,6 @@ def test_unigram_score_with_new_aggregators(
 
     # --- 4. assertion ---------------------------------------------
     got = model.score(TOKEN)
-    assert np.isclose(
-        got, expect_log, rtol=1e-12
-    ), f"\nAgg mode: {agg_key}\nExpected log {expect_log}\nGot      {got}"
+    assert np.isclose(got, expect_log, rtol=1e-12), (
+        f"\nAgg mode: {agg_key}\nExpected log {expect_log}\nGot      {got}"
+    )

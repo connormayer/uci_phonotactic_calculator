@@ -13,14 +13,12 @@ clean:
 lint:
 	ruff check --fix .
 	ruff format
-	black .
 	mypy --strict .
 
 # Auto-format code
 format:
-	black .
-	ruff check --fix .
 	ruff format
+	ruff check --fix .
 
 # Run tests
 test:

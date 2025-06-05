@@ -103,9 +103,9 @@ def test_conditional_transform_bigrams(training_path):
     expected_log = np.log(expected_linear, where=(expected_linear > 0))
     expected_log[expected_linear == 0] = float("-inf")
 
-    assert np.allclose(
-        logp, expected_log, equal_nan=False
-    ), f"\nExpected log-probs:\n{expected_log}\nGot:\n{logp}"
+    assert np.allclose(logp, expected_log, equal_nan=False), (
+        f"\nExpected log-probs:\n{expected_log}\nGot:\n{logp}"
+    )
 
     # Extra guard: each row must sum to ≈1 in linear space
     linear = np.exp(
