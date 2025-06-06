@@ -127,10 +127,10 @@ def all_variants(
                                     position_strategy=None,
                                     count_strategy=count_strategy,
                                 )
-                                if not PluginRegistry["ngram"].supports(cfg):
+                                if not PluginRegistry[count_strategy].supports(cfg):
                                     continue
                                 if _matches_filters(cfg, filters or {}):
-                                    yield _make_variant("ngram", order, cfg)
+                                    yield _make_variant(count_strategy, order, cfg)
             # ── 2) positional variants (absolute | relative) ──
             for strategy_name in _r("position_strategy"):
                 for boundary_mode in ("none", "both"):
@@ -146,6 +146,10 @@ def all_variants(
                                     aggregate_mode=agg,
                                     count_strategy=count_strategy,
                                 )
+                                from ..plugins.core import get_model
+
+                                if not get_model("ngram").supports(cfg):
+                                    continue  # skip illegal orders
                                 strategy = get_position_strategy(strategy_name, n=order)
                                 if _matches_filters(cfg, filters or {}):
                                     yield _make_variant("ngram", order, cfg, strategy)
