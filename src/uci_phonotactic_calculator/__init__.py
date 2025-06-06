@@ -25,7 +25,7 @@ from .models import weighting as _weighting  # noqa: F401
 __all__ = ["run", "main", "Config", "Corpus"]
 
 # Define the package version
-__version__ = "0.2.2"
+__version__ = "1.0.0"
 
 
 def import_all_submodules(package_name: str) -> None:
