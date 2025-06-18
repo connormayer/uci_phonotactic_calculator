@@ -66,3 +66,12 @@ help:
 	@echo "  make demo       - Run the calculator with demo data"
 	@echo "  make all-variants - Run ngram calculator with all variants (--all flag)"
 	@echo "  make legacy     - Run the legacy calculator variant"
+
+savecode:
+	savecode . --skip tests .deprecated web --ext py toml
+
+savecode-web:
+	savecode . --skip tests .deprecated --ext py toml
+
+savecode-all:
+	savecode . --skip .deprecated --ext py toml
