@@ -129,9 +129,10 @@ def _run_legacy(args: argparse.Namespace, parser: argparse.ArgumentParser) -> No
     if not test_corpus_2.tokens:
         parser.error(f"Test file ‘{args.test_file}’ contains no token rows.")
 
-    rows_output = []
+    rows_output: list[OrderedDict[str, float | str]] = []
     for tok in test_corpus_2.tokens:
-        row = OrderedDict()
+        # Each result row may contain both strings (word, length) and floats (scores)
+        row: OrderedDict[str, float | str] = OrderedDict()
         row["word"] = " ".join(tok)
         # Convert to string for consistent CSV column types
         row["word_len"] = str(len(tok))

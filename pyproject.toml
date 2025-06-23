@@ -19,14 +19,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "black>=23.0.0",
-    "ruff>=0.0.270",
-    "mypy>=1.0.0",
-    "build>=0.10.0",
-    "numpy>=1.21",
-]
 ui = [
     "gradio>=3.50.0",
     "setuptools"    # needed for pkg_resources
@@ -37,6 +29,18 @@ web = [
     "django-stubs>=5.0.0",
     "django-latexify>=0.3",
     "django-crontab>=0.7"
+]
+dev = [
+    # Testing
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+    # Linting / formatting
+    "ruff>=0.4.0",
+    "black>=23.0.0",
+    # Type-checking & stubs
+    "mypy>=1.10.0",
+    # Build tooling
+    "build>=0.10.0"
 ]
 
 [project.urls]

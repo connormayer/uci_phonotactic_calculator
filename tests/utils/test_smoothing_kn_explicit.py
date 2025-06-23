@@ -29,7 +29,7 @@ The smoothed matrix should therefore be:
          [0.75, 0.25]]
 """
 
-from typing import MutableMapping, cast  # Added for type hinting
+from typing import MutableMapping  # Added for type hinting
 
 import numpy as np
 from numpy.typing import NDArray  # ✨ right alias for 1-param ndarray
@@ -74,8 +74,7 @@ def test_kn_sparse_explicit():
 
     out_union = kneser_ney(table_input.copy())
     assert isinstance(out_union, MutableMapping), "Expected MutableMapping output"
-    # We can cast here as an alternative to direct assignment after isinstance
-    out = cast(MutableMapping[IndexTuple, float], out_union)
+    out: MutableMapping[IndexTuple, float] = out_union
 
     assert out.keys() == expected.keys()
     for k in expected:

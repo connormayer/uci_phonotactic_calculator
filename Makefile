@@ -3,6 +3,12 @@
 # Default action when running `make` without arguments
 all: lint test
 
+pip-install:
+	python -m pip install -e .
+
+pip-install-dev:
+	python -m pip install -e .[dev]
+
 pip-install-ui:
 	python -m pip install -e .[ui]
 
@@ -16,13 +22,13 @@ clean:
 	@echo "Clean completed successfully!"
 
 # Run linting tools
-lint:
+lint: pip-install-dev
 	ruff check --fix .
 	ruff format
 	mypy --strict .
 
 # Run tests
-test: pip-install
+test: pip-install-dev
 	python -m pytest
 
 check: lint test
@@ -43,11 +49,11 @@ django: pip-install-web
 	python -m uci_phonotactic_calculator.web.django.manage runserver
 
 # Run the demo calculator
-demo: pip-install
+demo: pip-install-dev
 	python -m uci_phonotactic_calculator.cli.main --use-demo-data output.csv
 
 # Run ngram calculator with all variants (--all flag)
-all-variants: pip-install
+all-variants: pip-install-dev
 	@echo "Running UCI Phonotactic Calculator with all variants..."
 	python -m uci_phonotactic_calculator.cli.main --use-demo-data --all output.csv
 
