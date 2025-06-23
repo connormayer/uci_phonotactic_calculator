@@ -167,7 +167,9 @@ def score(
             raise gr.Error(
                 "Upload BOTH training & test CSVs *or* select a default training file."
             )
-        train_path, test_path = train_csv.name, test_csv.name
+        # Support both Gradio File objects and plain string paths
+        train_path = train_csv if isinstance(train_csv, str) else train_csv.name
+        test_path = test_csv if isinstance(test_csv, str) else test_csv.name
         logger.info(f"Using custom files: {train_path}, {test_path}")
 
     # ------------------------------------------------------------------

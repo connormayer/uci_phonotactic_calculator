@@ -110,6 +110,29 @@ class MediaView(TemplateView):
     model = DefaultFile
 
     def get_context_data(self, **kwargs):
+        # Ensure default dataset entries exist so the list is never empty.
+        if self.model.objects.count() == 0:
+            from pathlib import Path
+
+            default_dir = Path(settings.MEDIA_ROOT) / "default"
+            if default_dir.exists():
+                # mapping from UploadTrain helper
+                try:
+                    from .models import UploadTrain  # local import to avoid circularity
+
+                    desc_map = dict(UploadTrain.get_file_choices())
+                except Exception:
+                    desc_map = {}
+                for fp in default_dir.iterdir():
+                    if fp.is_file():
+                        # Avoid duplicates if a race condition occurs
+                        self.model.objects.get_or_create(
+                            training_file=f"default/{fp.name}",
+                            defaults={
+                                "description": desc_map.get(fp.name, fp.stem.replace("_", " ").title()),
+                                "short_desc": desc_map.get(fp.name, fp.stem)[:50],
+                            },
+                        )
         context = super().get_context_data(**kwargs)
         context["objects"] = self.model.objects.all()
         return context

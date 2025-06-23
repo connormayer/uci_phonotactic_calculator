@@ -29,12 +29,14 @@ dev = [
 ]
 ui = [
     "gradio>=3.50.0",
+    "setuptools"    # needed for pkg_resources
 ]
 web = [
     "django>=4.2.0",
     "django-crispy-forms>=2.0.0",
     "django-stubs>=5.0.0",
     "django-latexify>=0.3",
+    "django-crontab>=0.7"
 ]
 
 [project.urls]

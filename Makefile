@@ -3,6 +3,12 @@
 # Default action when running `make` without arguments
 all: lint test
 
+pip-install-ui:
+	python -m pip install -e .[ui]
+
+pip-install-web:
+	python -m pip install -e .[web]
+
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
@@ -15,40 +21,38 @@ lint:
 	ruff format
 	mypy --strict .
 
-# Auto-format code
-format:
-	ruff format
-	ruff check --fix .
-
 # Run tests
-test:
+test: pip-install
 	python -m pytest
+
+check: lint test
 
 # Build distributable package
 build: clean
 	python -m build
 
 # Run the web UI
-web:
+web: pip-install-ui
 	python -c "from uci_phonotactic_calculator.web.gradio.web_demo_v2 import main; main()"
 
 # Run the Django web interface
-django-web:
+django: pip-install-web
+	python -m uci_phonotactic_calculator.web.django.manage migrate
 	@echo "Starting UCI Phonotactic Calculator Django UI..."
 	@python -c "import webbrowser; import time; time.sleep(0.5); webbrowser.open('http://127.0.0.1:8000/')"
 	python -m uci_phonotactic_calculator.web.django.manage runserver
 
 # Run the demo calculator
-demo:
+demo: pip-install
 	python -m uci_phonotactic_calculator.cli.main --use-demo-data output.csv
 
 # Run ngram calculator with all variants (--all flag)
-all-variants:
+all-variants: pip-install
 	@echo "Running UCI Phonotactic Calculator with all variants..."
 	python -m uci_phonotactic_calculator.cli.main --use-demo-data --all output.csv
 
 # Run the legacy calculator variant (default mode with 16-column output)
-legacy:
+legacy: pip-install
 	@echo "Running UCI Phonotactic Calculator legacy variant..."
 	@echo "Note: Legacy mode is now the default (16-column output)."
 	python -m uci_phonotactic_calculator.cli.main --use-demo-data output.csv
