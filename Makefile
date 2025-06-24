@@ -3,17 +3,21 @@
 # Default action when running `make` without arguments
 all: lint test
 
-pip-install:
-	python -m pip install -e .
+poetry-install:
+	poetry lock
+	poetry install
 
-pip-install-dev:
-	python -m pip install -e .[dev]
+poetry-install-dev:
+	poetry lock
+	poetry install --extras "dev" --extras "web" --extras "ui"
 
-pip-install-ui:
-	python -m pip install -e .[ui]
+poetry-install-ui:
+	poetry lock
+	poetry install --extras "ui"
 
-pip-install-web:
-	python -m pip install -e .[web]
+poetry-install-web:
+	poetry lock
+	poetry install --extras "web"
 
 # Clean build artifacts
 clean:
@@ -22,13 +26,13 @@ clean:
 	@echo "Clean completed successfully!"
 
 # Run linting tools
-lint: pip-install-dev
+lint: poetry-install-dev
 	ruff check --fix .
 	ruff format
 	mypy --strict .
 
 # Run tests
-test: pip-install-dev
+test: poetry-install-dev
 	python -m pytest
 
 check: lint test
@@ -38,30 +42,33 @@ build: clean
 	python -m build
 
 # Run the web UI
-web: pip-install-ui
-	python -c "from uci_phonotactic_calculator.web.gradio.web_demo_v2 import main; main()"
+gradio: poetry-install-ui
+	poetry run python -c "from uci_phonotactic_calculator.web.gradio.web_demo_v2 import main; main()"
+
+web: gradio
 
 # Run the Django web interface
-django: pip-install-web
-	python -m uci_phonotactic_calculator.web.django.manage migrate
+django: poetry-install-web
+	poetry run python -m uci_phonotactic_calculator.web.django.manage makemigrations
+	poetry run python -m uci_phonotactic_calculator.web.django.manage migrate
 	@echo "Starting UCI Phonotactic Calculator Django UI..."
 	@python -c "import webbrowser; import time; time.sleep(0.5); webbrowser.open('http://127.0.0.1:8000/')"
-	python -m uci_phonotactic_calculator.web.django.manage runserver
+	poetry run python -m uci_phonotactic_calculator.web.django.manage runserver
 
 # Run the demo calculator
-demo: pip-install-dev
-	python -m uci_phonotactic_calculator.cli.main --use-demo-data output.csv
+demo: poetry-install-dev
+	poetry run python -m uci_phonotactic_calculator.cli.main --use-demo-data output.csv
 
 # Run ngram calculator with all variants (--all flag)
-all-variants: pip-install-dev
+all-variants: poetry-install-dev
 	@echo "Running UCI Phonotactic Calculator with all variants..."
-	python -m uci_phonotactic_calculator.cli.main --use-demo-data --all output.csv
+	poetry run python -m uci_phonotactic_calculator.cli.main --use-demo-data --all output.csv
 
 # Run the legacy calculator variant (default mode with 16-column output)
-legacy: pip-install
+legacy: poetry-install
 	@echo "Running UCI Phonotactic Calculator legacy variant..."
 	@echo "Note: Legacy mode is now the default (16-column output)."
-	python -m uci_phonotactic_calculator.cli.main --use-demo-data output.csv
+	poetry run python -m uci_phonotactic_calculator.cli.main --use-demo-data output.csv
 
 # Show help
 help:
