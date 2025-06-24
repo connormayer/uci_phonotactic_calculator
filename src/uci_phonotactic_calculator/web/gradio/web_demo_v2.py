@@ -22,75 +22,433 @@ import pandas as pd
 
 # NEW ▶
 CSS = """
+/* Main container and layout */
+.gradio-container {
+    font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
+}
+
 #df-wrapper {
-    max-height: 350px;
-    overflow: hidden;
+    max-height: 400px;
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
 }
 
-/* Make the dataframe fill the available space */
-#df-wrapper .svelte-16r4veq {
-    width: 100%;
+/* Step-by-step wizard styling */
+.step-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 6px rgba(102, 126, 234, 0.1);
 }
 
-.download-row {
+.step-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    background-color: #f8f9fa;
-    padding: 10px 15px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    border-left: 4px solid #2ecc71;
+    gap: 12px;
+    margin-bottom: 8px;
 }
 
-.download-row p {
+.step-number {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.step-title {
+    font-size: 18px;
+    font-weight: 600;
     margin: 0;
-    font-size: 0.9rem;
 }
 
-.container        { margin:0 auto; }
-.feature-box      { background:#f0f7ff; padding:16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #3498db; }
-.info-box         { background:#e8f6f3; padding:16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2ecc71; }
-.warning-box      { background:#fff9e6; padding:16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #f39c12; }
-.examples-row     { margin-top:8px; }
-footer            { margin-top:20px; text-align:center; font-size:.8em; color:#666; }
+.step-description {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 14px;
+    line-height: 1.4;
+}
 
-/* Typography enhancements */
-h1, h2, h3, h4 { font-weight:700; color:#2c3e50; }
-h1              { font-size:1.8em; margin-top:0.5em; }
-h2              { font-size:1.5em; margin-top:1em; }
-h3              { font-size:1.2em; margin-top:1em; }
-h4              { font-size:1.1em; margin-top:1em; }
+/* Card-based design */
+.input-card {
+    background: white;
+    border: 1px solid #e1e5e9;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
 
-/* Color/label highlighting */
-.highlight      { background:#ffffcc; padding:2px 4px; border-radius:4px; font-weight:bold; }
+.input-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-color: #667eea;
+}
 
-/* Better table formatting */
-table { width:100%; border-collapse:collapse; margin:16px 0; }
-table th { background:#f0f7ff; text-align:left; padding:8px; }
-table td { border-top:1px solid #ddd; padding:8px; }
-table tr:nth-child(even) { background:#f9f9f9; }
+.card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
-/* New calculator UI enhancements */
-.calculator-container { background:#f7f9fc; border-radius:10px; padding:15px; }
-.input-panel { background:white; border-radius:8px; border:1px solid #e0e5eb; padding:12px; margin-bottom:15px; }
-.option-label { font-weight:bold; color:#2a6ea7; margin-bottom:5px; }
-.option-divider { text-align:center; margin:10px 0; color:#7f8c8d; }
-.calc-button { background:#3498db; color:white; padding:10px 15px; border-radius:5px; font-weight:bold; cursor:pointer; }
-.calc-button:hover { background:#2980b9; }
-.results-box { background:#f0f7ff; border-radius:8px; border:1px solid #d0e1f9; padding:15px; }
-.training-options-box { border:1px solid #e0e5eb; border-radius:8px; padding:12px 15px; background:#f8f9fa; }
+.card-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0 0 16px 0;
+    line-height: 1.4;
+}
 
-/* Highlight important terms */
-.highlight { color:#e74c3c; font-weight:bold; }
-.key-term { color:#3498db; font-weight:bold; }
+/* Enhanced form controls */
+.option-group {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
 
-/* Table styling */
-table { border-collapse:collapse; width:100%; margin-bottom:1em; }
-table, th, td { border:1px solid #ddd; }
-th, td { padding:8px 12px; text-align:left; }
-th { background-color:#f2f2f2; }
-tr:nth-child(even) { background-color:#f9f9f9; }
+.option-label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.option-divider {
+    position: relative;
+    text-align: center;
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.option-divider::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #e2e8f0 20%, #e2e8f0 80%, transparent);
+    transform: translateY(-100%);
+}
+
+.option-divider span {
+    background: white;
+    padding: 8px 16px;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 20px;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: inline-block;
+}
+
+/* Enhanced buttons */
+.primary-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+
+.primary-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.secondary-button {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.secondary-button:hover {
+    background: #667eea;
+    color: white;
+}
+
+/* Results styling */
+.results-container {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    color: white;
+    padding: 24px;
+    border-radius: 12px;
+    margin-top: 24px;
+    box-shadow: 0 4px 6px rgba(46, 204, 113, 0.1);
+}
+
+.results-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.results-icon {
+    background: rgba(255, 255, 255, 0.2);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.download-section {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+/* Enhanced info boxes */
+.info-box {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-left: 4px solid #2196f3;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.warning-box {
+    background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+    border-left: 4px solid #ff9800;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.feature-box {
+    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+    border-left: 4px solid #9c27b0;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.success-box {
+    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+    border-left: 4px solid #4caf50;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+/* Loading and progress */
+.loading-indicator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e2e8f0;
+    border-top: 2px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Enhanced tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: left;
+    padding: 12px;
+    font-weight: 600;
+}
+
+table td {
+    border-top: 1px solid #e2e8f0;
+    padding: 12px;
+}
+
+table tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+table tr:hover {
+    background: #f1f5f9;
+}
+
+/* Results table styling for better visibility */
+.results-container table {
+    background-color: white !important;
+}
+
+.results-container table thead th {
+    background-color: #f8f9fa !important;
+    color: #2c3e50 !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid #dee2e6 !important;
+    padding: 12px 8px !important;
+}
+
+.results-container table tbody td {
+    color: #495057 !important;
+    padding: 8px !important;
+    border-bottom: 1px solid #e9ecef !important;
+}
+
+.results-container table tbody tr:hover {
+    background-color: #f8f9fa !important;
+}
+
+/* Typography improvements */
+h1, h2, h3, h4 {
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+h3 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+h4 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+
+/* Utility classes */
+.text-center { text-align: center; }
+.text-muted { color: #64748b; }
+.text-small { font-size: 0.875rem; }
+.mb-0 { margin-bottom: 0; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mt-4 { margin-top: 1rem; }
+
+/* Footer */
+footer {
+    margin-top: 40px;
+    text-align: center;
+    font-size: 0.875rem;
+    color: #64748b;
+    padding: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Four-panel layout */
+.calculator-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+.calculator-container .gradio-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.calculator-container .input-card {
+    margin-bottom: 20px;
+}
+
+.calculator-container .results-container {
+    margin-top: 40px;
+}
+
+/* Custom dropdown-style-upload */
+.dropdown-style-upload {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.dropdown-style-upload:hover {
+    border-color: #667eea;
+}
+
+/* Style UploadButton to look like dropdown */
+.dropdown-style-upload button {
+    width: 100% !important;
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    text-align: left !important;
+    color: #374151 !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+}
+
+.dropdown-style-upload button:hover {
+    border-color: #667eea !important;
+    background: #f8fafc !important;
+}
+
+.dropdown-style-upload button::after {
+    content: "▼" !important;
+    font-size: 12px !important;
+    color: #9ca3af !important;
+    margin-left: auto !important;
+}
+
+/* Override Tailwind's justify-center utility added by Gradio */
+.dropdown-style-upload button.justify-center {
+    justify-content: flex-start !important;
+}
+
+/* Upload CSV button alignment */
+.upload-csv-button button {
+    text-align: left !important;
+    justify-content: flex-start !important;
+}
+
+.upload-csv-button {
+    text-align: left !important;
+}
 """
 APP_TITLE = "UCI Phonotactic Calculator"
 BANNER_MD = (
@@ -158,9 +516,15 @@ def score(
         train_path = str(pkg_resources.files(data_pkg) / train_csv)
         logger.info(f"Using packaged training file: {train_path}")
 
-        # For test file, use the uploaded file
-        test_path = test_csv.name if not isinstance(test_csv, str) else test_csv
-        logger.info(f"Using test file: {test_path}")
+        # Handle test file - check if it's also a packaged file
+        if isinstance(test_csv, str) and not os.path.isabs(test_csv):
+            # Test file is also a packaged file
+            test_path = str(pkg_resources.files(data_pkg) / test_csv)
+            logger.info(f"Using packaged test file: {test_path}")
+        else:
+            # For test file, use the uploaded file
+            test_path = test_csv.name if not isinstance(test_csv, str) else test_csv
+            logger.info(f"Using test file: {test_path}")
     else:
         # Both custom files
         if train_csv is None or test_csv is None:
@@ -270,7 +634,6 @@ def score(
 # Gradio UI Builder
 # ---------------------------------------------------------------------
 
-
 # -------------------------------------------------------------------- UI helpers
 def _banner() -> None:
     gr.Markdown(BANNER_MD)
@@ -328,372 +691,310 @@ def _spacer(px: int = 8) -> None:
 
 # -------------------------------------------------------------------- TAB 1 – Calculator
 def _calculator_tab():
+    """Build the main calculator tab with a four-panel layout"""
     # Dictionary to store UI components for sharing with other tabs
     components = {}
 
-    gr.Markdown("<div class='calculator-container'>")
+    # Define available training files
+    file_choices = [
+        ("English", "english.csv"),
+        ("English with frequencies", "english_freq.csv"),
+        ("English needle words", "english_needle.csv"),
+        ("English onsets", "english_onsets.csv"),
+        ("Finnish", "finnish.csv"),
+        ("French", "french.csv"),
+        ("Polish onsets", "polish_onsets.csv"),
+        ("Samoan", "samoan.csv"),
+        ("Spanish with stress", "spanish_stress.csv"),
+        ("Turkish", "turkish.csv"),
+    ]
 
-    # Title in a compact way
-    gr.Markdown(
-        "<h3 style='margin:0 0 15px 0;text-align:center;'>UCI Phonotactic Calculator</h3>"
-    )
+    gr.Markdown("<div class='feature-box'><strong>UCI Phonotactic Calculator</strong></div>")
 
+    # Four-panel grid layout
     with gr.Row():
-        # Left panel for inputs only
+        # Top row - Training Data and Test Data
         with gr.Column(scale=1):
-            # Training file section with clear either/or choice
-            gr.Markdown("<div class='input-panel'>")
-            gr.Markdown(
-                "<h4 style='margin:0 0 10px 0;color:#2c3e50;'>Training File</h4>"
-            )
-
-            with gr.Group(elem_classes="training-options-box"):
-                gr.Markdown(
-                    "<p class='option-label'>OPTION 1: Select a default file</p>"
-                )
-                # Default training file selection - dropdown with descriptions
-                file_choices = [
-                    ("English", "english.csv"),
-                    ("English with frequencies", "english_freq.csv"),
-                    ("English needle words", "english_needle.csv"),
-                    ("English onsets", "english_onsets.csv"),
-                    ("Finnish", "finnish.csv"),
-                    ("French", "french.csv"),
-                    ("Polish onsets", "polish_onsets.csv"),
-                    ("Samoan", "samoan.csv"),
-                    ("Spanish with stress", "spanish_stress.csv"),
-                    ("Turkish", "turkish.csv"),
-                ]
+            # Panel 1: Training Data Selection
+            with gr.Group(elem_classes=["input-card"]):
+                gr.HTML('<h4 class="card-title">📁 Training Data</h4>')
+                gr.HTML('<p class="card-subtitle">Select training corpus</p>')
+                
+                # Built-in datasets dropdown
                 components["default_file"] = gr.Dropdown(
-                    label="",
+                    label="Built-in Datasets",
                     choices=[value for _, value in file_choices],
                     interactive=True,
+                    elem_classes=["dropdown-style-upload"]
                 )
 
-                gr.Markdown("<div class='option-divider'>--- OR ---</div>")
+                gr.HTML('<div class="option-divider"><span>OR</span></div>')
 
-                gr.Markdown(
-                    "<p class='option-label'>OPTION 2: Upload your own file</p>"
-                )
-                components["train_in"] = gr.File(
-                    label="",
+                # Custom training files upload (styled as dropdown)
+                components["train_in"] = gr.UploadButton(
+                    label="📁 Upload CSV",
                     file_types=[".csv"],
-                    interactive=True,
+                    file_count="single",
+                    elem_classes=["dropdown-style-upload", "upload-csv-button"]
                 )
+                gr.HTML('<p class="text-small text-muted">Click to browse and upload CSV file</p>')
 
-            # Demo pair option - gets both train and test files from demo data
-            components["use_demo_pair"] = gr.Checkbox(
-                label="Use English demo pair (both train & test files)",
-                value=False,
-                info="Check this to use the default English training and test files. Overrides other file selections.",
-            )
+                # Demo pair option
+#                components["use_demo_pair"] = gr.Checkbox(
+#                    label="🔄 Use complete English demo",
+#                    value=False
+#                )
+#                gr.HTML('<p class="text-small text-muted">Use demo training + test files</p>')
 
-            # Test file section (always required)
-            gr.Markdown(
-                "<h4 style='margin:15px 0 10px 0;color:#2c3e50;'>Test File (required)</h4>"
-            )
-            components["test_in"] = gr.File(
-                label="",
-                file_types=[".csv"],
-                interactive=True,
-            )
-            gr.Markdown("</div>")
-
-            # Main submit button
-            components["calc_btn"] = gr.Button(
-                "Calculate", variant="primary", elem_classes="calc-button"
-            )
-
-            # Results display immediately below the Calculate button
-            components["results_container"] = gr.Group(visible=False)
-            with components["results_container"]:
-                gr.Markdown("<div class='results-box'>")
-                gr.Markdown(
-                    "<h3 style='margin-top:0;color:#2c3e50;'>Calculation Complete!</h3>"
-                )
-
-                # Download button with filename display
-                with gr.Row(elem_classes=["download-row"]):
-                    components["dl_label"] = gr.Markdown(elem_classes=["file-label"])
-                    components["out_csv"] = gr.DownloadButton(
-                        label="Download CSV", variant="primary", size="sm"
-                    )
-
-                # Results table in an accordion that's collapsed by default
-                with gr.Accordion("View Results Table", open=False):
-                    with gr.Column(elem_id="df-wrapper"):
-                        components["out_df"] = gr.Dataframe(label="", interactive=False)
-
-                gr.Markdown("</div>")
-
-        # Right panel for filters, model settings, and options
         with gr.Column(scale=1):
-            # Filter options panel
-            gr.Markdown("<div class='input-panel'>")
-            gr.Markdown(
-                "<h4 style='margin:0 0 10px 0;color:#2c3e50;'>Filter Options</h4>"
-            )
+            # Panel 2: Test Data Upload
+            with gr.Group(elem_classes=["input-card"]):
+                gr.HTML('<h4 class="card-title">📊 Test Data</h4>')
+                gr.HTML('<p class="card-subtitle">Upload words to score</p>')
+                
+                components["test_in"] = gr.File(
+                    label="Upload test CSV file",
+                    file_types=[".csv"],
+                    interactive=True
+                )
+                gr.HTML('<p class="text-small text-muted">CSV with test words (one column)</p>')
 
-            with gr.Row():
-                with gr.Column(scale=1):
-                    gr.Markdown("<p class='option-label'>Weight Mode</p>")
-                    components["weight_mode"] = gr.Radio(
-                        ["None", "Raw", "Log"], value="None", label=""
-                    )
-
-            with gr.Row():
-                with gr.Column(scale=1):
-                    gr.Markdown("<p class='option-label'>Probability</p>")
-                    components["prob_mode"] = gr.Radio(
-                        ["None", "Joint", "Conditional"], value="None", label=""
-                    )
-
-            with gr.Row():
-                with gr.Column(scale=1):
-                    gr.Markdown("<p class='option-label'>Smoothing</p>")
-                    components["smooth_mode"] = gr.Radio(
-                        ["None", "Laplace", "Add-k"], value="None", label=""
-                    )
-
-            # Model settings moved to right column
-            gr.Markdown("<div class='input-panel'>")
-            gr.Markdown(
-                "<h4 style='margin:0 0 10px 0;color:#2c3e50;'>Model Settings</h4>"
-            )
-            # Model dropdown and neighbourhood mode dropdown side by side
-            with gr.Row():
-                components["model_dd"] = gr.Dropdown(
-                    choices=sorted(PluginRegistry), value="ngram", label="Model"
+    with gr.Row():
+        # Bottom row - Model Configuration and Calculation
+        with gr.Column(scale=1):
+            # Panel 3: Model Configuration
+            with gr.Group(elem_classes=["input-card"]):
+                gr.HTML('<h4 class="card-title">⚙️ Model Settings</h4>')
+                gr.HTML('<p class="card-subtitle">Configure calculation parameters</p>')
+                
+                # Model type selection
+                components["model"] = gr.Radio(
+                    choices=["ngram", "neighbourhood"],
+                    value="ngram",
+                    label="Model Type"
+                )
+                gr.HTML('<p class="text-small text-muted">Choose phonotactic model</p>')
+                
+                # N-gram order (shown for ngram model)
+                components["ngram_order"] = gr.Slider(
+                    minimum=1,
+                    maximum=4,
+                    value=2,
+                    step=1,
+                    label="N-gram Order"
+                )
+                gr.HTML('<p class="text-small text-muted">Higher = longer patterns</p>')
+                
+                # Additional options
+                components["run_full_grid"] = gr.Checkbox(
+                    label="Run full parameter grid",
+                    value=False
                 )
 
-                # Add the neighbourhood mode dropdown (only visible when neighbourhood model is selected)
-                components["nh_mode"] = gr.Dropdown(
-                    ["full", "substitution_only"],
-                    value="full",
-                    label="Neighbourhood mode",
-                    visible=False,  # Hidden by default
+        with gr.Column(scale=1):
+            # Panel 4: Advanced Options & Calculation
+            with gr.Group(elem_classes=["input-card"]):
+                gr.HTML('<h4 class="card-title">🎛️ Advanced Options</h4>')
+                gr.HTML('<p class="card-subtitle">Fine-tune calculation settings</p>')
+                
+                # Weight mode
+                gr.HTML('<p class="option-label">Weight Mode</p>')
+                components["weight_mode"] = gr.Radio(
+                    ["None", "Raw", "Log"], 
+                    value="None", 
+                    label=""
+                )
+                gr.HTML('<p class="text-small text-muted">Frequency weighting</p>')
+
+                # Probability mode
+                gr.HTML('<p class="option-label">Probability Mode</p>')
+                components["prob_mode"] = gr.Radio(
+                    ["Joint", "Conditional"], 
+                    value="Joint", 
+                    label=""
+                )
+                gr.HTML('<p class="text-small text-muted">Calculation method</p>')
+
+                # Manual filters
+                components["filter_string"] = gr.Textbox(
+                    label="Advanced Filters",
+                    placeholder="e.g., smoothing=add1",
+                    lines=1
                 )
 
-            # N-gram order slider
-            components["n_slider"] = gr.Slider(1, 4, 2, step=1, label="N-gram order")
-
-            # Add Run full variant grid checkbox
-            components["run_grid"] = gr.Checkbox(False, label="Run full variant grid")
-
-            # Add change handlers for model selection
-            def update_ui_for_model(model_name):
-                # Show neighbourhood mode dropdown only for neighbourhood model
-                # Hide Run full variant grid checkbox for neighbourhood model (it has no variants)
-                return (
-                    gr.update(
-                        visible=(model_name == "neighbourhood")
-                    ),  # nh_mode visibility
-                    gr.update(
-                        visible=(model_name != "neighbourhood")
-                    ),  # run_grid visibility
+                # Progress option
+                components["hide_progress"] = gr.Checkbox(
+                    label="Hide progress details",
+                    value=False
                 )
 
-            components["model_dd"].change(
-                update_ui_for_model,
-                inputs=components["model_dd"],
-                outputs=[
-                    components["nh_mode"],  # Show/hide neighbourhood mode dropdown
-                    components["run_grid"],  # Show/hide run full variant grid checkbox
-                ],
+    # Calculation button - full width below panels
+    with gr.Row():
+        with gr.Column():
+            gr.HTML('<div style="margin: 20px 0 10px 0;"></div>')  # Spacer
+            components["calculate_btn"] = gr.Button(
+                "🚀 Calculate Phonotactic Scores",
+                variant="primary",
+                size="lg",
+                elem_classes=["calculate-button"]
             )
-            gr.Markdown("</div>")  # Close the model settings panel
-            gr.Markdown("</div>")
 
-            # Advanced options
-            gr.Markdown("<div class='input-panel'>")
-            gr.Markdown(
-                "<h4 style='margin:0 0 10px 0;color:#2c3e50;'>Advanced Options</h4>"
-            )
-            components["hide_prog"] = gr.Checkbox(False, label="Hide progress bar")
-            components["filt_txt"] = gr.Textbox(
-                label="Custom filters",
-                placeholder="key=value pairs (e.g., weight_mode=raw prob_mode=joint)",
-            )
-            gr.Markdown("</div>")
+    # Results Section (initially hidden) - below everything
+    components["results_container"] = gr.Group(visible=False, elem_classes=["results-container"])
+    with components["results_container"]:
+        gr.HTML('<div style="margin: 30px 0 20px 0;"><h4 class="card-title">📈 Results</h4></div>')
+        
+        with gr.Row():
+            with gr.Column(scale=2):
+                gr.HTML('<h5 style="margin: 0 0 10px 0; color: #2c3e50;">Preview</h5>')
+                components["results_df"] = gr.Dataframe(
+                    interactive=False,
+                    wrap=True,
+                    elem_classes=["results-table"]
+                )
+            
+            with gr.Column(scale=1):
+                gr.HTML('<h5 style="margin: 0 0 10px 0; color: #2c3e50;">Download</h5>')
+                with gr.Group(elem_classes=["download-section"]):
+                    components["download_file"] = gr.File(
+                        label=None,
+                        interactive=False,
+                        elem_classes=["download-file"]
+                    )
+                    components["download_label"] = gr.HTML("")
 
-    # No results area at the bottom anymore - moved directly below Calculate button
-
-    gr.Markdown("</div>")  # Close calculator-container
-
-    # ---------- WIRING ---------- #
-
-    def build_filter_string(*args):
-        """Build filter string from radio button selections"""
-        (
-            weight_mode,
-            prob_mode,
-            smooth_mode,
-            neighbourhood_mode,
-            model_name,
-            advanced_filters,
-        ) = args
-
-        # Ignore neighbourhood_mode if not using the neighbourhood model
-        if model_name != "neighbourhood":
-            neighbourhood_mode = None
-
-        tokens = []
-
-        # Log the selections to help with debugging
-        logger.info(
-            f"Selected options - Weight: {weight_mode}, Probability: {prob_mode}, Smoothing: {smooth_mode}, Neighbourhood: {neighbourhood_mode}"
-        )
-
-        # ─ weight ────────────────────────────
-        if weight_mode == "Raw":
-            tokens.append("weight_mode=raw")
-        elif weight_mode == "Log":
-            tokens.append("weight_mode=log")
-
-        # ─ probability ───────────────────────
-        # "Joint" stays a filter; "Conditional" becomes a CLI flag later.
-        if prob_mode == "Joint":
-            tokens.append("prob_mode=joint")
-
-        # ─ smoothing ─────────────────────────
-        if smooth_mode == "Laplace":
-            tokens.append("smoothing=laplace")
-        elif smooth_mode == "Add-k":  # our placeholder smoother
-            tokens.append("smoothing_scheme=kneser_ney")
-
-        # ─ neighbourhood ─────────────────────
-        # We now pass neighbourhood mode as a CLI flag, not as a filter
-        # So we don't need to add it to the filter tokens
-
-        # Add the neighborhood mode to extra_args when needed
-        extra_args = []
-        if model_name == "neighbourhood" and neighbourhood_mode not in (
-            None,
-            "full",
-            "None",
-        ):
-            extra_args.extend(["--neighbourhood-mode", neighbourhood_mode])
-
-        # ─ anything typed in free-form box ───
-        if advanced_filters.strip():
-            tokens.append(advanced_filters.strip())
-
-        filter_string = " ".join(tokens)
-        logger.info(f"Generated filter string: {filter_string}")
-        logger.info(f"Generated extra args for neighbourhood: {extra_args}")
-        return filter_string, extra_args
-
-    # We don't need the mutual exclusivity logic for radio buttons since they handle it automatically
-
-    # We no longer need the toggle_demo function since we're using a different UI approach
-
-    # Build filter string and call score function
-    def process_and_score(*args):
-        (
-            default_file,
-            train_in,
-            use_demo_pair,
-            test_in,
-            model_dd,
-            n_slider,
-            run_grid,
-            hide_prog,
-            weight_mode,
-            prob_mode,
-            smooth_mode,
-            nh_mode,
-            filt_txt,
-        ) = args
-
-        # Check if the demo pair checkbox is checked
-        if use_demo_pair:
-            # Get both paths from demo data
-            train_path, test_path = get_demo_paths()
-            train_in = train_path
-            test_in = test_path
-            logger.info(f"Using demo pair: {train_path}, {test_path}")
+    gr.Markdown("</div>")
+    
+    # Interactive behavior
+    def update_ui_for_model(model_name):
+        """Show/hide model-specific options"""
+        if model_name == "ngram":
+            return gr.update(visible=True)
         else:
-            # Check if we're using a default file or a custom upload
-            using_default_file = isinstance(
-                default_file, str
-            ) and default_file.endswith(".csv")
+            return gr.update(visible=False)
 
-            # Validate input - either default OR custom training file must be provided
-            if not using_default_file and (train_in is None or train_in == ""):
-                return (
-                    gr.update(visible=False),
-                    None,
-                    gr.update(visible=False),
-                )
+    components["model"].change(
+        fn=update_ui_for_model,
+        inputs=[components["model"]],
+        outputs=[components["ngram_order"]]
+    )
 
-            # Test file is required
-            if test_in is None or test_in == "":
-                return (
-                    gr.update(visible=False),
-                    None,
-                    gr.update(visible=False),
-                )
+    # Build filter string from selections
+    def build_filter_string(*args):
+        """Combine radio button selections into filter string"""
+        weight_mode, prob_mode, manual_filter = args
+        
+        filters = []
+        if weight_mode and weight_mode != "None":
+            filters.append(f"weight_mode={weight_mode.lower()}")
+        if prob_mode:
+            filters.append(f"prob_mode={prob_mode.lower()}")
+        
+        auto_filter = " ".join(filters)
+        
+        # Combine with manual filter if provided
+        if manual_filter and manual_filter.strip():
+            if auto_filter:
+                return f"{auto_filter} {manual_filter.strip()}"
+            else:
+                return manual_filter.strip()
+        
+        return auto_filter
 
-            # If using a default file, just pass the string name of the default file
-            # Resolution to actual file path happens in score()
-            if using_default_file:
-                train_in = default_file
-                logger.info(f"Selected default file: {train_in}")
+    # Main calculation function
+    def process_and_score(*args):
+        """Process inputs and run the scoring calculation"""
+        try:
+            # Extract arguments
+            (default_file, train_file, use_demo_pair, test_file, model, 
+             ngram_order, run_full_grid, weight_mode, prob_mode, 
+             manual_filter, hide_progress) = args
+            
+            # Handle file selection logic
+            actual_train_file = None
+            actual_test_file = test_file
+            
+            if use_demo_pair:
+                # Use demo files - set specific demo files instead of None
+                actual_train_file = "english.csv"  # Default English training file
+                actual_test_file = "sample_test_data/english_test_data.csv"  # Correct demo test file path
+                logger.info("Using demo pair: english.csv and sample_test_data/english_test_data.csv")
+            else:
+                # Handle training file selection
+                if default_file and default_file.strip():
+                    # Use the selected default file name
+                    actual_train_file = default_file
+                    logger.info(f"Using default training file: {default_file}")
+                elif train_file is not None:
+                    # Use uploaded custom training file
+                    actual_train_file = train_file
+                    logger.info(f"Using uploaded training file: {train_file}")
+                else:
+                    raise gr.Error("Please select a default training file OR upload a custom training file")
+                
+                # Test file is required when not using demo pair
+                if test_file is None:
+                    raise gr.Error("Please upload a test file")
+                
+                actual_test_file = test_file
+            
+            # Build complete filter string
+            filter_str = build_filter_string(weight_mode, prob_mode, manual_filter)
+            
+            # Run the calculation with correct parameters
+            df, csv_path = score(
+                train_csv=actual_train_file,
+                test_csv=actual_test_file,
+                model=model,
+                run_full_grid=run_full_grid,
+                ngram_order=ngram_order,
+                filter_string=filter_str,
+                hide_progress=hide_progress
+            )
+            
+            # Create download label
+            filename = Path(csv_path).name if csv_path else "results.csv"
+            download_label = f'<p style="margin:0;color:#2c3e50;font-weight:500;background-color:#f8f9fa;padding:8px;border-radius:4px;border:1px solid #dee2e6;">📄 {filename}</p>'
+            
+            return (
+                gr.update(visible=True),  # Show results container
+                df,  # Results dataframe
+                csv_path,  # Download file
+                download_label  # Download label
+            )
+            
+        except Exception as e:
+            # Show error in results
+            error_msg = f"❌ Error: {str(e)}"
+            return (
+                gr.update(visible=True),
+                None,
+                None,
+                f'<p style="margin:0;color:#ff6b6b;">{error_msg}</p>'
+            )
 
-        filter_string, neighbourhood_extra_args = build_filter_string(
-            weight_mode,
-            prob_mode,
-            smooth_mode,
-            nh_mode,
-            model_dd,  # Pass the model name to check if it's neighbourhood
-            filt_txt,
-        )
-
-        # Run the score calculation
-        result_df, result_csv = score(
-            train_in,
-            test_in,
-            model_dd,
-            run_grid,
-            n_slider,
-            filter_string,
-            hide_prog,
-            neighbourhood_extra_args,  # Pass the neighborhood mode extra args
-        )
-
-        # Make results container visible after calculation completes
-        from pathlib import Path
-
-        return (
-            result_df,
-            gr.update(value=result_csv),
-            gr.update(visible=True),
-            gr.update(value=f"**File:** `{Path(result_csv).name}`"),
-        )
-
-    components["calc_btn"].click(
-        process_and_score,
-        [
-            components["default_file"],  # Default file selection
-            components["train_in"],  # Custom training file upload
-            components["use_demo_pair"],  # Use English demo pair checkbox
-            components["test_in"],  # Test file (required)
-            components["model_dd"],  # Model selection
-            components["n_slider"],  # N-gram order
-            components["run_grid"],  # Run full grid
-            components["hide_prog"],  # Hide progress bar
-            components["weight_mode"],  # Weight mode radio
-            components["prob_mode"],  # Probability mode radio
-            components["smooth_mode"],  # Smoothing mode radio
-            components["nh_mode"],  # Neighbourhood mode radio
-            components["filt_txt"],  # Custom filters text
+    # Wire up the calculate button
+    components["calculate_btn"].click(
+        fn=process_and_score,
+        inputs=[
+            components["default_file"],
+            components["train_in"],
+            components["use_demo_pair"],
+            components["test_in"],
+            components["model"],
+            components["ngram_order"],
+            components["run_full_grid"],
+            components["weight_mode"],
+            components["prob_mode"],
+            components["filter_string"],
+            components["hide_progress"]
         ],
-        [
-            components["out_df"],
-            components["out_csv"],
+        outputs=[
             components["results_container"],
-            components["dl_label"],
-        ],
+            components["results_df"],
+            components["download_file"],
+            components["download_label"]
+        ]
     )
 
     return components
@@ -730,7 +1031,8 @@ def _datasets_tab(components=None):
             "  * First column (mandatory): Word list with space-separated symbols\n"
             "  * Second column (optional): Word frequencies as raw counts\n"
             "- The test file should consist of a single column containing the test word list\n"
-            "- The output file will contain the test words, word length, and all calculated metrics\n\n"
+            "- The output file will contain one column containing the test words, one column containing the number of symbols in the word, "
+            "and one column for each of the metrics.\n\n"
             "For more detailed information about the expected format, please see the About tab."
         )
 
@@ -979,7 +1281,7 @@ def build_ui() -> gr.Blocks:
 
         _banner()
         _about_box()
-        _spacer()
+
 
         with gr.Tabs() as tabs:
             with gr.TabItem("📊 Calculator", id=0) as tab_main:

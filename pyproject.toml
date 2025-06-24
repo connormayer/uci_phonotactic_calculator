@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "uci-phonotactic-calculator"
-version = "0.2.4"
+version = "1.0.0"
 description = "A toolkit for phonotactic probability calculation and analysis."
 authors = [
-    { name = "Connor Mayer", email = "connor.mayer@uci.edu" }
+    { name = "Connor Mayer", email = "cjmayer@uci.edu" }
 ]
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -20,7 +20,6 @@ dependencies = [
 
 [project.optional-dependencies]
 ui = [
-    "gradio>=3.50.0",
     "setuptools"    # needed for pkg_resources
 ]
 web = [
@@ -30,13 +29,13 @@ web = [
     "django-latexify>=0.3",
     "django-crontab>=0.7"
 ]
+
 dev = [
     # Testing
     "pytest>=8.0.0",
     "pytest-cov>=4.0.0",
     # Linting / formatting
     "ruff>=0.4.0",
-    "black>=23.0.0",
     # Type-checking & stubs
     "mypy>=1.10.0",
     # Build tooling
@@ -70,13 +69,6 @@ where = ["src"]
   "static/**/*.*",
   "media/**/*.*"
 ]
-
-# Black configuration
-[tool.black]
-line-length = 88
-target-version = ["py38"]
-include = '\.py$'
-exclude = '/(\..+|dist|build|venv)/'
 
 # Ruff configuration
 [tool.ruff]

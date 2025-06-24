@@ -96,6 +96,13 @@ def _kn_sparse(
     if not table:
         return table  # nothing to smooth
 
+    # Only apply Kneser–Ney to bigram (order-2) count tables.  If the keys
+    # indicate a different n-gram order, return the table unchanged so that
+    # downstream components can handle it appropriately.
+    sample_key = next(iter(table))
+    if len(sample_key) != 2:
+        return table  # leave unigram or higher-order counts untouched
+
     # Infer vocabulary size from the highest index observed
     V = max(max(idx) for idx in table) + 1
     dense = np.zeros((V, V), dtype=float)

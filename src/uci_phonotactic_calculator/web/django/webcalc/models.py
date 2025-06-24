@@ -1,6 +1,7 @@
 """Models for the UCI Phonotactic Calculator web interface."""
 
 from datetime import datetime
+from django.utils import timezone
 from os import listdir
 from os.path import isfile, join
 
@@ -58,7 +59,7 @@ class UploadTrain(models.Model):
     )
     test_file = models.FileField(upload_to="uploads")
     training_model = models.CharField(default="simple", max_length=128)
-    current_time = models.DateTimeField(default=datetime.now)
+    current_time = models.DateTimeField(default=timezone.now)
 
     def save(self, *args, **kwargs):
         """Save the model."""
