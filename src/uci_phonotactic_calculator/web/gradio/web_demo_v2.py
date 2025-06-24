@@ -740,11 +740,11 @@ def _calculator_tab():
                 gr.HTML('<p class="text-small text-muted">Click to browse and upload CSV file</p>')
 
                 # Demo pair option
-#                components["use_demo_pair"] = gr.Checkbox(
-#                    label="🔄 Use complete English demo",
-#                    value=False
-#                )
-#                gr.HTML('<p class="text-small text-muted">Use demo training + test files</p>')
+                components["use_demo_pair"] = gr.Checkbox(
+                    label="🔄 Use complete English demo",
+                    value=False
+                )
+                gr.HTML('<p class="text-small text-muted">Use demo training + test files</p>')
 
         with gr.Column(scale=1):
             # Panel 2: Test Data Upload
