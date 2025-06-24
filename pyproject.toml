@@ -7,7 +7,8 @@ name = "uci-phonotactic-calculator"
 version = "1.0.0"
 description = "A toolkit for phonotactic probability calculation and analysis."
 authors = [
-    { name = "Connor Mayer", email = "cjmayer@uci.edu" }
+    { name = "Connor Mayer", email = "cjmayer@uci.edu" },
+    { name = "Austin Wagner", email = "austinwagner@msn.com" }
 ]
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -19,10 +20,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-ui = [
-    "setuptools"    # needed for pkg_resources
+gradio = [
+    "setuptools",    # needed for pkg_resources
+    "gradio>=4.0.0"
 ]
-web = [
+django = [
     "django>=4.2.0",
     "django-crispy-forms>=2.0.0",
     "django-stubs>=5.0.0",

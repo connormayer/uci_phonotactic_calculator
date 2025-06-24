@@ -9,15 +9,15 @@ poetry-install:
 
 poetry-install-dev:
 	poetry lock
-	poetry install --extras "dev" --extras "web" --extras "ui"
+	poetry install --extras "dev" --extras "gradio" --extras "django"
 
-poetry-install-ui:
+poetry-install-gradio:
 	poetry lock
-	poetry install --extras "ui"
+	poetry install --extras "gradio"
 
-poetry-install-web:
+poetry-install-django:
 	poetry lock
-	poetry install --extras "web"
+	poetry install --extras "django"
 
 # Clean build artifacts
 clean:
@@ -42,13 +42,13 @@ build: clean
 	python -m build
 
 # Run the web UI
-gradio: poetry-install-ui
+gradio: poetry-install-gradio
 	poetry run python -c "from uci_phonotactic_calculator.web.gradio.web_demo_v2 import main; main()"
 
 web: gradio
 
 # Run the Django web interface
-django: poetry-install-web
+django: poetry-install-django
 	poetry run python -m uci_phonotactic_calculator.web.django.manage makemigrations
 	poetry run python -m uci_phonotactic_calculator.web.django.manage migrate
 	@echo "Starting UCI Phonotactic Calculator Django UI..."
