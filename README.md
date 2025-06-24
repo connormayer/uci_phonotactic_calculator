@@ -9,7 +9,8 @@ Easily score wordlists with classic and positional-n-gram phonotactic models —
 | Task | One-liner |
 |------|-----------|
 | Score a test list with the default model | `python -m uci_phonotactic_calculator.main train.csv test.csv out.csv` |
-| Try the demo data set | `python -m uci_phonotactic_calculator.main --use-demo-data out.csv` |
+| Try the demo data set, using an english training file and english test file | `make demo` |
+| Launch a Django web interface | `make django` |
 | Launch an interactive web UI (Gradio) | `make web` |
 
 The output is a CSV that adds phonotactic scores next to each word, ready for Excel or Pandas.
@@ -59,7 +60,20 @@ You’ll get a CSV like:
 
 ---
 
-## 🖥️ Web interface (optional)
+## 🖥️ Django interface (optional)
+
+Prefer point-and-click? Fire up the Django web interface:
+
+```bash
+make django      # or: python -m uci_phonotactic_calculator.web.django.webcalc
+```
+
+A browser window opens where you can drop CSVs, tweak a few options, and download scores.
+
+---
+
+
+## 🖥️ Gradio interface (optional)
 
 Prefer point-and-click? Fire up the Gradio UI:
 
