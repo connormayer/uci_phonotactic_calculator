@@ -6,6 +6,9 @@
     <head>
         <title>UCI Phonotactic Calculator</title>
         <link href="{% static 'webcalc/css/base.css' %}" rel="stylesheet">
+        
+        <!-- Django-latexify stylesheets -->
+        {% include 'latexify/stylesheets.html' %}
 
     </head>
 
@@ -42,5 +45,7 @@
         {% block content %}
         {% endblock content %}
 
+        <!-- Django-latexify scripts -->
+        {% include "latexify/scripts.html" %}
     </body>
 </html>
