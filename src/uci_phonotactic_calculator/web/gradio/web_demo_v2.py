@@ -880,7 +880,7 @@ def _calculator_tab():
                 
                 # Additional options
                 components["run_full_grid"] = gr.Checkbox(
-                    label="Run full parameter grid",
+                    label="Run full parameter grid, all variations (may take ~20 minutes)",
                     value=False
                 )
             
@@ -1303,8 +1303,8 @@ def _github_tab(components=None):
                 
                 <div class='step-card'>
                 <h3>🤝 Contributing</h3>
-                <p>Guidelines for contributors</p>
-                <p><a href="https://github.com/connormayer/uci_phonotactic_calculator/blob/main/CONTRIBUTING.md" target="_blank">How to Help</a></p>
+                <p>Check out the Repo!</p>
+                <p><a href="https://github.com/connormayer/uci_phonotactic_calculator" target="_blank">How to Help</a></p>
                 </div>
                 """)
 
@@ -1407,14 +1407,6 @@ pip install -e .</code></pre>
                 </ul>
                 </div>
                 """)
-
-        gr.Markdown("""
-        <div class='input-card'>
-        <p><strong>Ready to contribute?</strong> Check out our 
-        <a href="https://github.com/connormayer/uci_phonotactic_calculator/blob/main/CONTRIBUTING.md" target="_blank">contributing guidelines</a> 
-        for detailed instructions on how to get started.</p>
-        </div>
-        """)
 
 
 # -------------------------------------------------------------------- TAB 4 – About
@@ -1598,7 +1590,7 @@ def _docs_tab(components=None):
                 """)
 
     # Understanding results section
-    with gr.Accordion("📊 Understanding Your Results", open=False):
+    with gr.Accordion("📊 Understanding Your Results", open=True):
         gr.Markdown("""
         <div class='input-card'>
         <h3>📈 Score Interpretation</h3>
@@ -1618,7 +1610,7 @@ def _docs_tab(components=None):
         """)
 
     # Tips section
-    with gr.Accordion("💡 Tips for Best Results", open=False):
+    with gr.Accordion("💡 Tips for Best Results", open=True):
         gr.Markdown("""
         1. **Training Data**: Use a large, representative sample of your language
         2. **Test Data**: Can be real words, made-up words, or mixed datasets  
@@ -1627,7 +1619,7 @@ def _docs_tab(components=None):
         """)
 
     # What is phonotactic probability section
-    with gr.Accordion("🔬 What is Phonotactic Probability?", open=False):
+    with gr.Accordion("🔬 What is Phonotactic Probability?", open=True):
         gr.Markdown("""
         Phonotactic probability measures how "word-like" a sequence of sounds is in a particular language. It's based on:
         
@@ -1639,7 +1631,7 @@ def _docs_tab(components=None):
         """)
 
     # Use cases section  
-    with gr.Accordion("📈 Example Use Cases", open=False):
+    with gr.Accordion("📈 Example Use Cases", open=True):
         gr.Markdown("""
         - **Linguistics Research**: Analyze cross-linguistic sound patterns
         - **Psychology Experiments**: Create stimuli with controlled phonotactic properties
