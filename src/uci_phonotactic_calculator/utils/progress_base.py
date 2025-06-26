@@ -125,7 +125,7 @@ class GradioProgress(BaseProgress):
     def __enter__(self) -> "GradioProgress":
         if self.enabled:
             # Lazy import so CLI users don't need Gradio installed
-            import gradio as gr
+            import gradio as gr  # type: ignore
 
             prog = gr.Progress()  # may or may not be a context-manager
 
