@@ -27,13 +27,6 @@ CSS = """
     font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
 }
 
-#df-wrapper {
-    max-height: 400px;
-    overflow-y: auto;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-}
-
 /* Step-by-step wizard styling */
 .step-container {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -294,7 +287,6 @@ table {
     margin: 16px 0;
     background: white;
     border-radius: 8px;
-    overflow: hidden;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -483,6 +475,20 @@ footer {
     flex: 1;
     margin: 0;
 }
+
+/* Results table scrolling support */
+.results-table {
+    max-height: 400px !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+}
+
+.results-table > div {
+    max-height: 400px !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+}
+
 """
 APP_TITLE = "UCI Phonotactic Calculator"
 BANNER_MD = (
@@ -743,16 +749,64 @@ def _calculator_tab():
         ("Turkish", "turkish.csv"),
     ]
 
-    gr.Markdown("<div class='feature-box'><strong>UCI Phonotactic Calculator</strong></div>")
+    gr.Markdown("<div class='feature-box'><strong>🧮 UCI Phonotactic Calculator</strong></div>")
 
-    # Four-panel grid layout
-    with gr.Row():
-        # Top row - Training Data and Test Data
-        with gr.Column(scale=1):
-            # Panel 1: Training Data Selection
-            with gr.Group(elem_classes=["input-card"]):
-                gr.HTML('<h4 class="card-title">📁 Training Data</h4>')
-                gr.HTML('<p class="card-subtitle">Select training corpus</p>')
+# Quick Start Guide
+    with gr.Accordion("🚀 Quick Start Guide", open=False):
+        with gr.Row():
+            with gr.Column():
+                gr.Markdown("""
+                <div class='step-card'>
+                <h3>📁 Step 1: Choose Your Data</h3>
+                <ul>
+                <li><strong>Upload your own files</strong>: Use CSV files with a 'word' column</li>
+                <li><strong>Try the demo</strong>: Click "Load Demo Data" for sample English words</li>
+                </ul>
+                </div>
+                """)
+                
+                gr.Markdown("""
+                <div class='step-card'>
+                <h3>⚙️ Step 3: Configure Settings</h3>
+                <ul>
+                <li><strong>N-gram Order</strong>: How many characters to consider (2-4 recommended)</li>
+                <li><strong>Advanced Options</strong>: Fine-tune probability calculations</li>
+                </ul>
+                </div>
+                """)
+            
+            with gr.Column():
+                gr.Markdown("""
+                <div class='step-card'>
+                <h3>🔧 Step 2: Select a Model</h3>
+                <ul>
+                <li><strong>N-gram Model</strong>: Classic phonotactic probability</li>
+                <li><strong>Positional N-gram</strong>: Position-aware analysis (more sophisticated)</li>
+                </ul>
+                </div>
+                """)
+                
+                gr.Markdown("""
+                <div class='step-card'>
+                <h3>📊 Step 4: Calculate & Download</h3>
+                <ul>
+                <li>Click "Calculate Phonotactic Scores" to process your data</li>
+                <li>View results in the preview table</li>
+                <li>Download the complete scored dataset as CSV</li>
+                </ul>
+                </div>
+                """)
+
+    # Data Selection Section
+    with gr.Accordion("📁 Data Selection", open=True):
+        with gr.Row():
+            with gr.Column():
+                gr.Markdown("""
+<div class='step-card'>
+<h4>📚 1. Training Data</h4>
+<p>Choose the corpus to train your phonotactic model</p>
+</div>
+                """)
                 
                 # Built-in datasets dropdown
                 components["default_file"] = gr.Dropdown(
@@ -764,7 +818,7 @@ def _calculator_tab():
 
                 gr.HTML('<div class="option-divider"><span>OR</span></div>')
 
-                # Custom training files upload (styled as dropdown)
+                # Custom training files upload
                 components["train_in"] = gr.UploadButton(
                     label="📁 Upload CSV",
                     file_types=[".csv"],
@@ -779,12 +833,14 @@ def _calculator_tab():
                     value=False
                 )
                 gr.HTML('<p class="text-small text-muted">Use demo training + test files</p>')
-
-        with gr.Column(scale=1):
-            # Panel 2: Test Data Upload
-            with gr.Group(elem_classes=["input-card"]):
-                gr.HTML('<h4 class="card-title">📊 Test Data</h4>')
-                gr.HTML('<p class="card-subtitle">Upload words to score</p>')
+            
+            with gr.Column():
+                gr.Markdown("""
+<div class='step-card'>
+<h4>🎯 2. Test Data</h4>
+<p>Upload the words you want to score</p>
+</div>
+                """)
                 
                 components["test_in"] = gr.File(
                     label="Upload test CSV file",
@@ -793,13 +849,16 @@ def _calculator_tab():
                 )
                 gr.HTML('<p class="text-small text-muted">CSV with test words (one column)</p>')
 
-    with gr.Row():
-        # Bottom row - Model Configuration and Calculation
-        with gr.Column(scale=1):
-            # Panel 3: Model Configuration
-            with gr.Group(elem_classes=["input-card"]):
-                gr.HTML('<h4 class="card-title">⚙️ Model Settings</h4>')
-                gr.HTML('<p class="card-subtitle">Configure calculation parameters</p>')
+    # Model Configuration Section
+    with gr.Accordion("⚙️ Model Configuration", open=True):
+        with gr.Row():
+            with gr.Column():
+                gr.Markdown("""
+<div class='step-card'>
+<h4>🔧 Model Settings</h4>
+<p>Configure the phonotactic calculation parameters</p>
+</div>
+                """)
                 
                 # Model type selection
                 components["model"] = gr.Radio(
@@ -824,12 +883,14 @@ def _calculator_tab():
                     label="Run full parameter grid",
                     value=False
                 )
-
-        with gr.Column(scale=1):
-            # Panel 4: Advanced Options & Calculation
-            with gr.Group(elem_classes=["input-card"]):
-                gr.HTML('<h4 class="card-title">🎛️ Advanced Options</h4>')
-                gr.HTML('<p class="card-subtitle">Fine-tune calculation settings</p>')
+            
+            with gr.Column():
+                gr.Markdown("""
+<div class='step-card'>
+<h4>🎛️ Advanced Options</h4>
+<p>Fine-tune calculation settings</p>
+</div>
+                """)
                 
                 # Weight mode
                 gr.HTML('<p class="option-label">Weight Mode</p>')
@@ -856,27 +917,30 @@ def _calculator_tab():
                     lines=1
                 )
 
-                # Progress option
-                components["hide_progress"] = gr.Checkbox(
-                    label="Hide progress details",
-                    value=False
-                )
+    # Calculation Section
+    with gr.Accordion("🚀 Calculate", open=True):
+        gr.Markdown("""
+<div class='input-card'>
+<h3>▶️ Run Calculation</h3>
+<p>Click the button below to calculate phonotactic scores based on your selected data and model settings.</p>
+</div>
+        """)
+        
+        components["calculate_btn"] = gr.Button(
+            "🚀 Calculate Phonotactic Scores",
+            variant="primary",
+            size="lg",
+            elem_classes=["calculate-button"]
+        )
 
-    # Calculation button - full width below panels
-    with gr.Row():
-        with gr.Column():
-            gr.HTML('<div style="margin: 20px 0 10px 0;"></div>')  # Spacer
-            components["calculate_btn"] = gr.Button(
-                "🚀 Calculate Phonotactic Scores",
-                variant="primary",
-                size="lg",
-                elem_classes=["calculate-button"]
-            )
-
-    # Results Section (initially hidden) - below everything
+    # Results Section (initially hidden)
     components["results_container"] = gr.Group(visible=False, elem_classes=["results-container"])
     with components["results_container"]:
-        gr.HTML('<div style="margin: 30px 0 20px 0;"><h4 class="card-title">📈 Results</h4></div>')
+        gr.Markdown("""
+<div class='feature-box'>
+<strong>📈 Results</strong>
+</div>
+        """)
         
         with gr.Row():
             with gr.Column(scale=2):
@@ -884,7 +948,7 @@ def _calculator_tab():
                 components["results_df"] = gr.Dataframe(
                     interactive=False,
                     wrap=True,
-                    elem_classes=["results-table"]
+                    row_count=(20, "paginate")
                 )
             
             with gr.Column(scale=1):
@@ -896,8 +960,6 @@ def _calculator_tab():
                         elem_classes=["download-file"]
                     )
                     components["download_label"] = gr.HTML("")
-
-    gr.Markdown("</div>")
     
     # Interactive behavior
     def update_ui_for_model(model_name):
@@ -939,10 +1001,10 @@ def _calculator_tab():
     def process_and_score(*args):
         """Process inputs and run the scoring calculation"""
         try:
-            # Extract arguments
+            # Extract arguments (now 10 instead of 11 since hide_progress was removed)
             (default_file, train_file, use_demo_pair, test_file, model, 
              ngram_order, run_full_grid, weight_mode, prob_mode, 
-             manual_filter, hide_progress) = args
+             manual_filter) = args
             
             # Handle file selection logic
             actual_train_file = None
@@ -975,7 +1037,7 @@ def _calculator_tab():
             # Build complete filter string
             filter_str = build_filter_string(weight_mode, prob_mode, manual_filter)
             
-            # Run the calculation with correct parameters
+            # Run the calculation with correct parameters (hide_progress=False by default)
             df, csv_path = score(
                 train_csv=actual_train_file,
                 test_csv=actual_test_file,
@@ -983,7 +1045,7 @@ def _calculator_tab():
                 run_full_grid=run_full_grid,
                 ngram_order=ngram_order,
                 filter_string=filter_str,
-                hide_progress=hide_progress
+                hide_progress=False  # Default to showing progress
             )
             
             # Create download label
@@ -1021,7 +1083,6 @@ def _calculator_tab():
             components["weight_mode"],
             components["prob_mode"],
             components["filter_string"],
-            components["hide_progress"]
         ],
         outputs=[
             components["results_container"],
@@ -1092,7 +1153,7 @@ def _datasets_tab(components=None):
                 """)
 
     # Using your own data section
-    with gr.Accordion("📁 Using Your Own Data", open=True):
+    with gr.Accordion("📁 Using Your Own Data", open=False):
         gr.Markdown("""
         <div class='input-card'>
         <h3>💡 Quick Start</h3>
@@ -1129,7 +1190,7 @@ def _datasets_tab(components=None):
                 """)
 
     # Example datasets section
-    with gr.Accordion("📝 Formatting Examples", open=True):
+    with gr.Accordion("📝 Formatting Examples", open=False):
         gr.Markdown("""
         <div class='input-card'>
         <h3>✨ Example Formats</h3>
@@ -1184,7 +1245,7 @@ a n o t h e r</code></pre>
                 <div class='step-card'>
                 <h3>📦 Sample Data Downloads</h3>
                 <p>Access example datasets and templates:</p>
-                <p><a href="https://github.com/connormayer/uci_phonotactic_calculator/tree/main/data/sample_test_data" target="_blank">🔗GitHub Sample Data</a></p>
+                <p><a href="https://github.com/connormayer/uci_phonotactic_calculator/tree/main/data/sample_test_data" target="_blank">GitHub Sample Data</a></p>
                 </div>
                 """)
             
@@ -1275,7 +1336,7 @@ def _github_tab(components=None):
                 """)
 
     # Installation section
-    with gr.Accordion("💻 Installation", open=False):
+    with gr.Accordion("💻 Installation", open=True):
         gr.Markdown("""
 <div class='input-card'>
 <h3>📦 Install from PyPI (Recommended)</h3>
@@ -1292,7 +1353,7 @@ pip install -e .</code></pre>
         """)
 
     # Contributing section
-    with gr.Accordion("🤝 How to Contribute", open=False):
+    with gr.Accordion("🤝 How to Contribute", open=True):
         gr.Markdown("""
         <div class='input-card'>
         <h3>🚀 Ways to Help</h3>
@@ -1490,68 +1551,71 @@ def _about_tab(components=None):
 def _docs_tab(components=None):
     gr.Markdown("<div class='feature-box'><strong>📚 How to Use This Interface</strong></div>")
 
-    with gr.Row():
-        with gr.Column():
-            gr.Markdown("""
-            <div class='step-card'>
-            <h3>📁 Step 1: Choose Your Data</h3>
-            <ul>
-            <li><strong>Upload your own files</strong>: Use CSV files with a 'word' column</li>
-            <li><strong>Try the demo</strong>: Click "Load Demo Data" for sample English words</li>
-            </ul>
-            </div>
-            """)
+    # Quick Start Guide
+    with gr.Accordion("🚀 Quick Start Guide", open=True):
+        with gr.Row():
+            with gr.Column():
+                gr.Markdown("""
+                <div class='step-card'>
+                <h3>📁 Step 1: Choose Your Data</h3>
+                <ul>
+                <li><strong>Upload your own files</strong>: Use CSV files with a 'word' column</li>
+                <li><strong>Try the demo</strong>: Click "Load Demo Data" for sample English words</li>
+                </ul>
+                </div>
+                """)
+                
+                gr.Markdown("""
+                <div class='step-card'>
+                <h3>⚙️ Step 3: Configure Settings</h3>
+                <ul>
+                <li><strong>N-gram Order</strong>: How many characters to consider (2-4 recommended)</li>
+                <li><strong>Advanced Options</strong>: Fine-tune probability calculations</li>
+                </ul>
+                </div>
+                """)
             
-            gr.Markdown("""
-            <div class='step-card'>
-            <h3>⚙️ Step 3: Configure Settings</h3>
-            <ul>
-            <li><strong>N-gram Order</strong>: How many characters to consider (2-4 recommended)</li>
-            <li><strong>Advanced Options</strong>: Fine-tune probability calculations</li>
-            </ul>
-            </div>
-            """)
-        
-        with gr.Column():
-            gr.Markdown("""
-            <div class='step-card'>
-            <h3>🔧 Step 2: Select a Model</h3>
-            <ul>
-            <li><strong>N-gram Model</strong>: Classic phonotactic probability</li>
-            <li><strong>Positional N-gram</strong>: Position-aware analysis (more sophisticated)</li>
-            </ul>
-            </div>
-            """)
-            
-            gr.Markdown("""
-            <div class='step-card'>
-            <h3>📊 Step 4: Calculate & Download</h3>
-            <ul>
-            <li>Click "Calculate Phonotactic Scores" to process your data</li>
-            <li>View results in the preview table</li>
-            <li>Download the complete scored dataset as CSV</li>
-            </ul>
-            </div>
-            """)
+            with gr.Column():
+                gr.Markdown("""
+                <div class='step-card'>
+                <h3>🔧 Step 2: Select a Model</h3>
+                <ul>
+                <li><strong>N-gram Model</strong>: Classic phonotactic probability</li>
+                <li><strong>Positional N-gram</strong>: Position-aware analysis (more sophisticated)</li>
+                </ul>
+                </div>
+                """)
+                
+                gr.Markdown("""
+                <div class='step-card'>
+                <h3>📊 Step 4: Calculate & Download</h3>
+                <ul>
+                <li>Click "Calculate Phonotactic Scores" to process your data</li>
+                <li>View results in the preview table</li>
+                <li>Download the complete scored dataset as CSV</li>
+                </ul>
+                </div>
+                """)
 
     # Understanding results section
-    gr.Markdown("""
-    <div class='input-card'>
-    <h2>📊 Understanding Your Results</h2>
-    <p>The tool adds phonotactic probability scores to each word in your test data:</p>
-    <ul>
-    <li><strong>Higher scores</strong> = more phonotactically probable (sounds more "natural")</li>
-    <li><strong>Lower scores</strong> = less phonotactically probable (sounds more unusual)</li>
-    </ul>
-    
-    <h3>Score Types Available:</h3>
-    <ul>
-    <li><strong>Raw Probability</strong>: Direct statistical probability</li>
-    <li><strong>Log Probability</strong>: Natural logarithm (useful for very small numbers)</li>
-    <li><strong>Z-score</strong>: Standardized score comparing to the dataset average</li>
-    </ul>
-    </div>
-    """)
+    with gr.Accordion("📊 Understanding Your Results", open=False):
+        gr.Markdown("""
+        <div class='input-card'>
+        <h3>📈 Score Interpretation</h3>
+        <p>The tool adds phonotactic probability scores to each word in your test data:</p>
+        <ul>
+        <li><strong>Higher scores</strong> = more phonotactically probable (sounds more "natural")</li>
+        <li><strong>Lower scores</strong> = less phonotactically probable (sounds more unusual)</li>
+        </ul>
+        
+        <h4>Score Types Available:</h4>
+        <ul>
+        <li><strong>Raw Probability</strong>: Direct statistical probability</li>
+        <li><strong>Log Probability</strong>: Natural logarithm (useful for very small numbers)</li>
+        <li><strong>Z-score</strong>: Standardized score comparing to the dataset average</li>
+        </ul>
+        </div>
+        """)
 
     # Tips section
     with gr.Accordion("💡 Tips for Best Results", open=False):
