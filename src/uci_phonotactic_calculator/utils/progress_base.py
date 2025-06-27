@@ -126,7 +126,7 @@ class GradioProgress(BaseProgress):
         if self.enabled:
             # Lazy import so CLI users don't need Gradio installed
             try:
-                import gradio as gr  # type: ignore
+                import gradio as gr
             except ModuleNotFoundError:
                 # Create a minimal stub so downstream code and tests can run
                 import sys

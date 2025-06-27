@@ -37,6 +37,28 @@ pip install "uci-phonotactic-calculator[ui]"
 
 ---
 
+### 🛠️ Using the `make` shortcuts
+
+The repository ships with a `Makefile` that bundles handy commands such as `make demo`, `make web`, and `make django`.  
+To use these targets you will need **Poetry** and **GNU Make** installed on your system.
+
+| Tool | macOS | Windows |
+|------|-------|---------|
+| Poetry | `curl -sSL https://install.python-poetry.org | python3 -` | Install via the [official installer](https://python-poetry.org/) or simply `pip install poetry` |
+| GNU Make | Comes with Xcode CLT (`xcode-select --install`) or `brew install make` | `choco install make` (Chocolatey) or use Git Bash/WSL which already ships with `make` |
+
+If you prefer not to install **Make** you can run the underlying commands directly:
+
+```bash
+# Launch the Gradio UI
+poetry run python -m uci_phonotactic_calculator.web.web_demo  # same as: make web
+
+# Launch the Django web interface
+poetry run python -m uci_phonotactic_calculator.web.django.webcalc  # same as: make django
+```
+
+---
+
 ## 🏃 Your first run
 
 ```bash
