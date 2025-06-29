@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "uci-phonotactic-calculator"
-version = "1.0.1"
+version = "1.0.0" #pypi version and gradio version are on 1.0.1 (Gradio UI fixes). Git version is 1.0.0
 description = "A toolkit for phonotactic probability calculation and analysis."
 authors = [
     { name = "Connor Mayer", email = "cjmayer@uci.edu" },
