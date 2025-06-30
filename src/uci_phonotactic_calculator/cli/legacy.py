@@ -2,8 +2,6 @@
 import sys
 from typing import Mapping, Sequence
 
-from .main import main
-
 
 def run(
     train_file: str,
@@ -57,6 +55,8 @@ def run(
 
 
 if __name__ == "__main__":
+    from .main import main
+
     main()
 
 # End of src/ngram_calculator.py

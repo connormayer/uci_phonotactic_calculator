@@ -9,7 +9,6 @@ import pkgutil
 
 # Re-export CLI entry points for package scripts
 from .cli.legacy import run  # noqa: F401
-from .cli.main import main  # noqa: F401
 from .core.config import Config  # noqa: F401
 from .core.corpus import Corpus  # noqa: F401
 
@@ -22,7 +21,7 @@ from .models import smoothing as _smoothing_builtin  # noqa: F401
 from .models import weighting as _weighting  # noqa: F401
 
 # Define public API
-__all__ = ["run", "main", "Config", "Corpus"]
+__all__ = ["run", "Config", "Corpus"]
 
 # Define the package version
 __version__ = "1.0.0"

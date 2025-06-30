@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from typing import (
     Any,
-    Dict,
     Iterator,
     List,
     NamedTuple,
@@ -101,10 +100,10 @@ def all_variants(
         Instances in a deterministic order.
     """
     if filters:
-        from ..cli.main import _matches_filters
+        from .filter_aliases import matches_filters
     else:
-
-        def _matches_filters(cfg: Config, filters: Dict[str, str]) -> bool:
+        # No filters, so all configs match
+        def matches_filters(cfg: Config, filters: dict[str, str]) -> bool:
             return True
 
     for count_strategy in _r("count_strategy") or {"ngram": None}:
@@ -129,7 +128,7 @@ def all_variants(
                                 )
                                 if not PluginRegistry[count_strategy].supports(cfg):
                                     continue
-                                if _matches_filters(cfg, filters or {}):
+                                if matches_filters(cfg, filters or {}):
                                     yield _make_variant(count_strategy, order, cfg)
             # ── 2) positional variants (absolute | relative) ──
             for strategy_name in _r("position_strategy"):
@@ -151,7 +150,7 @@ def all_variants(
                                 if not get_model("ngram").supports(cfg):
                                     continue  # skip illegal orders
                                 strategy = get_position_strategy(strategy_name, n=order)
-                                if _matches_filters(cfg, filters or {}):
+                                if matches_filters(cfg, filters or {}):
                                     yield _make_variant("ngram", order, cfg, strategy)
 
 
