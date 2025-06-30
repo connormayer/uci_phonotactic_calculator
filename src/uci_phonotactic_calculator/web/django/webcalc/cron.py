@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from django.conf import settings
 
 
-def clean_media_folder():
+def clean_media_folder() -> None:
     """
     Clean up the media/uploads folder by removing files older than 24 hours.
     This is run as a cron job to prevent the media folder from filling up.

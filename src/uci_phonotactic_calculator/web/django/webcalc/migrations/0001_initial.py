@@ -46,7 +46,7 @@ class Migration(migrations.Migration):
                     "default_training_file",
                     models.CharField(
                         blank=True,
-                        choices=uci_phonotactic_calculator.web.django.webcalc.models.UploadTrain.get_file_choices,
+                        choices=uci_phonotactic_calculator.web.django.webcalc.models.get_file_choices,
                         max_length=200,
                     ),
                 ),

@@ -5,6 +5,8 @@ This allows them to be displayed in the web interface.
 
 import os
 from os.path import isfile, join
+from typing import Any
+from argparse import ArgumentParser
 
 from django.core.management.base import BaseCommand
 from django.core.files.base import ContentFile
@@ -19,14 +21,14 @@ class Command(BaseCommand):
 
     help = "Register default dataset files in the database"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--force",
             action="store_true",
             help="Force re-registration of files even if they already exist",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any) -> None:
         force = options.get("force", False)
 
         # File descriptions
