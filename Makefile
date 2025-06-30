@@ -27,19 +27,19 @@ clean:
 
 # Run linting tools
 lint: poetry-install-dev
-	ruff check --fix .
-	ruff format
-	mypy --strict .
+	poetry run ruff check --fix .
+	poetry run ruff format
+	poetry run mypy --strict .
 
 # Run tests
 test: poetry-install-dev
-	python -m pytest
+	poetry run python -m pytest
 
 check: lint test
 
 # Build distributable package
 build: clean
-	python -m build
+	poetry run python -m build
 
 # Run the web UI
 gradio: poetry-install-gradio

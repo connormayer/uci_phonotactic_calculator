@@ -36,6 +36,7 @@ dev = [
     # Testing
     "pytest>=8.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-asyncio",
     # Linting / formatting
     "ruff>=0.4.0",
     # Type-checking & stubs
@@ -50,8 +51,8 @@ Documentation = "https://github.com/connormayer/uci_phonotactic_calculator#readm
 Issues = "https://github.com/connormayer/uci_phonotactic_calculator/issues"
 
 [project.scripts]
-ngram-calculator = "uci_phonotactic_calculator:main"
-uci-phonotactic-calculator = "uci_phonotactic_calculator:main"
+ngram-calculator = "uci_phonotactic_calculator.cli.main:main"
+uci-phonotactic-calculator = "uci_phonotactic_calculator.cli.main:main"
 uci-phonotactic-web = "uci_phonotactic_calculator.web.django.manage:main"
 uci-phonotactic-ui = "uci_phonotactic_calculator.web.gradio.web_demo_v2:main"
 
