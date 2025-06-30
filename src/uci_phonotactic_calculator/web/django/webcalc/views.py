@@ -2,8 +2,11 @@
 
 from os import makedirs
 from os.path import basename, dirname, exists, join
+from typing import Any, Dict, TYPE_CHECKING
 
+from django import forms
 from django.contrib import messages
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic.base import TemplateView
@@ -13,15 +16,21 @@ from uci_phonotactic_calculator.utils import utility as util
 from uci_phonotactic_calculator.cli.legacy import run
 from uci_phonotactic_calculator.web.django import settings
 
-from .models import DefaultFile, UploadTrain, UploadWithDefault
+from .models import DefaultFile, UploadTrain, UploadWithDefault, get_file_choices
 
 
-def index(request):
+def index(request: HttpRequest) -> HttpResponse:
     """Redirect to the home page."""
     return render(request, "webcalc/home.html")
 
 
-class UploadTrainView(CreateView):
+if TYPE_CHECKING:
+    _UploadTrainViewBase = CreateView[UploadTrain, forms.ModelForm[UploadTrain]]
+else:
+    _UploadTrainViewBase = CreateView
+
+
+class UploadTrainView(_UploadTrainViewBase):
     """View for uploading training and test files."""
 
     model = UploadTrain
@@ -29,22 +38,28 @@ class UploadTrainView(CreateView):
     template_name = "webcalc/home.html"
     success_url = reverse_lazy("webcalc:output")
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["documents"] = self.model.objects.all()
         return context
 
-    def form_invalid(self, form):
-        response = super(UploadTrainView, self).form_invalid(form)
+    def form_invalid(self, form: Any) -> HttpResponse:
+        response = super().form_invalid(form)
         context = self.get_context_data()
         form.data = form.data.copy()  # make copy of form data
         form.data["default_training_file"] = ""
         context["form"] = form  # set form in context to updated form
         return response
 
-    def form_valid(self, form):
-        response = super(UploadTrainView, self).form_valid(form)
+    def form_valid(self, form: Any) -> HttpResponse:
+        response = super().form_valid(form)
         objects = self.model.objects.last()
+
+        if objects is None:
+            messages.error(
+                self.request, "Could not find the submitted form data. Please try again."
+            )
+            return self.form_invalid(form)
 
         media_path = settings.MEDIA_ROOT
 
@@ -109,7 +124,7 @@ class MediaView(TemplateView):
     template_name = "webcalc/media.html"
     model = DefaultFile
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         # Ensure default dataset entries exist so the list is never empty.
         if self.model.objects.count() == 0:
             from pathlib import Path
@@ -120,7 +135,7 @@ class MediaView(TemplateView):
                 try:
                     from .models import UploadTrain  # local import to avoid circularity
 
-                    desc_map = dict(UploadTrain.get_file_choices())
+                    desc_map = dict(get_file_choices())
                 except Exception:
                     desc_map = {}
                 for fp in default_dir.iterdir():
@@ -144,14 +159,18 @@ class OutputView(TemplateView):
     model = UploadTrain
     template_name = "webcalc/output.html"
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         context = super().get_context_data(**kwargs)
         objects = self.model.objects.last()
-        file_name = util.get_filename(
-            basename(objects.test_file.name), objects.current_time.timestamp()
-        )
-        context["output_file"] = file_name
-        context["human_readable_output_file"] = basename(file_name)
+        if objects:
+            file_name = util.get_filename(
+                basename(objects.test_file.name), objects.current_time.timestamp()
+            )
+            context["output_file"] = file_name
+            context["human_readable_output_file"] = basename(file_name)
+        else:
+            context["output_file"] = ""
+            context["human_readable_output_file"] = "No output file found."
         return context
 
 
@@ -161,7 +180,13 @@ class AboutView(TemplateView):
     template_name = "webcalc/about.html"
 
 
-class UploadDefaultView(CreateView):
+if TYPE_CHECKING:
+    _UploadDefaultViewBase = CreateView[UploadWithDefault, forms.ModelForm[UploadWithDefault]]
+else:
+    _UploadDefaultViewBase = CreateView
+
+
+class UploadDefaultView(_UploadDefaultViewBase):
     """View for uploading with default training files."""
 
     model = UploadWithDefault
@@ -169,8 +194,8 @@ class UploadDefaultView(CreateView):
     template_name = "webcalc/uploadDefault.html"
     success_url = reverse_lazy("webcalc:output")
 
-    def form_invalid(self, form):
-        response = super(UploadDefaultView, self).form_invalid(form)
+    def form_invalid(self, form: Any) -> HttpResponse:
+        response = super().form_invalid(form)
         context = self.get_context_data()
         form.data = form.data.copy()  # make copy of form data
         form.data["training_file"] = (
@@ -180,9 +205,15 @@ class UploadDefaultView(CreateView):
         messages.warning(self.request, "Bad file formatting")
         return response
 
-    def form_valid(self, form):
-        response = super(UploadDefaultView, self).form_valid(form)
+    def form_valid(self, form: Any) -> HttpResponse:
+        response = super().form_valid(form)
         objects = self.model.objects.last()
+
+        if objects is None:
+            messages.error(
+                self.request, "Could not find the submitted form data. Please try again."
+            )
+            return self.form_invalid(form)
 
         media_path = settings.MEDIA_ROOT
 

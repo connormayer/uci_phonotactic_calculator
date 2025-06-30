@@ -11,7 +11,7 @@ from ..core.config import Config
 from ..core.corpus import (
     Corpus,  # Ensure Corpus is available in all scopes
 )
-from ..core.filter_aliases import ALIASES, canonical
+from ..core.filter_aliases import ALIASES, canonical, matches_filters
 from ..core.variants import all_variants
 from ..plugins.core import (
     PluginRegistry,
@@ -24,18 +24,6 @@ from ..utils.progress import (
 from .parser import build_parser
 
 # Imported once here – never re-import inside main(), or it will mask the global.
-
-
-def _matches_filters(cfg: Config, filters: dict[str, str]) -> bool:
-    for key, want in filters.items():
-        got = getattr(cfg, key, None)
-        if isinstance(got, bool):
-            got = "true" if got else "false"
-        else:
-            got = str(got).lower()
-        if got != want:
-            return False
-    return True
 
 
 # Ensure all plugins are loaded so --model choices/default stay in sync
@@ -241,7 +229,7 @@ def main() -> None:
     if args.use_demo_data:
         from .demo_data import get_demo_paths
 
-        train, test = get_demo_paths()
+        train, test = get_demo_paths("english.csv")
         if not args.train_file:
             args.train_file = train
         if not args.test_file:
@@ -431,7 +419,7 @@ def main() -> None:
                     if bar is not None:
                         bar.update(score_task, advance=1)
                     continue
-                if not _matches_filters(single_variant.cfg, filters):
+                if not matches_filters(single_variant.cfg, filters):
                     if bar is not None:
                         bar.update(score_task, advance=1)
                     continue

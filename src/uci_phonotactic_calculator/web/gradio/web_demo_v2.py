@@ -19,6 +19,10 @@ from pathlib import Path
 
 import gradio as gr
 import pandas as pd
+from typing import Any, Dict, List, Optional, Tuple, cast
+
+from gradio.blocks import Block
+from gradio.components.base import Component
 
 # NEW ▶
 CSS = """
@@ -516,161 +520,6 @@ TMP_DIR = Path(tempfile.gettempdir())
 
 
 # ---------------------------------------------------------------------
-# Back-end helper
-# ---------------------------------------------------------------------
-def score(
-    train_csv,  # gr.File or None
-    test_csv,  # gr.File or None
-    model,  # str
-    run_full_grid,  # bool
-    ngram_order,  # int
-    filter_string,  # str like "weight_mode=raw prob_mode=joint"
-    hide_progress,  # bool
-    neighbourhood_extra_args=None,  # Optional extra args for neighbourhood mode
-):
-    """
-    Execute the scorer and return (DataFrame, CSV-path) for Gradio.
-
-    Parameters:
-        train_csv: Training corpus CSV file or None if using demo data
-        test_csv: Test corpus CSV file or None if using demo data
-        model: Model plugin name to use
-        run_full_grid: Whether to run all model variants
-        ngram_order: The n-gram order to use (1-4)
-        filter_string: Space-separated key=value pairs for filtering
-        hide_progress: Whether to hide the progress indicator
-
-    Returns:
-        Tuple of (DataFrame preview, CSV file path)
-    """
-    # -------------------- resolve input paths -----------------------
-    logger.info(f"Starting scoring with model={model}, n={ngram_order}")
-
-    # Handle packaged files (when train_csv is a string path)
-    if isinstance(train_csv, str) and not os.path.isabs(train_csv):
-        # When a file name from the package data is selected (not an absolute path)
-        import importlib.resources as pkg_resources
-        import uci_phonotactic_calculator.data as data_pkg
-
-        # Use the modern importlib.resources approach
-        train_path = str(pkg_resources.files(data_pkg) / train_csv)
-        logger.info(f"Using packaged training file: {train_path}")
-
-        # Handle test file - check if it's also a packaged file
-        if isinstance(test_csv, str) and not os.path.isabs(test_csv):
-            # Test file is also a packaged file
-            test_path = str(pkg_resources.files(data_pkg) / test_csv)
-            logger.info(f"Using packaged test file: {test_path}")
-        else:
-            # For test file, use the uploaded file
-            test_path = test_csv.name if not isinstance(test_csv, str) else test_csv
-            logger.info(f"Using test file: {test_path}")
-    else:
-        # Both custom files
-        if train_csv is None or test_csv is None:
-            raise gr.Error(
-                "Upload BOTH training & test CSVs *or* select a default training file."
-            )
-        # Support both Gradio File objects and plain string paths
-        train_path = train_csv if isinstance(train_csv, str) else train_csv.name
-        test_path = test_csv if isinstance(test_csv, str) else test_csv.name
-        logger.info(f"Using custom files: {train_path}, {test_path}")
-
-    # ------------------------------------------------------------------
-    # Packaged files are just paths - no special behavior
-    # ------------------------------------------------------------------
-    # default training file is just another path – nothing else changes
-
-    out_file = TMP_DIR / f"scores_{uuid.uuid4().hex}.csv"
-    atexit.register(functools.partial(out_file.unlink, missing_ok=True))
-
-    # -------------------- translate filters -------------------------
-    filters = {}
-    # Initialize extra_args to avoid UnboundLocalError
-    extra_args = []
-    tokens = filter_string.split()
-    if tokens and tokens[0] == "--filter":
-        tokens = tokens[1:]  # drop the flag if present
-    if tokens:
-        for tok in tokens:
-            if "=" not in tok:
-                raise gr.Error(f"Filter '{tok}' must look like key=value")
-            k, v = tok.split("=", 1)
-            # 1️⃣ probability radio
-            if k == "prob_mode" and v in ("conditional", "joint"):
-                logger.info(f"Setting probability mode to {v}")
-                # For probability modes, use --prob-mode flag directly
-                extra_args.extend(["--prob-mode", v])
-                continue  # Skip adding to filters since we're handling it via CLI flag
-
-            # 2️⃣ weight-mode radio
-            elif k == "weight_mode":
-                logger.info(f"Setting weight mode to {v}")
-                extra_args.extend(["--weight-mode", v])
-                continue
-
-            # 3️⃣ smoothing radio
-            elif k in ("smoothing", "smoothing_scheme"):
-                logger.info(f"Setting smoothing scheme to {v}")
-                extra_args.extend(["--smoothing-scheme", v])
-                continue
-
-            # 4️⃣ neighbourhood mode → real CLI flag
-            elif k == "neighbourhood_mode" and v:
-                logger.info(f"Setting neighbourhood mode to: {v}")
-                extra_args.extend(
-                    ["--neighbourhood-mode", v]
-                )  # Pass as an actual CLI flag
-                continue
-
-            # anything else really is a grid-filter
-            else:
-                filters[k] = v
-
-    logger.info(f"Filters: {filters}, Extra args: {extra_args}")
-
-    # -------------------- invoke library with Gradio progress patch ---------------------------
-    from uci_phonotactic_calculator.utils.progress import progress
-
-    _orig_progress = progress  # keep original
-
-    def _gradio_progress(enabled=True):
-        return GradioProgress(enabled=enabled and not hide_progress)
-
-    # Patch the progress function
-    import uci_phonotactic_calculator.utils.progress as _p
-
-    _p.progress = _gradio_progress
-    try:
-        # Combine n-gram order with any other extra args we've set up
-        combined_extra_args = ["-n", str(ngram_order)] + extra_args
-
-        # Add neighbourhood mode extra args if provided
-        if neighbourhood_extra_args:
-            combined_extra_args.extend(neighbourhood_extra_args)
-
-        logger.info(f"Running with extra_args: {combined_extra_args}")
-
-        ngram_run(
-            train_file=train_path,
-            test_file=test_path,
-            output_file=str(out_file),
-            model=None if run_full_grid else model,
-            run_all=run_full_grid,
-            filters=filters,
-            show_progress=not hide_progress,  # still disables library chatter
-            extra_args=combined_extra_args,
-        )
-    finally:
-        _p.progress = _orig_progress  # guarantee cleanup
-
-    df = pd.read_csv(out_file)
-    df_preview = df.head(50).iloc[:, :30]  # show only first 50 rows, 30 cols in UI
-    logger.info(f"Scoring complete, generated {len(df)} rows of output")
-    return df_preview, str(out_file)
-
-
-# ---------------------------------------------------------------------
 # Gradio UI Builder
 # ---------------------------------------------------------------------
 
@@ -730,10 +579,10 @@ def _spacer(px: int = 8) -> None:
 
 
 # -------------------------------------------------------------------- TAB 1 – Calculator
-def _calculator_tab():
+def _calculator_tab() -> Dict[str, Block]:
     """Build the main calculator tab with a four-panel layout"""
     # Dictionary to store UI components for sharing with other tabs
-    components = {}
+    components: Dict[str, Block] = {}
 
     # Define available training files
     file_choices = [
@@ -751,7 +600,7 @@ def _calculator_tab():
 
     gr.Markdown("<div class='feature-box'><strong>🧮 UCI Phonotactic Calculator</strong></div>")
 
-# Quick Start Guide
+    # Quick Start Guide
     with gr.Accordion("🚀 Quick Start Guide", open=False):
         with gr.Row():
             with gr.Column():
@@ -934,8 +783,10 @@ def _calculator_tab():
         )
 
     # Results Section (initially hidden)
-    components["results_container"] = gr.Group(visible=False, elem_classes=["results-container"])
-    with components["results_container"]:
+    components["results_container"] = cast(
+        Any, gr.Group(visible=False, elem_classes=["results-container"])
+    )
+    with cast(gr.Group, components["results_container"]):
         gr.Markdown("""
 <div class='feature-box'>
 <strong>📈 Results</strong>
@@ -954,123 +805,146 @@ def _calculator_tab():
             with gr.Column(scale=1):
                 gr.HTML('<h5 style="margin: 0 0 10px 0; color: #2c3e50;">Download</h5>')
                 with gr.Group(elem_classes=["download-section"]):
-                    components["download_file"] = gr.File(
-                        label=None,
-                        interactive=False,
-                        elem_classes=["download-file"]
+                    components["download_label"] = gr.HTML(
+                        '<p style="color: #57606a; font-size: 0.9em;">Ready to calculate.</p>'
                     )
-                    components["download_label"] = gr.HTML("")
-    
-    # Interactive behavior
-    def update_ui_for_model(model_name):
-        """Show/hide model-specific options"""
-        if model_name == "ngram":
-            return gr.update(visible=True)
-        else:
-            return gr.update(visible=False)
+                    components["download_file"] = gr.File(
+                        label="Download Results (CSV)",
+                        interactive=False,
+                        visible=False,  # Initially hidden
+                    )
 
-    components["model"].change(
+    # Interactive behavior
+    def _safe_remove(path: str) -> None:
+        """Safely remove a file if it exists."""
+        if os.path.exists(path):
+            os.remove(path)
+
+    def update_ui_for_model(model_name: str) -> dict[str, Any]:
+        """Show/hide model-specific options"""
+        is_ngram = model_name.lower() == "ngram"
+        return gr.update(visible=is_ngram)
+
+    cast(gr.Radio, components["model"]).change(
         fn=update_ui_for_model,
         inputs=[components["model"]],
-        outputs=[components["ngram_order"]]
+        outputs=[components["ngram_order"]],
     )
 
-    # Build filter string from selections
-    def build_filter_string(*args):
-        """Combine radio button selections into filter string"""
-        weight_mode, prob_mode, manual_filter = args
-        
-        filters = []
-        if weight_mode and weight_mode != "None":
-            filters.append(f"weight_mode={weight_mode.lower()}")
-        if prob_mode:
-            filters.append(f"prob_mode={prob_mode.lower()}")
-        
-        auto_filter = " ".join(filters)
-        
-        # Combine with manual filter if provided
-        if manual_filter and manual_filter.strip():
-            if auto_filter:
-                return f"{auto_filter} {manual_filter.strip()}"
-            else:
-                return manual_filter.strip()
-        
-        return auto_filter
-
     # Main calculation function
-    def process_and_score(*args):
-        """Process inputs and run the scoring calculation"""
-        try:
-            # Extract arguments (now 10 instead of 11 since hide_progress was removed)
-            (default_file, train_file, use_demo_pair, test_file, model, 
-             ngram_order, run_full_grid, weight_mode, prob_mode, 
-             manual_filter) = args
-            
-            # Handle file selection logic
-            actual_train_file = None
+    def process_and_score(
+        default_file: str,
+        train_file: Optional[str],
+        use_demo_pair: bool,
+        test_file: Optional[str],
+        model: str,
+        ngram_order: int,
+        run_full_grid: bool,
+        weight_mode: str,
+        prob_mode: str,
+        manual_filter: str,
+    ) -> Tuple[dict[str, Any], pd.DataFrame, dict[str, Any], dict[str, Any]]:
+        """Process inputs, run the scoring calculation, and update UI components."""
+        logger.info("=== GRADIO CALCULATION START ===")
+        for name, value in locals().items():
+            if name != "request":
+                logger.info(f"{name}: {value}")
+
+        actual_train_file, actual_test_file = None, None
+        if use_demo_pair:
+            demo_train, demo_test = get_demo_paths(default_file)
+            logger.info(f"Using demo pair: {demo_train} and {demo_test}")
+            actual_train_file, actual_test_file = str(demo_train), str(demo_test)
+        else:
+            actual_train_file = train_file
             actual_test_file = test_file
-            
-            if use_demo_pair:
-                # Use demo files - set specific demo files instead of None
-                actual_train_file = "english.csv"  # Default English training file
-                actual_test_file = "sample_test_data/english_test_data.csv"  # Correct demo test file path
-                logger.info("Using demo pair: english.csv and sample_test_data/english_test_data.csv")
+
+        if not actual_train_file or not actual_test_file:
+            msg = "Missing training or test file. Please select or upload both."
+            logger.warning(msg)
+            gr.Warning(msg)
+            return (
+                gr.update(visible=False),
+                pd.DataFrame(),
+                gr.update(visible=False),
+                gr.update(value=f'<p style="color: #d9534f;">⚠️ {msg}</p>'),
+            )
+
+        extra_args: List[str] = []
+        filters_dict: Dict[str, Any] = {}
+
+        if not run_full_grid:
+            extra_args += ["-n", str(ngram_order)]
+            if weight_mode and weight_mode != "None":
+                extra_args += ["--weight-mode", weight_mode.lower()]
+            if prob_mode:
+                extra_args += ["--prob-mode", prob_mode.lower()]
+
+        if manual_filter:
+            try:
+                pairs = [p.strip().split("=") for p in manual_filter.split(",")]
+                filters_dict.update({k.strip(): v.strip() for k, v in pairs})
+            except Exception:
+                gr.Warning("Invalid manual filter format. Use 'key=value, key2=value2'.")
+
+        try:
+            out_path = os.path.join(tempfile.gettempdir(), f"scores_{uuid.uuid4().hex}.csv")
+            # Register a cleanup function that is compatible with all Python versions
+            atexit.register(functools.partial(_safe_remove, out_path))
+
+            logger.info(f"Running calculation with extra_args: {extra_args}")
+            ngram_run(
+                train_file=actual_train_file,
+                test_file=actual_test_file,
+                output_file=out_path,
+                model=None if run_full_grid else model,
+                run_all=run_full_grid,
+                filters=filters_dict,
+                show_progress=False,
+                extra_args=extra_args,
+            )
+
+            if os.path.exists(out_path) and os.path.getsize(out_path) > 0:
+                df = pd.read_csv(out_path)
+                logger.info(f"DataFrame shape: {df.shape}")
+                if df.empty:
+                    msg = "Calculation ran but produced no output rows."
+                    gr.Warning(msg)
+                    return (
+                        gr.update(visible=False),
+                        pd.DataFrame(),
+                        gr.update(visible=False),
+                        gr.update(value=f'<p style="color: #f0ad4e;">⚠️ {msg}</p>'),
+                    )
+
+                status_msg = f"✅ Success! Previewing {len(df)} rows."
+                return (
+                    gr.update(visible=True),
+                    df,
+                    gr.update(value=out_path, visible=True),
+                    gr.update(value=f'<p style="color: #5cb85c;">{status_msg}</p>'),
+                )
             else:
-                # Handle training file selection
-                if default_file and default_file.strip():
-                    # Use the selected default file name
-                    actual_train_file = default_file
-                    logger.info(f"Using default training file: {default_file}")
-                elif train_file is not None:
-                    # Use uploaded custom training file
-                    actual_train_file = train_file
-                    logger.info(f"Using uploaded training file: {train_file}")
-                else:
-                    raise gr.Error("Please select a default training file OR upload a custom training file")
-                
-                # Test file is required when not using demo pair
-                if test_file is None:
-                    raise gr.Error("Please upload a test file")
-                
-                actual_test_file = test_file
-            
-            # Build complete filter string
-            filter_str = build_filter_string(weight_mode, prob_mode, manual_filter)
-            
-            # Run the calculation with correct parameters (hide_progress=False by default)
-            df, csv_path = score(
-                train_csv=actual_train_file,
-                test_csv=actual_test_file,
-                model=model,
-                run_full_grid=run_full_grid,
-                ngram_order=ngram_order,
-                filter_string=filter_str,
-                hide_progress=False  # Default to showing progress
-            )
-            
-            # Create download label
-            filename = Path(csv_path).name if csv_path else "results.csv"
-            download_label = f'<p style="margin:0;color:#2c3e50;font-weight:500;background-color:#f8f9fa;padding:8px;border-radius:4px;border:1px solid #dee2e6;">📄 {filename}</p>'
-            
-            return (
-                gr.update(visible=True),  # Show results container
-                df,  # Results dataframe
-                csv_path,  # Download file
-                download_label  # Download label
-            )
-            
+                msg = "Calculation failed: Output file not created or is empty."
+                logger.error(msg)
+                gr.Error(msg)
+                df = pd.DataFrame()
+
         except Exception as e:
-            # Show error in results
-            error_msg = f"❌ Error: {str(e)}"
-            return (
-                gr.update(visible=True),
-                None,
-                None,
-                f'<p style="margin:0;color:#ff6b6b;">{error_msg}</p>'
-            )
+            msg = f"An error occurred: {e}"
+            logger.exception(f"An error occurred during calculation: {e}")
+            gr.Error(msg)
+            df = pd.DataFrame()
+
+        return (
+            gr.update(visible=False),
+            df,
+            gr.update(visible=False),
+            gr.update(value=f'<p style="color: #d9534f;">❌ {msg}</p>'),
+        )
 
     # Wire up the calculate button
-    components["calculate_btn"].click(
+    cast(gr.Button, components["calculate_btn"]).click(
         fn=process_and_score,
         inputs=[
             components["default_file"],
@@ -1088,15 +962,15 @@ def _calculator_tab():
             components["results_container"],
             components["results_df"],
             components["download_file"],
-            components["download_label"]
-        ]
+            components["download_label"],
+        ],
     )
 
     return components
 
 
 # -------------------------------------------------------------------- TAB 2 – Datasets
-def _datasets_tab(components=None):
+def _datasets_tab() -> None:
     gr.Markdown("<div class='feature-box'><strong>📊 Available Datasets</strong></div>")
 
     # Built-in datasets section
@@ -1271,7 +1145,7 @@ a n o t h e r</code></pre>
 
 
 # -------------------------------------------------------------------- TAB 3 – GitHub
-def _github_tab(components=None):
+def _github_tab() -> None:
     gr.Markdown("<div class='feature-box'><strong>🔗 GitHub Repository</strong></div>")
 
 
@@ -1410,7 +1284,7 @@ pip install -e .</code></pre>
 
 
 # -------------------------------------------------------------------- TAB 4 – About
-def _about_tab(components=None):
+def _about_tab() -> None:
     gr.Markdown("<div class='feature-box'><strong>ℹ️ About UCI Phonotactic Calculator</strong></div>")
 
 
@@ -1540,7 +1414,7 @@ def _about_tab(components=None):
 
 
 # -------------------------------------------------------------------- TAB 5 – Documentation
-def _docs_tab(components=None):
+def _docs_tab() -> None:
     gr.Markdown("<div class='feature-box'><strong>📚 How to Use This Interface</strong></div>")
 
     # Quick Start Guide
@@ -1670,14 +1544,14 @@ def build_ui() -> gr.Blocks:
             with gr.TabItem("ℹ️ About", id=3):
                 _about_tab()
             with gr.TabItem("📚 Documentation", id=4):
-                _docs_tab(None)  # Pass None since we're not using components
+                _docs_tab()  # Pass None since we're not using components
 
         _footer()
 
-    return demo
+    return cast(gr.Blocks, demo)
 
 
-def main():
+def main() -> None:
     """Main entry point to run the web UI with clear console output."""
     print("\n========================================")
     print("UCI Phonotactic Calculator - Web UI")
