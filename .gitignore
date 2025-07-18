@@ -3,13 +3,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Ignore temp.txt file from savecode pip
-temp.txt
-
-# Ignore src/output.csv
-*/output.csv
-
-    
 # C extensions
 *.so
 
@@ -136,4 +129,3 @@ dmypy.json
 .pyre/
 
 media/uploads
-src/uci_phonotactic_calculator/web/django/media/uploads/

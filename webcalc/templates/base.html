@@ -1,0 +1,46 @@
+<!-- templates/base.html -->
+
+{% load static %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>UCI Phonotactic Calculator</title>
+        <link href="{% static 'css/base.css' %}" rel="stylesheet">
+        {% include 'latexify/stylesheets.html' %}
+    </head>
+
+    <body>
+        
+        <div class="top-header">
+            <span class="home-button">
+                <strong>
+                    <a href="{% url 'home' %}">Home</a>
+                </strong>
+            </span>
+            <span class="about-button">
+                <strong>
+                    <a href="{% url 'about' %}">About</a>
+                </strong>
+            </span>
+            <span class="media-button">
+                <strong>
+                    <a href="{% url 'media' %}">Datasets</a>
+                </strong>
+            </span>
+            <span class="source_button">
+                <strong>
+                    <a href="https://github.com/connormayer/uci_phonotactic_calculator">GitHub</a>
+                </strong>
+            </span>
+        </div>
+        <div class="page-title">
+            <h1>
+                UCI Phonotactic Calculator
+            </h1>
+        </div>
+    
+        {% block content %}
+        {% endblock content %}
+        {% include "latexify/scripts.html" %}
+    </body>
+</html>

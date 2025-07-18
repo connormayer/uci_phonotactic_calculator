@@ -1,9 +1,0 @@
-<!-- templates/output.html -->
-{% extends 'webcalc/base.html' %}
-
-{% block content %}
-    <div style="padding:40px;margin:40px;border:1px solid #ccc">
-        <h1>Output File</h1>
-        <a href = "/media/uploads/{{ output_file }}" download><h2>{{ human_readable_output_file }}</h2></a>
-    </div>
-{% endblock content %}
