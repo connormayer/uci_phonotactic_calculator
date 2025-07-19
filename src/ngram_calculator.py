@@ -61,7 +61,7 @@ def read_tokens(dataset):
         token_freqs = []
 
         for row in reader:
-            split_token = row[0].split(' ')
+            split_token = row[0].strip().split(' ')
             freq = float(row[1]) if len(row) == 2 else 0
             token_freqs.append([split_token, freq])
 
