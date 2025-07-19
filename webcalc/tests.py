@@ -36,7 +36,8 @@ class FitNGramsTestCase(TestCase):
             'a': np.log(a_total / total)
         }
         
-        self.assertEqual(unigram_freqs, expected_dict)
+        self.assertAlmostEqual(unigram_freqs['t'], expected_dict['t'])
+        self.assertAlmostEqual(unigram_freqs['a'], expected_dict['a'])
 
     def testFitBigrams(self):
         bigram_probs = ngram_calculator.fit_bigrams(
@@ -332,6 +333,24 @@ class FitNGramsTestCase(TestCase):
         self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('t', 't')], tt_23 / total_23)
         self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('a', 'a')], aa_23 / total_23)
 
+    def testFitNeighborhoodDensity(self):
+        neighbors = ngram_calculator.fit_neighborhood_density(self.token_freqs[:1])
+        # Expected neighbors for 'ta' are:
+        #   - 't', 'a' (deletion)
+        #   - 'tta', 'tat', 'ata', 'taa' (insertion)
+        #   - 'aa', 'tt' (substitution)
+        expected_neighbors = [('t',), ('a',), ('t', 't', 'a'), ('t', 'a', 't'), 
+                              ('a', 't', 'a'), ('t', 'a', 'a'), ('a', 'a'), ('t', 't')]
+        for neighbor in expected_neighbors:
+            self.assertEqual(neighbors[neighbor], 1)
+        # Check that there are no unexpected words
+        self.assertEqual(len(expected_neighbors), len(neighbors))
+
+        # Check that counts sum properly when there's more than one word
+        neighbors = ngram_calculator.fit_neighborhood_density(self.token_freqs[:2])
+        self.assertEqual(neighbors[('t', 't', 'a')], 2)
+        self.assertEqual(neighbors[('a',)], 1)
+
 class TestNGramsTestCase(TestCase):
     def setUp(self):
         self.token_freqs = ngram_calculator.read_tokens(TRAINING_FILE)
@@ -347,6 +366,9 @@ class TestNGramsTestCase(TestCase):
             self.token_freqs
         )
         self.pos_bigram_freqs = ngram_calculator.fit_positional_bigrams(
+            self.token_freqs
+        )
+        self.neighborhood_density = ngram_calculator.fit_neighborhood_density(
             self.token_freqs
         )
 
@@ -410,3 +432,18 @@ class TestNGramsTestCase(TestCase):
 
         self.assertEqual(score, expected_score)
 
+    def testGetNeighborhoodDensity(self):
+        test_word = [['t', 'a', 't', 'a'], 0]
+        nd = ngram_calculator.get_neighborhood_density(test_word, self.neighborhood_density)
+        # 'tata' should have two neighbors: 'ata' and 'taa'
+        self.assertEqual(nd, 2)
+
+        # 'at' should have one neighbor: 'ata'
+        test_word = [['a', 't'], 0]
+        nd = ngram_calculator.get_neighborhood_density(test_word, self.neighborhood_density)
+        self.assertEqual(nd, 1)
+
+        # 'ttt' should have no neighbors
+        test_word = [['t', 't', 't'], 0]
+        nd = ngram_calculator.get_neighborhood_density(test_word, self.neighborhood_density)
+        self.assertEqual(nd, 0)

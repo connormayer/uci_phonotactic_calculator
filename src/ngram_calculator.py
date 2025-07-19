@@ -28,7 +28,9 @@ HEADER = [
     'pos_bi_score',
     'pos_bi_score_freq_weighted',
     'pos_bi_score_smoothed',
-    'pos_bi_score_freq_weighted_smoothed'
+    'pos_bi_score_freq_weighted_smoothed',
+
+    'neighborhood_density'
 ]
 
 ####################
@@ -85,7 +87,7 @@ def write_results(results, outfile):
 # Code for fitting models #
 ###########################
 
-def fit_ngram_models(token_freqs, sound_idx):
+def fit_models(token_freqs, sound_idx):
     """
     Fits all of the n-gram models to the provided data and returns the fitted
     models.
@@ -145,7 +147,9 @@ def fit_ngram_models(token_freqs, sound_idx):
         fit_positional_bigrams(token_freqs, smoothed=True, token_weighted=True)  # pos_bi_score_freq_weighted_smoothed
     )
 
-    return unigram_models, bigram_models, pos_unigram_models, pos_bigram_models
+    neighborhood_models = fit_neighborhood_density(token_freqs)
+
+    return unigram_models, bigram_models, pos_unigram_models, pos_bigram_models, neighborhood_models
 
 def fit_unigrams(token_freqs, token_weighted=False, smoothed=False):
     """
@@ -283,6 +287,38 @@ def fit_positional_bigrams(token_freqs, token_weighted=False, smoothed=False):
     
     return pos_bigram_freqs
 
+def fit_neighborhood_density(words):
+    # Get alphabet
+    alphabet = set(sym for word in words for sym in word[0])
+    neighbor_counts = defaultdict(int)
+    breakpoint()
+    for entry in words:
+        neighbors = set()
+        word = entry[0]
+        # Iterate through all positions we can modify
+        for i, ph in enumerate(word):
+            # Substitutions
+            for a in alphabet:
+                if a != ph:
+                    neighbors.add(tuple(word[:i] + [a] + word[i+1:]))
+            # Deletions
+            neighbors.add(tuple(word[:i] + word[i+1:]))
+            # Insertions
+            for a in alphabet:
+                neighbors.add(tuple(word[:i] + [a] + word[i:]))
+        
+        # Final insertion outside of loop range
+        for a in alphabet:
+            neighbors.add(tuple(word + [a]))
+        
+        for neighbor in neighbors:
+            neighbor_counts[neighbor] += 1
+        
+        if word == ['S', 'EY', 'L']:
+            breakpoint()
+
+    return [neighbor_counts]
+
 def normalize_positional_counts(counts):
     """
     Normalizes positional counts by total counts for each position.
@@ -316,7 +352,7 @@ def score_corpus(token_freqs, fitted_models, sound_idx):
     sublist contains the word itself, its length, and its score under each of the
     ngram models.
     """
-    uni_models, bi_models, pos_uni_models, pos_bi_models = fitted_models
+    uni_models, bi_models, pos_uni_models, pos_bi_models, neighborhood_models = fitted_models
 
     results = []
     
@@ -334,6 +370,9 @@ def score_corpus(token_freqs, fitted_models, sound_idx):
 
         for model in pos_bi_models:
             row.append(get_pos_bigram_score(token, model))
+
+        for model in neighborhood_models:
+            row.append(get_neighborhood_density(token, model))
 
         results.append(row)
 
@@ -416,6 +455,17 @@ def get_pos_bigram_score(word, pos_bi_freqs):
 
     return score
 
+def get_neighborhood_density(word, model):
+    '''
+    Gets the neighborhood density of a given token from a trained model
+
+    word: The test word
+    model: The model containing neighborhood density counts
+
+    returns: An integer corresponding to the neighborhood density of the token
+    '''
+    return model[tuple(word[0])]
+
 ##################
 # Entry function #
 ##################
@@ -438,7 +488,7 @@ def run(train, test, out):
     )
     sound_idx = sorted(list(unique_sounds)) + ['#']
 
-    fitted_models = fit_ngram_models(train_token_freqs, sound_idx)
+    fitted_models = fit_models(train_token_freqs, sound_idx)
     results = score_corpus(test_token_freqs, fitted_models, sound_idx)
     write_results(results, out)
 
