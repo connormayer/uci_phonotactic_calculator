@@ -334,7 +334,7 @@ class FitNGramsTestCase(TestCase):
         self.assertAlmostEqual(pos_bigram_freqs[(2, 3)][('a', 'a')], aa_23 / total_23)
 
     def testFitNeighborhoodDensity(self):
-        neighbors = ngram_calculator.fit_neighborhood_density(self.token_freqs[:1])
+        neighbors = ngram_calculator.fit_neighborhood_density(self.token_freqs[:1])[0]
         # Expected neighbors for 'ta' are:
         #   - 't', 'a' (deletion)
         #   - 'tta', 'tat', 'ata', 'taa' (insertion)
@@ -347,7 +347,7 @@ class FitNGramsTestCase(TestCase):
         self.assertEqual(len(expected_neighbors), len(neighbors))
 
         # Check that counts sum properly when there's more than one word
-        neighbors = ngram_calculator.fit_neighborhood_density(self.token_freqs[:2])
+        neighbors = ngram_calculator.fit_neighborhood_density(self.token_freqs[:2])[0]
         self.assertEqual(neighbors[('t', 't', 'a')], 2)
         self.assertEqual(neighbors[('a',)], 1)
 
@@ -433,17 +433,17 @@ class TestNGramsTestCase(TestCase):
         self.assertEqual(score, expected_score)
 
     def testGetNeighborhoodDensity(self):
-        test_word = [['t', 'a', 't', 'a'], 0]
-        nd = ngram_calculator.get_neighborhood_density(test_word, self.neighborhood_density)
+        test_word = ['t', 'a', 't', 'a']
+        nd = ngram_calculator.get_neighborhood_density(test_word, self.neighborhood_density[0])
         # 'tata' should have two neighbors: 'ata' and 'taa'
         self.assertEqual(nd, 2)
 
         # 'at' should have one neighbor: 'ata'
-        test_word = [['a', 't'], 0]
-        nd = ngram_calculator.get_neighborhood_density(test_word, self.neighborhood_density)
+        test_word = ['a', 't']
+        nd = ngram_calculator.get_neighborhood_density(test_word, self.neighborhood_density[0])
         self.assertEqual(nd, 1)
 
         # 'ttt' should have no neighbors
-        test_word = [['t', 't', 't'], 0]
-        nd = ngram_calculator.get_neighborhood_density(test_word, self.neighborhood_density)
+        test_word = ['t', 't', 't']
+        nd = ngram_calculator.get_neighborhood_density(test_word, self.neighborhood_density[0])
         self.assertEqual(nd, 0)
